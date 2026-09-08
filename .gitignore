@@ -1,25 +1,50 @@
-.DS_Store
+# Environment
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/bootstrap/ssr
+.env.local
+.env.*.local
+
+# Dependencies
 /node_modules
+/vendor
+
+# Laravel
+/bootstrap/ssr
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
+.phpactor.json
+.phpunit.cache
+.phpunit.result.cache
 auth.json
 Homestead.json
 Homestead.yaml
-npm-debug.log
-yarn-error.log
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# OS - macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# OS - Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
