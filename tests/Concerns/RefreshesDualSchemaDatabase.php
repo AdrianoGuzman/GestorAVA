@@ -2,39 +2,31 @@
 
 namespace Tests\Concerns;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
- * migrate:fresh solo resetea el schema de la conexion por defecto ("usuarios"),
- * pero la tabla de control de migraciones vive en el schema "laravel" (conexion
- * separada) y nunca se toca. Sin este trait, la segunda vez que corre el suite
- * el migrator ve el historial de la corrida anterior y no vuelve a crear nada
- * en "usuarios", dejando las tablas del dominio inexistentes.
+ * Se probaron y descartaron varias variantes de RefreshDatabase (que corre
+ * migrate:fresh dentro del mismo proceso PHP que los tests) para el setup de
+ * doble schema/conexion ("usuarios"/"laravel") de este proyecto: dropear
+ * "laravel" antes de migrar, dropear tambien "usuarios", truncar solo la
+ * tabla migrations, usar una conexion PDO nueva y separada, incluso una
+ * limpieza via un proceso de sistema operativo aparte (psql por shell_exec).
+ * Todas fallan de alguna forma en cuanto la base de "testing" ya tenia
+ * tablas de una corrida anterior en el mismo proceso PHP - hay algo a nivel
+ * de PHP/libpq (no de Laravel) con dropAllTables() sobre la conexion default
+ * justo despues de tocar el otro schema en el mismo proceso.
  *
- * Envuelve RefreshDatabase en vez de heredar de TestCase porque Pest aplica el
- * trait directo sobre la clase de test: un trait pisa un metodo heredado de la
- * clase padre, asi que sobreescribir beforeRefreshingDatabase() en TestCase no
- * tiene efecto.
+ * La solucion real: no migrar dentro del proceso de test en absoluto. La
+ * migracion de la base "testing" corre como paso aparte y siempre confiable
+ * (composer run test, ver composer.json) via un proceso de artisan
+ * genuinamente distinto - eso nunca fallo en ninguna prueba. Los tests solo
+ * envuelven cada uno en una transaccion (DatabaseTransactions puro, sin
+ * gestion de migraciones), asumiendo que el schema ya existe.
  *
- * OJO: no dropear tambien "usuarios" aca. Se probo (ver historial de commits)
- * y dropear el schema de la conexion default activa causa que Postgres
- * pierda la durabilidad de las tablas creadas por la migracion siguiente en
- * cuanto termina la transaccion envolvente del primer test - el schema
- * queda realmente vacio para el segundo test en adelante. dropAllTables()
- * de migrate:fresh ya se encarga de "usuarios" sin este problema.
+ * Mantiene el mismo nombre de trait que antes para no tener que tocar los
+ * tests existentes que ya hacen "use RefreshesDualSchemaDatabase;".
  */
 trait RefreshesDualSchemaDatabase
 {
-    use RefreshDatabase {
-        RefreshDatabase::beforeRefreshingDatabase as protected baseBeforeRefreshingDatabase;
-    }
-
-    protected function beforeRefreshingDatabase()
-    {
-        $this->baseBeforeRefreshingDatabase();
-
-        DB::connection('usuarios')->statement('DROP SCHEMA IF EXISTS laravel CASCADE');
-        DB::connection('usuarios')->statement('CREATE SCHEMA laravel');
-    }
+    use DatabaseTransactions;
 }
