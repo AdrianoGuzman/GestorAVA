@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\DB;
  * trait directo sobre la clase de test: un trait pisa un metodo heredado de la
  * clase padre, asi que sobreescribir beforeRefreshingDatabase() en TestCase no
  * tiene efecto.
+ *
+ * OJO: no dropear tambien "usuarios" aca. Se probo (ver historial de commits)
+ * y dropear el schema de la conexion default activa causa que Postgres
+ * pierda la durabilidad de las tablas creadas por la migracion siguiente en
+ * cuanto termina la transaccion envolvente del primer test - el schema
+ * queda realmente vacio para el segundo test en adelante. dropAllTables()
+ * de migrate:fresh ya se encarga de "usuarios" sin este problema.
  */
 trait RefreshesDualSchemaDatabase
 {
@@ -27,9 +34,6 @@ trait RefreshesDualSchemaDatabase
     {
         $this->baseBeforeRefreshingDatabase();
 
-        // Recrear vacio (no solo dropear): el migrator crea su tabla de
-        // control (laravel.migrations) antes de correr la migracion que
-        // crea este schema, mismo bug huevo-gallina que en el entorno real.
         DB::connection('usuarios')->statement('DROP SCHEMA IF EXISTS laravel CASCADE');
         DB::connection('usuarios')->statement('CREATE SCHEMA laravel');
     }
