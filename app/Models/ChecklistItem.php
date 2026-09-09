@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChecklistItem extends Model {
+    use HasFactory;
+
     protected $connection = "usuarios";
     protected $table = "checklist_items";
 

@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\TipoUnidad;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UnidadOrganizacional extends Model {
+    use HasFactory;
+
     protected $connection = "usuarios";
     protected $table = "unidades_organizacionales";
     public $timestamps = false;
