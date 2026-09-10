@@ -39,8 +39,24 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
 - **Ya implementado (backend)**: RF-04 (crear tarea), RF-05 (reasignar responsable, incl. RN-12),
-  RF-06 (agregar colaborador). Ver `app/Services/TareaService.php`, `ReasignacionService.php`,
-  `ColaboradorService.php` como referencia de cómo está armado el patrón Controller→Service.
+  RF-06 (agregar colaborador), RF-10 (transición automática a en progreso), RF-11 (completar tarea).
+  Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
+  `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
+
+## Guards de completado (importante para Oscar y Jeremy)
+
+RF-11 (completar tarea) tiene que bloquearse si hay dependencias hijas pendientes (RF-22,
+Oscar) o ítems de checklist sin marcar (RF-23, Jeremy). En vez de que `FinalizacionService`
+conozca la lógica de ambos módulos, existe un punto de extensión:
+
+1. Crear una clase que implemente `App\Contracts\GuardCompletarTareaInterface`
+   (método `verificar(Tarea $tarea): array` — devuelve un array de strings con los motivos
+   de bloqueo, o `[]` si no bloquea nada).
+2. Registrarla en `config/tareas.php`, clave `guards_completar`.
+
+Con eso alcanza — no hay que tocar `FinalizacionService.php` ni `TareaController.php`.
+Ejemplo de test que verifica el mecanismo: `tests/Feature/Tarea/CompletarTareaTest.php`
+(casos `un_guard_registrado_*`) y `tests/Support/GuardDeBloqueoDePruebas.php`.
 
 ## Base de datos
 
