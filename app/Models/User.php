@@ -77,4 +77,8 @@ class User extends Authenticatable {
     public function tareasComoColaborador(): BelongsToMany {
         return $this->belongsToMany(Tarea::class, "colaboradores_tarea", "usuario_id", "tarea_id");
     }
+
+    public function notificacionesRecibidas(): HasMany {
+        return $this->hasMany(Notificacion::class, "usuario_id");
+    }
 }

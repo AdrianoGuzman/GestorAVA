@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TareaController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -11,6 +12,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
+    Route::patch('tareas/{tarea}/reasignar', [TareaController::class, 'reasignar'])->name('tareas.reasignar');
 });
 
 require __DIR__.'/settings.php';
