@@ -8,6 +8,7 @@ use App\Http\Requests\Tarea\ReasignarTareaRequest;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Services\ColaboradorService;
+use App\Services\FinalizacionService;
 use App\Services\ReasignacionService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
@@ -22,6 +23,7 @@ class TareaController extends Controller
         private readonly ReasignacionService $reasignacionService,
         private readonly ColaboradorService $colaboradorService,
         private readonly TransicionAutomaticaService $transicionAutomatica,
+        private readonly FinalizacionService $finalizacionService,
     ) {
     }
 
@@ -70,5 +72,12 @@ class TareaController extends Controller
         $this->colaboradorService->agregar($tarea, $request->validated("colaboradores"), $request->user());
 
         return back()->with("success", "Colaborador(es) agregado(s) correctamente.");
+    }
+
+    public function completar(Request $request, Tarea $tarea): RedirectResponse
+    {
+        $this->finalizacionService->completar($tarea, $request->user());
+
+        return back()->with("success", "Tarea marcada como completada.");
     }
 }

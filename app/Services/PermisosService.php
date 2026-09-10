@@ -70,4 +70,13 @@ class PermisosService
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
     }
+
+    /**
+     * RF-11 D1 / RN-14: solo el responsable principal puede marcar la tarea
+     * como completada; un colaborador no tiene esta accion disponible.
+     */
+    public function puedeCompletar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id;
+    }
 }
