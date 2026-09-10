@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
 use App\Models\Tarea;
 use App\Models\User;
+use App\Services\ColaboradorService;
 use App\Services\ReasignacionService;
 use App\Services\TareaService;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +17,7 @@ class TareaController extends Controller
     public function __construct(
         private readonly TareaService $tareaService,
         private readonly ReasignacionService $reasignacionService,
+        private readonly ColaboradorService $colaboradorService,
     ) {
     }
 
@@ -44,5 +47,12 @@ class TareaController extends Controller
         }
 
         return back()->with("success", "Responsable reasignado correctamente.");
+    }
+
+    public function agregarColaborador(AgregarColaboradorRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->colaboradorService->agregar($tarea, $request->validated("colaboradores"), $request->user());
+
+        return back()->with("success", "Colaborador(es) agregado(s) correctamente.");
     }
 }

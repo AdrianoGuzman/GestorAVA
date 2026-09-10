@@ -59,4 +59,15 @@ class PermisosService
 
         return $usuario->nivel_jerarquico->esSuperiorA($responsable->nivel_jerarquico);
     }
+
+    /**
+     * RF-06 D1: el responsable de la tarea o cualquier colaborador ya
+     * existente puede agregar nuevos colaboradores, sin restriccion de nivel
+     * jerarquico ni de unidad organizacional (RN-04).
+     */
+    public function puedeAgregarColaborador(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
 }

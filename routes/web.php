@@ -15,6 +15,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
     Route::patch('tareas/{tarea}/reasignar', [TareaController::class, 'reasignar'])->name('tareas.reasignar');
+    Route::post('tareas/{tarea}/colaboradores', [TareaController::class, 'agregarColaborador'])->name('tareas.colaboradores.store');
 });
 
 require __DIR__.'/settings.php';
