@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\NivelJerarquico;
+use App\Models\UnidadOrganizacional;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -44,6 +46,18 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Asocia al usuario un nivel jerarquico y una unidad organizacional
+     * (por defecto una nueva). Sin esto, ambos campos quedan null.
+     */
+    public function conNivel(NivelJerarquico $nivel, ?UnidadOrganizacional $unidad = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'nivel_jerarquico' => $nivel,
+            'unidad_organizacional_id' => $unidad?->id ?? UnidadOrganizacional::factory(),
         ]);
     }
 }
