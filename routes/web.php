@@ -4,6 +4,7 @@ use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistPersonalController;
 use App\Http\Controllers\MisTareasController;
 use App\Http\Controllers\TareaController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -17,6 +18,10 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('mis-tareas', [MisTareasController::class, 'index'])->name('mis-tareas.index');
+
+    Route::get('administracion/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
+    Route::post('administracion/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
     Route::get('tareas/{tarea}', [TareaController::class, 'show'])->name('tareas.show');
     Route::patch('tareas/{tarea}/reasignar', [TareaController::class, 'reasignar'])->name('tareas.reasignar');
