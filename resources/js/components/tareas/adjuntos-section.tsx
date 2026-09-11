@@ -150,7 +150,7 @@ export function AdjuntosSection({
                         <p className="text-sm text-foreground">
                             {subiendo ? 'Subiendo...' : isDragActive ? 'Soltá el archivo acá...' : 'Arrastrá un archivo o hacé click para elegirlo'}
                         </p>
-                        <p className="text-xs text-muted-foreground">PDF, imágenes, Word o Excel — máx. 10MB</p>
+                        <p className="text-xs text-muted-foreground">PDF, imágenes, Word, Excel o ZIP — máx. 10MB</p>
                     </div>
                     {error && <p className="mt-1 text-center text-sm text-rojo-1">{error}</p>}
                 </div>

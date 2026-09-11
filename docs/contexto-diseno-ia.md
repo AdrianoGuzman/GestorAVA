@@ -143,8 +143,9 @@ corregirlo), y cuando se cancela una tarea (les llega a los colaboradores).
   título, estado + atrasada, descripción, fechas, responsable/colaboradores/
   creador, tu propio rol respecto a la tarea, botones de acción habilitados
   según permisos, selector de personas estilo Trello, historial timeline, y
-  **adjuntar archivos** (PDF/imágenes/Word/Excel, drag-and-drop, descarga
-  autenticada — nada queda expuesto por URL pública).
+  **adjuntar archivos** (PDF/imágenes/Word/Excel/ZIP, drag-and-drop, descarga
+  autenticada — nada queda expuesto por URL pública), separados en "Necesarios
+  para la tarea" y "Evidencia" (categoría elegida al subir, no por quién sube).
 
 ## Qué falta (a cargo de otros compañeros, todavía sin UI ni backend propio)
 

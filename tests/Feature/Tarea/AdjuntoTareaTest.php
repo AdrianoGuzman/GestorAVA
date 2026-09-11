@@ -91,6 +91,25 @@ class AdjuntoTareaTest extends TestCase
         $this->assertCount(0, $tarea->fresh()->adjuntos);
     }
 
+    public function test_se_puede_subir_un_zip(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("paquete.zip", 100, "application/zip");
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "evidencia",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $this->assertCount(1, $tarea->fresh()->adjuntos);
+    }
+
     public function test_un_colaborador_puede_adjuntar(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
