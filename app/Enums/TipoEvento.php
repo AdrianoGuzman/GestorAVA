@@ -20,4 +20,5 @@ enum TipoEvento: string
     case ChecklistItemDesmarcado = 'checklist_item_desmarcado';
     case ChecklistItemEditado = 'checklist_item_editado';
     case ChecklistItemEliminado = 'checklist_item_eliminado';
+    case AdjuntoAgregado = 'adjunto_agregado';
 }

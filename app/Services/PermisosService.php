@@ -109,4 +109,14 @@ class PermisosService
     {
         return $solicitante->id === $tarea->responsable_id;
     }
+
+    /**
+     * RF-19 D1: el responsable o un colaborador de la tarea puede adjuntar
+     * archivos.
+     */
+    public function puedeAdjuntar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
 }

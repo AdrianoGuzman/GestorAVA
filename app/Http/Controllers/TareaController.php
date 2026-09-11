@@ -2,25 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Tarea\AdjuntarArchivoRequest;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
 use App\Http\Requests\Tarea\RechazarTareaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
+use App\Models\AdjuntoTarea;
 use App\Models\Tarea;
 use App\Models\User;
+use App\Services\AdjuntoService;
 use App\Services\CancelacionService;
 use App\Services\ColaboradorService;
 use App\Services\FinalizacionService;
+use App\Services\MisTareasService;
+use App\Services\PermisosService;
 use App\Services\ReasignacionService;
 use App\Services\RechazoService;
 use App\Services\RetrocesoService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TareaController extends Controller
 {
@@ -33,19 +40,59 @@ class TareaController extends Controller
         private readonly RetrocesoService $retrocesoService,
         private readonly RechazoService $rechazoService,
         private readonly CancelacionService $cancelacionService,
+        private readonly AdjuntoService $adjuntoService,
+        private readonly PermisosService $permisos,
+        private readonly MisTareasService $misTareasService,
     ) {
     }
 
     /**
-     * RF-10: abrir el detalle dispara la transicion automatica a "en
-     * progreso" cuando corresponde. Endpoint minimo por ahora (responde
-     * JSON) -- RF-24 lo va a reemplazar por la vista de detalle real.
+     * RF-24: vista de detalle unico de la tarea. Abrirla dispara la
+     * transicion automatica a "en progreso" cuando corresponde (RF-10).
      */
-    public function show(Request $request, Tarea $tarea): JsonResponse
+    public function show(Request $request, Tarea $tarea): Response
     {
-        $tarea = $this->transicionAutomatica->procesarApertura($tarea, $request->user());
+        $usuario = $request->user();
 
-        return response()->json($tarea);
+        $tarea = $this->transicionAutomatica->procesarApertura($tarea, $usuario);
+        $tarea->load([
+            "responsable",
+            "colaboradores",
+            "creador",
+            "adjuntos" => fn ($query) => $query->with("usuario")->latest("created_at"),
+            "historial" => function ($query) {
+                $query->with("usuario")->orderBy("created_at");
+            },
+        ]);
+
+        return Inertia::render("tareas/show", [
+            "tarea" => $tarea,
+            "rolUsuario" => $this->misTareasService->rolDe($tarea, $usuario),
+            "usuarios" => User::select(["id", "nombre_1", "nombre_2", "apellido_1", "apellido_2", "email"])->get(),
+            "permisos" => [
+                "puedeReasignar" => $this->permisos->puedeReasignar($tarea, $usuario),
+                "puedeAgregarColaborador" => $this->permisos->puedeAgregarColaborador($tarea, $usuario),
+                "puedeCompletar" => $this->permisos->puedeCompletar($tarea, $usuario),
+                "puedeRetroceder" => $this->permisos->puedeRetroceder($tarea, $usuario),
+                "puedeRechazar" => $this->permisos->puedeRechazar($tarea, $usuario),
+                "puedeCancelar" => $this->permisos->puedeCancelar($tarea, $usuario),
+                "puedeAdjuntar" => $this->permisos->puedeAdjuntar($tarea, $usuario),
+            ],
+        ]);
+    }
+
+    public function agregarAdjunto(AdjuntarArchivoRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->adjuntoService->agregar($tarea, $request->file("archivo"), $request->user());
+
+        return back()->with("success", "Archivo adjuntado correctamente.");
+    }
+
+    public function descargarAdjunto(Tarea $tarea, AdjuntoTarea $adjunto): StreamedResponse
+    {
+        abort_unless($adjunto->tarea_id === $tarea->id, 404);
+
+        return $this->adjuntoService->descargar($adjunto);
     }
 
     public function store(CrearTareaRequest $request): RedirectResponse
