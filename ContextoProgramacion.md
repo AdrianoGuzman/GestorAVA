@@ -68,6 +68,30 @@ placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependenc
 (RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
 mover ni renombrar la tarjeta en sí.
 
+**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026), distintas de la spec original:**
+- **Solo el creador de la tarea asigna el dueño de un ítem** — no hay autoasignación por parte
+  de un colaborador, para evitar confusión en la interfaz. Es una restricción más estricta
+  que el D1.4 de la spec original ("autoasignación permitida"); prevalece esta decisión.
+- **La sección de Checklist solo se muestra si la tarea tiene colaboradores.** Si el
+  responsable es el único involucrado (sin colaboradores), esa tarjeta no debe aparecer —
+  en ese caso el responsable usa un "checklist personal" propio (ver abajo, no es RF-23).
+- **Actividad chica y binaria → checklist (RF-23). Actividad grande que necesita su propio
+  responsable y seguimiento → tarea hija (RF-21/22, Oscar), no un ítem de checklist.** Esta
+  es la regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una
+  tarea dependiente completa.
+
+**Decisión sobre RF-21/22 (Oscar):** el responsable de una tarea hija debe mostrarse bien
+visible en la sección Dependencias de la tarea padre (con avatar, `PersonaAvatar`, link a su
+propio detalle) — pero **no se agrega como colaborador** de la tarea padre (`colaboradores_tarea`).
+Son conceptualmente distintos: un colaborador comparte la misma tarea y hereda sus permisos
+(RF-06); el responsable de una tarea hija tiene su propia tarea separada y no debería tener
+permisos sobre la tarea padre solo por estar vinculado como dependencia.
+
+**Nueva idea, todavía sin construir, no es de nadie en particular todavía:** un "checklist
+personal" por tarea — privado, visible solo para quien lo crea, no bloquea nada (a diferencia
+del checklist de RF-23), y siempre disponible sin importar si hay colaboradores o no. Distinto
+de RF-23, no confundir los dos al momento de nombrar componentes/tablas.
+
 Reusar en vez de crear de nuevo:
 - `PersonaAvatar` (`resources/js/components/tareas/persona-avatar.tsx`) — avatar circular
   con iniciales + tooltip con el nombre. Pedido explícito de Franco: cada ítem del
