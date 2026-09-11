@@ -4,17 +4,17 @@ import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completa
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
+import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import { Head } from '@inertiajs/react';
-import { Ban, CircleCheckBig, GitBranch, History, ListChecks, Paperclip, Undo2, UserCog, UserPlus, XCircle } from 'lucide-react';
+import { Ban, CircleCheckBig, GitBranch, History, ListChecks, Paperclip, Plus, Undo2, UserCog, UserPlus, XCircle } from 'lucide-react';
 
 interface Props {
     tarea: TareaDetalle;
@@ -54,6 +54,31 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                                 <div className="flex flex-wrap items-center gap-2">
                                     <EstadoBadge estado={tarea.estado} />
                                     {tarea.esta_atrasada && <AtrasadaBadge />}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center -space-x-2">
+                                        <PersonaAvatar nombre={tarea.responsable.name} destacado />
+                                        {tarea.colaboradores.map((colaborador) => (
+                                            <PersonaAvatar key={colaborador.id} nombre={colaborador.name} />
+                                        ))}
+                                        {permisos.puedeAgregarColaborador && (
+                                            <AgregarColaboradorDialog
+                                                tareaId={tarea.id}
+                                                personas={usuarios}
+                                                trigger={
+                                                    <button
+                                                        type="button"
+                                                        className="flex size-8 items-center justify-center rounded-full border-2 border-dashed border-gris-3 bg-background text-gris-1 transition-colors hover:border-verde-5 hover:text-verde-6"
+                                                        title="Agregar colaborador"
+                                                    >
+                                                        <Plus className="size-4" />
+                                                    </button>
+                                                }
+                                            />
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Creado por {tarea.creador.name}</p>
                                 </div>
                             </div>
 
@@ -174,31 +199,6 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                                 Motivo de cancelación: {tarea.motivo_cancelacion}
                             </p>
                         )}
-
-                        <Separator />
-
-                        <div className="grid gap-4 sm:grid-cols-3">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Responsable</p>
-                                <p className="font-medium text-gris-2">{tarea.responsable.name}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Creador</p>
-                                <p className="font-medium text-gris-2">{tarea.creador.name}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Colaboradores</p>
-                                {tarea.colaboradores.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">Sin colaboradores</p>
-                                ) : (
-                                    <ul className="text-sm text-gris-2">
-                                        {tarea.colaboradores.map((colaborador) => (
-                                            <li key={colaborador.id}>{colaborador.name}</li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        </div>
                     </CardContent>
                 </Card>
 

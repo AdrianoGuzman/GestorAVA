@@ -38,8 +38,10 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `NotificacionService::notificarAsignacion()` — crea notificación in-app + dispara mail.
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
-- **Ya implementado (backend)**: RF-04 (crear tarea), RF-05 (reasignar responsable, incl. RN-12),
-  RF-06 (agregar colaborador), RF-10 (transición automática a en progreso), RF-11 (completar tarea).
+- **Ya implementado (backend + frontend)**: RF-04 (crear tarea), RF-05 (reasignar responsable,
+  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend), RF-10 (transición
+  automática), RF-11 (completar), RF-12 (retroceso), RF-13 (rechazo), RF-19 (adjuntar evidencia),
+  RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
 
@@ -57,6 +59,26 @@ conozca la lógica de ambos módulos, existe un punto de extensión:
 Con eso alcanza — no hay que tocar `FinalizacionService.php` ni `TareaController.php`.
 Ejemplo de test que verifica el mecanismo: `tests/Feature/Tarea/CompletarTareaTest.php`
 (casos `un_guard_registrado_*`) y `tests/Support/GuardDeBloqueoDePruebas.php`.
+
+## Convenciones de UI para Jeremy y Oscar (cuando construyan su frontend)
+
+La vista de detalle (`resources/js/pages/tareas/show.tsx`) ya tiene reservadas dos tarjetas
+placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependencias**
+(RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
+mover ni renombrar la tarjeta en sí.
+
+Reusar en vez de crear de nuevo:
+- `PersonaAvatar` (`resources/js/components/tareas/persona-avatar.tsx`) — avatar circular
+  con iniciales + tooltip con el nombre. Pedido explícito de Franco: cada ítem del
+  checklist debe mostrar el avatar del colaborador dueño del ítem (si tiene uno asignado),
+  usando este mismo componente.
+- `PersonaPicker` (`resources/js/components/tareas/persona-picker.tsx`) — selector de
+  personas estilo Trello (click, buscar, elegir), usado hoy para reasignar/agregar
+  colaboradores. Sirve igual para elegir el dueño de un ítem de checklist o la tarea a
+  vincular como dependencia.
+- Los tokens de color de marca (`bg-verde-*`, `text-gris-*`, etc.) y el patrón de
+  ícono + texto en los botones de acción (`lucide-react`) — ver `docs/contexto-diseno-ia.md`
+  para la paleta completa y las reglas de uso del verde.
 
 ## Base de datos
 
