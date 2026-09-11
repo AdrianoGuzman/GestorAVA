@@ -20,6 +20,7 @@ import {
     GitBranch,
     History,
     ListChecks,
+    MessageSquareWarning,
     Paperclip,
     Plus,
     Undo2,
@@ -27,7 +28,6 @@ import {
     UserCog,
     UserPlus,
     Users,
-    XCircle,
 } from 'lucide-react';
 
 interface Props {
@@ -119,18 +119,17 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                                         }
                                     />
                                 )}
-                                {permisos.puedeRechazar && (
+                                {permisos.puedeReportarProblema && (
                                     <MotivoDialog
                                         tareaId={tarea.id}
-                                        routeName="tareas.rechazar"
-                                        title="Rechazar tarea"
-                                        description="La tarea vuelve a quien la delegó por última vez para que la corrija y reasigne."
-                                        submitLabel="Rechazar"
-                                        submitIcon={XCircle}
-                                        variant="destructive"
+                                        routeName="tareas.reportar-problema"
+                                        title="Reportar problema"
+                                        description="Avisa que la tarea está mal definida. No cambia su estado ni interrumpe el trabajo: solo notifica a quien puede corregirla (el creador si reportás como responsable, el responsable si reportás como colaborador)."
+                                        submitLabel="Reportar problema"
+                                        submitIcon={MessageSquareWarning}
                                         trigger={
                                             <Button variant="outline">
-                                                <XCircle /> Rechazar
+                                                <MessageSquareWarning /> Reportar problema
                                             </Button>
                                         }
                                     />

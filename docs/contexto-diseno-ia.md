@@ -101,8 +101,9 @@ a una `UnidadOrganizacional` (tipos: `directorio`, `gerencia`, `obra`,
 `area`), que puede tener una unidad padre (árbol).
 
 **Tarea** (`EstadoTarea`): `pendiente` → `en_progreso` → `completada` |
-`rechazada` | `cancelada`. `rechazada` puede volver a `pendiente` (reingresa
-al flujo); `completada` y `cancelada` son terminales. El indicador
+`cancelada`. `completada` y `cancelada` son terminales. No existe un estado
+"rechazada" — reportar que una tarea está mal definida (ver más abajo) es
+una notificación, no un cambio de estado. El indicador
 **"atrasada"** es independiente del estado (un booleano aparte) — una tarea
 puede estar "en progreso" Y "atrasada" a la vez, se muestran ambos a la vez.
 
@@ -114,18 +115,27 @@ misma tarea sin poder fragmentar el trabajo — el checklist es para eso),
 
 **Historial**: cada tarea tiene un log cronológico completo, append-only, de
 eventos (creación, reasignación, agregar colaborador, transición automática,
-completar, retroceder, rechazar, cancelar, adjuntar archivo, y más adelante
-dependencias/checklist). Se muestra como timeline en el detalle.
+completar, retroceder, reportar problema, cancelar, adjuntar archivo, y más
+adelante dependencias/checklist). Se muestra como timeline en el detalle.
+
+**Reportar problema** (antes se llamaba "Rechazar", se rediseñó porque el
+nombre confundía): si el responsable o un colaborador detecta que la tarea
+está mal definida, puede reportarlo con un motivo. A diferencia de una
+"reasignación" o un "rechazo" clásico, **esto no cambia el estado de la
+tarea ni interrumpe el trabajo** — solo notifica a quien puede corregir la
+definición: si reporta el responsable, le llega al creador; si reporta un
+colaborador, le llega al responsable.
 
 **Notificaciones**: por correo (Mailpit en local) cuando te asignan como
-responsable/colaborador, cuando retrocede/rechaza un colaborador (le llega al
-responsable), y cuando se cancela una tarea (les llega a los colaboradores).
+responsable/colaborador, cuando retrocede un colaborador (le llega al
+responsable), cuando alguien reporta un problema (le llega a quien puede
+corregirlo), y cuando se cancela una tarea (les llega a los colaboradores).
 
 ## Qué está construido (funcional, con tests, integrado a la vista de detalle)
 
 - Crear tarea, reasignar responsable (incl. excepción por ausencia total),
-  agregar colaboradores, marcar completada, retroceder a pendiente, rechazar
-  (reingresa al flujo hacia quien delegó), cancelar (cierre definitivo).
+  agregar colaboradores, marcar completada, retroceder a pendiente, reportar
+  problema (notifica sin cambiar estado), cancelar (cierre definitivo).
 - Vista "Mis tareas" (backend, sin página propia todavía): secciones
   Responsable / Colaborador / Delegadas por mí / Creadas por mí, con
   contadores agregados.
@@ -150,7 +160,7 @@ responsable), y cuando se cancela una tarea (les llega a los colaboradores).
 
 - Todo el dominio está en español (nombres de tablas, variables, UI).
 - Los estados de tarea tienen colores fijos ya decididos: pendiente=gris,
-  en progreso=verde, completada=gris oscuro, rechazada=naranjo,
-  cancelada=gris claro, atrasada=rojo (siempre, independiente del estado).
+  en progreso=verde, completada=gris oscuro, cancelada=gris claro,
+  atrasada=rojo (siempre, independiente del estado, ver arriba).
 - Botones de acción: ícono + texto, nunca solo ícono ni solo texto.
 - Evitar fondos verdes grandes/dominantes; el verde va en acentos puntuales.

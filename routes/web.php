@@ -21,7 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tareas/{tarea}/colaboradores', [TareaController::class, 'agregarColaborador'])->name('tareas.colaboradores.store');
     Route::patch('tareas/{tarea}/completar', [TareaController::class, 'completar'])->name('tareas.completar');
     Route::patch('tareas/{tarea}/retroceder', [TareaController::class, 'retroceder'])->name('tareas.retroceder');
-    Route::patch('tareas/{tarea}/rechazar', [TareaController::class, 'rechazar'])->name('tareas.rechazar');
+    Route::patch('tareas/{tarea}/reportar-problema', [TareaController::class, 'reportarProblema'])->name('tareas.reportar-problema');
     Route::patch('tareas/{tarea}/cancelar', [TareaController::class, 'cancelar'])->name('tareas.cancelar');
     Route::post('tareas/{tarea}/adjuntos', [TareaController::class, 'agregarAdjunto'])->name('tareas.adjuntos.store');
     Route::get('tareas/{tarea}/adjuntos/{adjunto}/descargar', [TareaController::class, 'descargarAdjunto'])->name('tareas.adjuntos.descargar');

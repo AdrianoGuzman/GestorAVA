@@ -7,7 +7,7 @@ use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
-use App\Http\Requests\Tarea\RechazarTareaRequest;
+use App\Http\Requests\Tarea\ReportarProblemaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\AdjuntoTarea;
 use App\Models\Tarea;
@@ -19,7 +19,7 @@ use App\Services\FinalizacionService;
 use App\Services\MisTareasService;
 use App\Services\PermisosService;
 use App\Services\ReasignacionService;
-use App\Services\RechazoService;
+use App\Services\ReporteProblemaService;
 use App\Services\RetrocesoService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
@@ -38,7 +38,7 @@ class TareaController extends Controller
         private readonly TransicionAutomaticaService $transicionAutomatica,
         private readonly FinalizacionService $finalizacionService,
         private readonly RetrocesoService $retrocesoService,
-        private readonly RechazoService $rechazoService,
+        private readonly ReporteProblemaService $reporteProblemaService,
         private readonly CancelacionService $cancelacionService,
         private readonly AdjuntoService $adjuntoService,
         private readonly PermisosService $permisos,
@@ -74,7 +74,7 @@ class TareaController extends Controller
                 "puedeAgregarColaborador" => $this->permisos->puedeAgregarColaborador($tarea, $usuario),
                 "puedeCompletar" => $this->permisos->puedeCompletar($tarea, $usuario),
                 "puedeRetroceder" => $this->permisos->puedeRetroceder($tarea, $usuario),
-                "puedeRechazar" => $this->permisos->puedeRechazar($tarea, $usuario),
+                "puedeReportarProblema" => $this->permisos->puedeReportarProblema($tarea, $usuario),
                 "puedeCancelar" => $this->permisos->puedeCancelar($tarea, $usuario),
                 "puedeAdjuntar" => $this->permisos->puedeAdjuntar($tarea, $usuario),
             ],
@@ -144,11 +144,11 @@ class TareaController extends Controller
         return back()->with("success", "Tarea retrocedida a Pendiente.");
     }
 
-    public function rechazar(RechazarTareaRequest $request, Tarea $tarea): RedirectResponse
+    public function reportarProblema(ReportarProblemaRequest $request, Tarea $tarea): RedirectResponse
     {
-        $this->rechazoService->rechazar($tarea, $request->user(), $request->validated("motivo"));
+        $this->reporteProblemaService->reportar($tarea, $request->user(), $request->validated("motivo"));
 
-        return back()->with("success", "Tarea rechazada.");
+        return back()->with("success", "Problema reportado correctamente.");
     }
 
     public function cancelar(CancelarTareaRequest $request, Tarea $tarea): RedirectResponse

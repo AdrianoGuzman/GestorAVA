@@ -8,7 +8,7 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     transicion_automatica: 'La tarea pasó a En progreso automáticamente',
     completada: 'Marcó la tarea como completada',
     retroceso: 'Retrocedió la tarea a Pendiente',
-    rechazo: 'Rechazó la tarea',
+    problema_reportado: 'Reportó un problema en la tarea',
     cancelacion: 'Canceló la tarea',
     dependencia_creada: 'Creó una dependencia',
     dependencia_resuelta: 'Resolvió una dependencia',

@@ -8,12 +8,12 @@ use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
-use App\Notifications\TareaRetrocedidaNotification;
+use App\Notifications\ProblemaReportadoNotification;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\RefreshesDualSchemaDatabase;
 use Tests\TestCase;
 
-class RetrocederTareaTest extends TestCase
+class ReportarProblemaTest extends TestCase
 {
     use RefreshesDualSchemaDatabase;
 
@@ -22,33 +22,35 @@ class RetrocederTareaTest extends TestCase
         return User::factory()->conNivel($nivel, $unidad)->create();
     }
 
-    public function test_el_responsable_puede_retroceder_sin_notificarse_a_si_mismo(): void
+    public function test_el_responsable_reporta_y_se_notifica_al_creador_sin_cambiar_el_estado(): void
     {
         Notification::fake();
 
         $obra = UnidadOrganizacional::factory()->create();
+        $creador = $this->usuario(NivelJerarquico::JefeArea, $obra);
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
         $tarea = Tarea::factory()->create([
+            "creador_id" => $creador->id,
             "responsable_id" => $responsable->id,
             "unidad_organizacional_id" => $obra->id,
             "estado" => EstadoTarea::EnProgreso,
         ]);
 
-        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/retroceder", [
-            "motivo" => "Prioricé mal el orden de mis tareas.",
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "La especificación técnica tiene un error.",
         ])->assertRedirect()->assertSessionHas("success");
 
         $tarea->refresh();
-        $this->assertSame(EstadoTarea::Pendiente, $tarea->estado);
+        $this->assertSame(EstadoTarea::EnProgreso, $tarea->estado);
 
-        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::Retroceso)->first();
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->first();
         $this->assertNotNull($evento);
-        $this->assertSame("Prioricé mal el orden de mis tareas.", $evento->datos_evento["motivo"]);
+        $this->assertSame("La especificación técnica tiene un error.", $evento->datos_evento["motivo"]);
 
-        Notification::assertNothingSent();
+        Notification::assertSentTo($creador, ProblemaReportadoNotification::class);
     }
 
-    public function test_un_colaborador_puede_retroceder_y_notifica_al_responsable(): void
+    public function test_un_colaborador_reporta_y_se_notifica_al_responsable_sin_cambiar_el_estado(): void
     {
         Notification::fake();
 
@@ -58,41 +60,41 @@ class RetrocederTareaTest extends TestCase
         $tarea = Tarea::factory()->create([
             "responsable_id" => $responsable->id,
             "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::EnProgreso,
+            "estado" => EstadoTarea::Pendiente,
         ]);
         $tarea->colaboradores()->attach($colaborador->id);
 
-        $this->actingAs($colaborador)->patch("/tareas/{$tarea->id}/retroceder", [
-            "motivo" => "La abrí antes de poder empezarla realmente.",
+        $this->actingAs($colaborador)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "No tengo la información necesaria.",
         ])->assertRedirect()->assertSessionHas("success");
 
         $this->assertSame(EstadoTarea::Pendiente, $tarea->fresh()->estado);
 
-        Notification::assertSentTo($responsable, TareaRetrocedidaNotification::class);
+        Notification::assertSentTo($responsable, ProblemaReportadoNotification::class);
+        Notification::assertNotSentTo($colaborador, ProblemaReportadoNotification::class);
     }
 
-    public function test_el_responsable_y_los_colaboradores_no_cambian_con_el_retroceso(): void
+    public function test_si_el_responsable_es_tambien_el_creador_no_hay_a_quien_notificar(): void
     {
+        Notification::fake();
+
         $obra = UnidadOrganizacional::factory()->create();
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
-        $colaborador = $this->usuario(NivelJerarquico::Asistente, $obra);
         $tarea = Tarea::factory()->create([
+            "creador_id" => $responsable->id,
             "responsable_id" => $responsable->id,
             "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::EnProgreso,
         ]);
-        $tarea->colaboradores()->attach($colaborador->id);
 
-        $this->actingAs($colaborador)->patch("/tareas/{$tarea->id}/retroceder", [
-            "motivo" => "Reordenando mi trabajo.",
-        ])->assertRedirect();
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "Ya no aplica como la definí.",
+        ])->assertRedirect()->assertSessionHas("success");
 
-        $tarea->refresh();
-        $this->assertSame($responsable->id, $tarea->responsable_id);
-        $this->assertTrue($tarea->colaboradores->contains("id", $colaborador->id));
+        $this->assertTrue($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
+        Notification::assertNothingSent();
     }
 
-    public function test_un_usuario_ajeno_no_puede_retroceder(): void
+    public function test_un_usuario_ajeno_no_puede_reportar(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -100,14 +102,13 @@ class RetrocederTareaTest extends TestCase
         $tarea = Tarea::factory()->create([
             "responsable_id" => $responsable->id,
             "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::EnProgreso,
         ]);
 
-        $this->actingAs($ajeno)->patch("/tareas/{$tarea->id}/retroceder", [
+        $this->actingAs($ajeno)->patch("/tareas/{$tarea->id}/reportar-problema", [
             "motivo" => "Intento invalido",
         ])->assertSessionHas("error");
 
-        $this->assertSame(EstadoTarea::EnProgreso, $tarea->fresh()->estado);
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
     }
 
     public function test_el_motivo_es_obligatorio(): void
@@ -117,31 +118,12 @@ class RetrocederTareaTest extends TestCase
         $tarea = Tarea::factory()->create([
             "responsable_id" => $responsable->id,
             "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::EnProgreso,
         ]);
 
-        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/retroceder", [
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
             "motivo" => "",
         ])->assertSessionHasErrors("motivo");
 
-        $this->assertSame(EstadoTarea::EnProgreso, $tarea->fresh()->estado);
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
     }
-
-    public function test_no_se_puede_retroceder_una_tarea_pendiente(): void
-    {
-        $obra = UnidadOrganizacional::factory()->create();
-        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
-        $tarea = Tarea::factory()->create([
-            "responsable_id" => $responsable->id,
-            "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::Pendiente,
-        ]);
-
-        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/retroceder", [
-            "motivo" => "Intento invalido",
-        ])->assertSessionHasErrors("estado");
-
-        $this->assertSame(EstadoTarea::Pendiente, $tarea->fresh()->estado);
-    }
-
 }

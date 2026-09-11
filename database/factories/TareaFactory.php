@@ -43,13 +43,6 @@ class TareaFactory extends Factory
         ]);
     }
 
-    public function rechazada(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            "estado" => EstadoTarea::Rechazada,
-        ]);
-    }
-
     public function cancelada(): static
     {
         return $this->state(fn (array $attributes) => [

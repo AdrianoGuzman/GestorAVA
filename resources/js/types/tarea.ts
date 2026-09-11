@@ -1,4 +1,4 @@
-export type EstadoTarea = 'pendiente' | 'en_progreso' | 'completada' | 'rechazada' | 'cancelada';
+export type EstadoTarea = 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
 
 export type TipoEvento =
     | 'creacion'
@@ -8,7 +8,7 @@ export type TipoEvento =
     | 'transicion_automatica'
     | 'completada'
     | 'retroceso'
-    | 'rechazo'
+    | 'problema_reportado'
     | 'cancelacion'
     | 'dependencia_creada'
     | 'dependencia_resuelta'
@@ -70,7 +70,7 @@ export interface PermisosTarea {
     puedeAgregarColaborador: boolean;
     puedeCompletar: boolean;
     puedeRetroceder: boolean;
-    puedeRechazar: boolean;
+    puedeReportarProblema: boolean;
     puedeCancelar: boolean;
     puedeAdjuntar: boolean;
 }

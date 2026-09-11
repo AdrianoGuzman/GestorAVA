@@ -11,7 +11,7 @@ enum TipoEvento: string
     case TransicionAutomatica = 'transicion_automatica';
     case Completada = 'completada';
     case Retroceso = 'retroceso';
-    case Rechazo = 'rechazo';
+    case ProblemaReportado = 'problema_reportado';
     case Cancelacion = 'cancelacion';
     case DependenciaCreada = 'dependencia_creada';
     case DependenciaResuelta = 'dependencia_resuelta';

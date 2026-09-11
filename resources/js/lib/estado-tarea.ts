@@ -11,7 +11,6 @@ export const ESTADO_TAREA_LABELS: Record<EstadoTarea, string> = {
     pendiente: 'Pendiente',
     en_progreso: 'En progreso',
     completada: 'Completada',
-    rechazada: 'Rechazada',
     cancelada: 'Cancelada',
 };
 
@@ -19,7 +18,6 @@ export const ESTADO_TAREA_BADGE_CLASSES: Record<EstadoTarea, string> = {
     pendiente: 'border-gris-1 bg-white text-gris-2',
     en_progreso: 'border-verde-3 bg-verde-2 text-gris-2',
     completada: 'border-gris-2 bg-gris-2 text-white',
-    rechazada: 'border-naranjo-1/30 bg-naranjo-1/10 text-naranjo-1',
     cancelada: 'border-gris-1/30 bg-gris-1/10 text-gris-1',
 };
 

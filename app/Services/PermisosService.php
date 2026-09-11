@@ -91,10 +91,10 @@ class PermisosService
     }
 
     /**
-     * RF-13 D1: el responsable o un colaborador de la tarea puede
-     * rechazarla.
+     * RF-13 (rediseñado) D1: el responsable o un colaborador de la tarea
+     * puede reportar que está mal definida.
      */
-    public function puedeRechazar(Tarea $tarea, User $solicitante): bool
+    public function puedeReportarProblema(Tarea $tarea, User $solicitante): bool
     {
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
