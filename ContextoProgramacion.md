@@ -87,10 +87,21 @@ Son conceptualmente distintos: un colaborador comparte la misma tarea y hereda s
 (RF-06); el responsable de una tarea hija tiene su propia tarea separada y no debería tener
 permisos sobre la tarea padre solo por estar vinculado como dependencia.
 
-**Nueva idea, todavía sin construir, no es de nadie en particular todavía:** un "checklist
-personal" por tarea — privado, visible solo para quien lo crea, no bloquea nada (a diferencia
-del checklist de RF-23), y siempre disponible sin importar si hay colaboradores o no. Distinto
-de RF-23, no confundir los dos al momento de nombrar componentes/tablas.
+**Ojo: la sección Dependencias NUNCA se oculta por falta de colaboradores** (a diferencia de
+Checklist, ver arriba) — incluso una tarea chica y sin colaboradores puede necesitar pedir
+ayuda externa creando una tarea hija, así que esa tarjeta siempre debe estar disponible.
+
+**Ya construido y usable por Oscar sin que tenga que hacer nada extra:** cuando alguien sube
+un adjunto con categoría "evidencia" (RF-19) en una tarea que tiene `tarea_padre_id` seteado,
+ese archivo aparece automáticamente en "Necesarios para la tarea" de la tarea padre (ver
+`AdjuntoService::deTareasHijas()` y `resources/js/components/tareas/adjuntos-section.tsx`).
+Las relaciones `Tarea::tareaPadre()`/`tareasHijas()` ya existen desde el modelo original — en
+cuanto Oscar construya el flujo de "crear tarea hija" y setee `tarea_padre_id`, esto funciona
+solo, sin que tenga que tocar nada de adjuntos.
+
+**Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
+ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
+importar si hay colaboradores. Ver `ChecklistPersonalService.php`.
 
 Reusar en vez de crear de nuevo:
 - `PersonaAvatar` (`resources/js/components/tareas/persona-avatar.tsx`) — avatar circular
