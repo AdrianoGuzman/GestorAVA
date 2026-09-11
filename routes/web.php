@@ -19,6 +19,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tareas/{tarea}/colaboradores', [TareaController::class, 'agregarColaborador'])->name('tareas.colaboradores.store');
     Route::patch('tareas/{tarea}/completar', [TareaController::class, 'completar'])->name('tareas.completar');
     Route::patch('tareas/{tarea}/retroceder', [TareaController::class, 'retroceder'])->name('tareas.retroceder');
+    Route::patch('tareas/{tarea}/rechazar', [TareaController::class, 'rechazar'])->name('tareas.rechazar');
 });
 
 require __DIR__.'/settings.php';

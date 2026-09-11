@@ -89,4 +89,14 @@ class PermisosService
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
     }
+
+    /**
+     * RF-13 D1: el responsable o un colaborador de la tarea puede
+     * rechazarla.
+     */
+    public function puedeRechazar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
 }

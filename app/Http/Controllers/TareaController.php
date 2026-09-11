@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
+use App\Http\Requests\Tarea\RechazarTareaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Services\ColaboradorService;
 use App\Services\FinalizacionService;
 use App\Services\ReasignacionService;
+use App\Services\RechazoService;
 use App\Services\RetrocesoService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
@@ -27,6 +29,7 @@ class TareaController extends Controller
         private readonly TransicionAutomaticaService $transicionAutomatica,
         private readonly FinalizacionService $finalizacionService,
         private readonly RetrocesoService $retrocesoService,
+        private readonly RechazoService $rechazoService,
     ) {
     }
 
@@ -89,5 +92,12 @@ class TareaController extends Controller
         $this->retrocesoService->retroceder($tarea, $request->user(), $request->validated("motivo"));
 
         return back()->with("success", "Tarea retrocedida a Pendiente.");
+    }
+
+    public function rechazar(RechazarTareaRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->rechazoService->rechazar($tarea, $request->user(), $request->validated("motivo"));
+
+        return back()->with("success", "Tarea rechazada.");
     }
 }

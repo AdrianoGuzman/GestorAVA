@@ -6,6 +6,7 @@ use App\Enums\TipoNotificacion;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaRechazadaNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
@@ -38,5 +39,20 @@ class NotificacionService
         ]);
 
         $responsable->notify(new TareaRetrocedidaNotification($tarea, $colaborador, $motivo));
+    }
+
+    /**
+     * RF-13 D5 / RF-17 D4: notifica al usuario que debe corregir y reasignar
+     * la tarea (quien la delegó por última vez) cuando esta es rechazada.
+     */
+    public function notificarRechazo(User $delegador, Tarea $tarea, User $quienRechaza, string $motivo): void
+    {
+        $delegador->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Rechazo,
+            "mensaje" => "{$quienRechaza->name} rechazó la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $delegador->notify(new TareaRechazadaNotification($tarea, $quienRechaza, $motivo));
     }
 }
