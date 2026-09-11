@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem, SharedData } from '@/types';
+import type { BreadcrumbItem } from '@/types';
 import type { ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     Ban,
     Calendar,
@@ -52,7 +52,6 @@ function calcularPlazo(fechaInicio: string | null, fechaCompromiso: string): str
 }
 
 export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, permisos }: Props) {
-    const { auth } = usePage<SharedData>().props;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: tarea.titulo, href: `/tareas/${tarea.id}` },
@@ -274,12 +273,7 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <AdjuntosSection
-                                tareaId={tarea.id}
-                                adjuntos={tarea.adjuntos}
-                                puedeAdjuntar={permisos.puedeAdjuntar}
-                                usuarioActualId={auth.user.id}
-                            />
+                            <AdjuntosSection tareaId={tarea.id} adjuntos={tarea.adjuntos} puedeAdjuntar={permisos.puedeAdjuntar} />
                         </CardContent>
                     </Card>
                 </div>

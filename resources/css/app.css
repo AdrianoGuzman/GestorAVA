@@ -154,7 +154,10 @@
     --secondary: hsl(0, 0%, 14.9%);
     --secondary-foreground: hsl(0, 0%, 98%);
     --muted: hsl(0, 0%, 6.9%);
-    --muted-foreground: #7a7f85;
+    /* gris-1 (#7a7f85) pierde demasiado contraste sobre el fondo oscuro de
+       la tarjeta (#2d3238) -- lo aclaramos solo en modo oscuro, sin tocar
+       el valor de modo claro, para que siga siendo secundario al blanco. */
+    --muted-foreground: hsl(0, 0%, 65%);
     --accent: hsl(0, 0%, 14.9%);
     --accent-foreground: hsl(0, 0%, 98%);
     --destructive: #f80000;

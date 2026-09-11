@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CategoriaAdjunto;
 use App\Http\Requests\Tarea\AdjuntarArchivoRequest;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
@@ -93,7 +94,9 @@ class TareaController extends Controller
 
     public function agregarAdjunto(AdjuntarArchivoRequest $request, Tarea $tarea): RedirectResponse
     {
-        $this->adjuntoService->agregar($tarea, $request->file("archivo"), $request->user());
+        $categoria = CategoriaAdjunto::from($request->validated("categoria"));
+
+        $this->adjuntoService->agregar($tarea, $request->file("archivo"), $request->user(), $categoria);
 
         return back()->with("success", "Archivo adjuntado correctamente.");
     }

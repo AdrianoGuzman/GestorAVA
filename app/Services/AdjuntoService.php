@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CategoriaAdjunto;
 use App\Enums\TipoEvento;
 use App\Exceptions\PermisoDenegadoException;
 use App\Models\AdjuntoTarea;
@@ -24,7 +25,7 @@ class AdjuntoService
      * nunca expuesto por URL directa -- solo se sirve via descargar(),
      * detras del control de acceso de la tarea.
      */
-    public function agregar(Tarea $tarea, UploadedFile $archivo, User $solicitante): AdjuntoTarea
+    public function agregar(Tarea $tarea, UploadedFile $archivo, User $solicitante, CategoriaAdjunto $categoria): AdjuntoTarea
     {
         if (! $this->permisos->puedeAdjuntar($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
@@ -41,6 +42,7 @@ class AdjuntoService
             "ruta" => $ruta,
             "mime_type" => $archivo->getClientMimeType(),
             "tamano_bytes" => $archivo->getSize(),
+            "categoria" => $categoria,
         ]);
 
         $this->historial->registrar($tarea, TipoEvento::AdjuntoAgregado, $solicitante, [

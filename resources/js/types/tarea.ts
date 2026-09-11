@@ -36,11 +36,14 @@ export interface HistorialEvento {
     created_at: string;
 }
 
+export type CategoriaAdjunto = 'necesario' | 'evidencia';
+
 export interface AdjuntoTarea {
     id: number;
     nombre_original: string;
     mime_type: string;
     tamano_bytes: number;
+    categoria: CategoriaAdjunto;
     created_at: string;
     usuario: UsuarioTarea | null;
 }

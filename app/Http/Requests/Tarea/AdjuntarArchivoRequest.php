@@ -20,6 +20,7 @@ class AdjuntarArchivoRequest extends FormRequest
     {
         return [
             "archivo" => ["required", "file", "mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx", "max:10240"],
+            "categoria" => ["required", "in:necesario,evidencia"],
         ];
     }
 }

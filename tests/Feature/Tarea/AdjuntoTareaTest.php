@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tarea;
 
+use App\Enums\CategoriaAdjunto;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
@@ -40,14 +41,54 @@ class AdjuntoTareaTest extends TestCase
 
         $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
             "archivo" => $archivo,
+            "categoria" => "evidencia",
         ])->assertRedirect()->assertSessionHas("success");
 
         $tarea->refresh();
         $this->assertCount(1, $tarea->adjuntos);
         $this->assertSame("evidencia.pdf", $tarea->adjuntos->first()->nombre_original);
+        $this->assertSame(CategoriaAdjunto::Evidencia, $tarea->adjuntos->first()->categoria);
         Storage::disk("local")->assertExists($tarea->adjuntos->first()->ruta);
 
         $this->assertTrue($tarea->historial()->where("tipo_evento", TipoEvento::AdjuntoAgregado)->exists());
+    }
+
+    public function test_se_puede_subir_como_necesario_para_la_tarea(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("plano.pdf", 100, "application/pdf");
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "necesario",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $this->assertSame(CategoriaAdjunto::Necesario, $tarea->fresh()->adjuntos->first()->categoria);
+    }
+
+    public function test_la_categoria_es_obligatoria_y_valida(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("evidencia.pdf", 100, "application/pdf");
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "otra-cosa",
+        ])->assertSessionHasErrors("categoria");
+
+        $this->assertCount(0, $tarea->fresh()->adjuntos);
     }
 
     public function test_un_colaborador_puede_adjuntar(): void
@@ -65,6 +106,7 @@ class AdjuntoTareaTest extends TestCase
 
         $this->actingAs($colaborador)->post("/tareas/{$tarea->id}/adjuntos", [
             "archivo" => $archivo,
+            "categoria" => "evidencia",
         ])->assertRedirect()->assertSessionHas("success");
 
         $this->assertCount(1, $tarea->fresh()->adjuntos);
@@ -84,6 +126,7 @@ class AdjuntoTareaTest extends TestCase
 
         $this->actingAs($ajeno)->post("/tareas/{$tarea->id}/adjuntos", [
             "archivo" => $archivo,
+            "categoria" => "evidencia",
         ])->assertSessionHas("error");
 
         $this->assertCount(0, $tarea->fresh()->adjuntos);
@@ -102,6 +145,7 @@ class AdjuntoTareaTest extends TestCase
 
         $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
             "archivo" => $archivo,
+            "categoria" => "evidencia",
         ])->assertSessionHasErrors("archivo");
 
         $this->assertCount(0, $tarea->fresh()->adjuntos);
@@ -120,6 +164,7 @@ class AdjuntoTareaTest extends TestCase
 
         $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
             "archivo" => $archivo,
+            "categoria" => "evidencia",
         ])->assertSessionHasErrors("archivo");
 
         $this->assertCount(0, $tarea->fresh()->adjuntos);
@@ -135,7 +180,7 @@ class AdjuntoTareaTest extends TestCase
         ]);
 
         $archivo = UploadedFile::fake()->create("evidencia.pdf", 100, "application/pdf");
-        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", ["archivo" => $archivo]);
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", ["archivo" => $archivo, "categoria" => "evidencia"]);
 
         $adjunto = $tarea->fresh()->adjuntos->first();
 
@@ -158,7 +203,7 @@ class AdjuntoTareaTest extends TestCase
         ]);
 
         $archivo = UploadedFile::fake()->create("evidencia.pdf", 100, "application/pdf");
-        $this->actingAs($responsable)->post("/tareas/{$tareaA->id}/adjuntos", ["archivo" => $archivo]);
+        $this->actingAs($responsable)->post("/tareas/{$tareaA->id}/adjuntos", ["archivo" => $archivo, "categoria" => "evidencia"]);
         $adjunto = $tareaA->fresh()->adjuntos->first();
 
         $this->actingAs($responsable)

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { AdjuntoTarea } from '@/types/tarea';
+import type { AdjuntoTarea, CategoriaAdjunto } from '@/types/tarea';
 import { router } from '@inertiajs/react';
 import { Download, File as FileIcon, FileImage, FileSpreadsheet, FileText, Paperclip } from 'lucide-react';
 import { useState } from 'react';
@@ -20,7 +20,7 @@ function formatearTamano(bytes: number): string {
 
 function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos: AdjuntoTarea[]; vacio: string }) {
     if (adjuntos.length === 0) {
-        return <p className="text-sm text-muted-foreground">{vacio}</p>;
+        return <p className="text-center text-sm text-muted-foreground">{vacio}</p>;
     }
 
     return (
@@ -53,22 +53,20 @@ function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos
 
 /**
  * RF-19: adjuntar evidencia. Solo el responsable o un colaborador puede
- * subir (D1). Se separan en dos columnas: "Necesarios" (lo que subió
- * cualquier otro -- típicamente planos/especificaciones del creador) y
- * "Por mí" (lo que subiste vos, tu evidencia) -- agrupación visual según
- * quién subió cada archivo, sin un campo de tipo nuevo en la base de datos.
+ * subir (D1). Quien sube elige explícitamente la categoría (Necesario para
+ * la tarea / Evidencia) -- no se infiere de quién lo sube, porque la misma
+ * persona puede necesitar subir ambos tipos.
  */
 export function AdjuntosSection({
     tareaId,
     adjuntos,
     puedeAdjuntar,
-    usuarioActualId,
 }: {
     tareaId: number;
     adjuntos: AdjuntoTarea[];
     puedeAdjuntar: boolean;
-    usuarioActualId: number;
 }) {
+    const [categoria, setCategoria] = useState<CategoriaAdjunto>('evidencia');
     const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -79,25 +77,49 @@ export function AdjuntosSection({
         setError(null);
         const formData = new FormData();
         formData.append('archivo', archivo);
+        formData.append('categoria', categoria);
 
         router.post(route('tareas.adjuntos.store', tareaId), formData, {
             forceFormData: true,
             preserveScroll: true,
             onStart: () => setSubiendo(true),
             onFinish: () => setSubiendo(false),
-            onError: (errores) => setError(errores.archivo ?? 'No se pudo subir el archivo.'),
+            onError: (errores) => setError(errores.archivo ?? errores.categoria ?? 'No se pudo subir el archivo.'),
         });
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false, disabled: subiendo });
 
-    const necesarios = adjuntos.filter((a) => a.usuario?.id !== usuarioActualId);
-    const porMi = adjuntos.filter((a) => a.usuario?.id === usuarioActualId);
+    const necesarios = adjuntos.filter((a) => a.categoria === 'necesario');
+    const evidencia = adjuntos.filter((a) => a.categoria === 'evidencia');
 
     return (
         <div className="space-y-4">
             {puedeAdjuntar && (
                 <div>
+                    <div className="mb-2 flex items-center justify-center gap-1 rounded-md border border-border bg-muted/40 p-1 text-sm">
+                        <button
+                            type="button"
+                            onClick={() => setCategoria('necesario')}
+                            className={cn(
+                                'flex-1 rounded-sm px-3 py-1.5 font-medium transition-colors',
+                                categoria === 'necesario' ? 'bg-verde-5 text-gris-2' : 'text-muted-foreground hover:text-foreground',
+                            )}
+                        >
+                            Necesario para la tarea
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCategoria('evidencia')}
+                            className={cn(
+                                'flex-1 rounded-sm px-3 py-1.5 font-medium transition-colors',
+                                categoria === 'evidencia' ? 'bg-verde-5 text-gris-2' : 'text-muted-foreground hover:text-foreground',
+                            )}
+                        >
+                            Es mi evidencia
+                        </button>
+                    </div>
+
                     <div
                         {...getRootProps()}
                         className={cn(
@@ -111,20 +133,22 @@ export function AdjuntosSection({
                         <p className="text-sm text-foreground">
                             {subiendo ? 'Subiendo...' : isDragActive ? 'Soltá el archivo acá...' : 'Arrastrá un archivo o hacé click para elegirlo'}
                         </p>
-                        <p className="text-xs text-muted-foreground">PDF, imágenes, Word o Excel — máx. 10MB (queda como evidencia tuya)</p>
+                        <p className="text-xs text-muted-foreground">PDF, imágenes, Word o Excel — máx. 10MB</p>
                     </div>
-                    {error && <p className="mt-1 text-sm text-rojo-1">{error}</p>}
+                    {error && <p className="mt-1 text-center text-sm text-rojo-1">{error}</p>}
                 </div>
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <h4 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Necesarios para la tarea</h4>
+                    <h4 className="mb-2 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Necesarios para la tarea
+                    </h4>
                     <ListaAdjuntos tareaId={tareaId} adjuntos={necesarios} vacio="Sin archivos de referencia todavía." />
                 </div>
                 <div>
-                    <h4 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Por mí</h4>
-                    <ListaAdjuntos tareaId={tareaId} adjuntos={porMi} vacio="Todavía no subiste evidencia." />
+                    <h4 className="mb-2 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">Evidencia</h4>
+                    <ListaAdjuntos tareaId={tareaId} adjuntos={evidencia} vacio="Todavía no hay evidencia subida." />
                 </div>
             </div>
         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CategoriaAdjunto;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -22,10 +23,12 @@ class AdjuntoTarea extends Model
         "ruta",
         "mime_type",
         "tamano_bytes",
+        "categoria",
     ];
 
     protected $casts = [
         "created_at" => "datetime",
+        "categoria" => CategoriaAdjunto::class,
     ];
 
     public function tarea(): BelongsTo
