@@ -1,6 +1,7 @@
 import { AdjuntosSection } from '@/components/tareas/adjuntos-section';
 import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborador-dialog';
 import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
+import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
@@ -245,16 +246,24 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                             </Card>
                         )}
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <ListChecks className="size-4 text-verde-6" /> Checklist
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground">Próximamente (RF-23) — módulo a cargo de Jeremy.</p>
-                            </CardContent>
-                        </Card>
+                        {tarea.colaboradores.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                        <ListChecks className="size-4 text-verde-6" /> Checklist
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ChecklistSection
+                                        tareaId={tarea.id}
+                                        items={tarea.checklist_items}
+                                        personasElegibles={[tarea.responsable, ...tarea.colaboradores]}
+                                        puedeUsar={permisos.puedeUsarChecklist}
+                                        puedeAsignarDueno={permisos.puedeAsignarDuenoChecklist}
+                                    />
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <Card>
                             <CardHeader>

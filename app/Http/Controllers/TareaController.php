@@ -65,6 +65,7 @@ class TareaController extends Controller
             "colaboradores",
             "creador",
             "adjuntos" => fn ($query) => $query->with("usuario")->latest("created_at"),
+            "checklistItems" => fn ($query) => $query->with("dueno")->orderBy("created_at"),
             "historial" => function ($query) {
                 $query->with("usuario")->orderBy("created_at");
             },
@@ -89,6 +90,8 @@ class TareaController extends Controller
                 "puedeCancelar" => $this->permisos->puedeCancelar($tarea, $usuario),
                 "puedeAdjuntar" => $this->permisos->puedeAdjuntar($tarea, $usuario),
                 "puedeUsarChecklistPersonal" => $this->permisos->puedeUsarChecklistPersonal($tarea, $usuario),
+                "puedeUsarChecklist" => $this->permisos->puedeUsarChecklist($tarea, $usuario),
+                "puedeAsignarDuenoChecklist" => $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario),
             ],
         ]);
     }

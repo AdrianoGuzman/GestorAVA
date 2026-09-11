@@ -61,6 +61,17 @@ export interface ChecklistPersonalItem {
     created_at: string;
 }
 
+/** Checklist compartido (RF-23), visible solo cuando la tarea tiene colaboradores. */
+export interface ChecklistItem {
+    id: number;
+    tarea_id: number;
+    texto: string;
+    completado: boolean;
+    dueno_id: number | null;
+    dueno: UsuarioTarea | null;
+    created_at: string;
+}
+
 export interface TareaDetalle {
     id: number;
     titulo: string;
@@ -77,6 +88,7 @@ export interface TareaDetalle {
     colaboradores: UsuarioTarea[];
     historial: HistorialEvento[];
     adjuntos: AdjuntoTarea[];
+    checklist_items: ChecklistItem[];
 }
 
 /** Rol del usuario que consulta respecto de esta tarea (RF-24 D4), coherente con las secciones de RF-09. */
@@ -92,4 +104,6 @@ export interface PermisosTarea {
     puedeCancelar: boolean;
     puedeAdjuntar: boolean;
     puedeUsarChecklistPersonal: boolean;
+    puedeUsarChecklist: boolean;
+    puedeAsignarDuenoChecklist: boolean;
 }
