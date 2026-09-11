@@ -6,6 +6,7 @@ use App\Enums\TipoNotificacion;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
 {
@@ -22,5 +23,20 @@ class NotificacionService
         ]);
 
         $destinatario->notify(new TareaAsignadaNotification($tarea, $rol));
+    }
+
+    /**
+     * RF-12 D5: si quien retrocede la tarea es un colaborador, se notifica
+     * al responsable principal.
+     */
+    public function notificarRetroceso(User $responsable, Tarea $tarea, User $colaborador, string $motivo): void
+    {
+        $responsable->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Retroceso,
+            "mensaje" => "{$colaborador->name} retrocedió la tarea \"{$tarea->titulo}\" a Pendiente.",
+        ]);
+
+        $responsable->notify(new TareaRetrocedidaNotification($tarea, $colaborador, $motivo));
     }
 }

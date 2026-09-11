@@ -79,4 +79,14 @@ class PermisosService
     {
         return $solicitante->id === $tarea->responsable_id;
     }
+
+    /**
+     * RF-12 D1: el responsable o un colaborador de la tarea puede
+     * retrocederla de En progreso a Pendiente.
+     */
+    public function puedeRetroceder(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
 }

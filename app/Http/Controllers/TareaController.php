@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
+use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Services\ColaboradorService;
 use App\Services\FinalizacionService;
 use App\Services\ReasignacionService;
+use App\Services\RetrocesoService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +26,7 @@ class TareaController extends Controller
         private readonly ColaboradorService $colaboradorService,
         private readonly TransicionAutomaticaService $transicionAutomatica,
         private readonly FinalizacionService $finalizacionService,
+        private readonly RetrocesoService $retrocesoService,
     ) {
     }
 
@@ -79,5 +82,12 @@ class TareaController extends Controller
         $this->finalizacionService->completar($tarea, $request->user());
 
         return back()->with("success", "Tarea marcada como completada.");
+    }
+
+    public function retroceder(RetrocederTareaRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->retrocesoService->retroceder($tarea, $request->user(), $request->validated("motivo"));
+
+        return back()->with("success", "Tarea retrocedida a Pendiente.");
     }
 }
