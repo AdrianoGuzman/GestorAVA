@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ChecklistItem;
 use App\Models\Tarea;
 use App\Models\User;
 
@@ -120,6 +121,44 @@ class PermisosService
     {
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * RF-23 (Jeremy): el responsable o un colaborador de la tarea puede
+     * usar el checklist compartido -- crear items, editar su texto,
+     * eliminarlos. Asignar el dueño de un item es una accion distinta, ver
+     * puedeAsignarDuenoChecklist().
+     */
+    public function puedeUsarChecklist(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * Decision de Franco (11-09-2026): solo el creador de la tarea asigna
+     * el dueño de un item del checklist -- no hay autoasignacion por parte
+     * de un colaborador, para evitar confusion en la interfaz.
+     */
+    public function puedeAsignarDuenoChecklist(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->creador_id;
+    }
+
+    /**
+     * Decision de Franco (11-09-2026): solo el dueño asignado de un item
+     * puede marcarlo/desmarcarlo -- evita que otra persona declare
+     * terminada una parte de trabajo que no es suya. Si el item no tiene
+     * dueño, cualquiera con acceso al checklist puede marcarlo (si no,
+     * quedaría imposible de completar).
+     */
+    public function puedeMarcarChecklistItem(ChecklistItem $item, User $solicitante): bool
+    {
+        if ($item->dueno_id !== null) {
+            return $solicitante->id === $item->dueno_id;
+        }
+
+        return $this->puedeUsarChecklist($item->tarea, $solicitante);
     }
 
     /**

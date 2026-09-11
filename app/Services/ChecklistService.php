@@ -13,6 +13,7 @@ class ChecklistService
 {
     public function __construct(
         private readonly HistorialService $historial,
+        private readonly PermisosService $permisos,
     ) {
     }
 
@@ -22,6 +23,18 @@ class ChecklistService
         ?User $dueno,
         User $usuario,
     ): ChecklistItem {
+        if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+            );
+        }
+
+        if ($dueno !== null && ! $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el creador de la tarea puede asignar el dueño de un ítem del checklist."
+            );
+        }
+
         $this->validarDueno($tarea, $dueno);
 
         return DB::connection("usuarios")->transaction(function () use ($tarea, $texto, $dueno, $usuario) {
@@ -53,6 +66,20 @@ class ChecklistService
         User $usuario,
     ): ChecklistItem {
         $tarea = $item->tarea;
+
+        if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+            );
+        }
+
+        $cambiaDueno = $dueno?->id !== $item->dueno_id;
+
+        if ($cambiaDueno && ! $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el creador de la tarea puede asignar el dueño de un ítem del checklist."
+            );
+        }
 
         $this->validarDueno($tarea, $dueno);
 
@@ -98,6 +125,12 @@ class ChecklistService
         bool $completado,
         User $usuario,
     ): ChecklistItem {
+        if (! $this->permisos->puedeMarcarChecklistItem($item, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el dueño asignado de este ítem puede marcarlo o desmarcarlo."
+            );
+        }
+
         return DB::connection("usuarios")->transaction(function () use ($item, $completado, $usuario) {
             $item->update([
                 "completado" => $completado,
@@ -120,6 +153,12 @@ class ChecklistService
 
     public function eliminar(ChecklistItem $item, User $usuario): void
     {
+        if (! $this->permisos->puedeUsarChecklist($item->tarea, $usuario)) {
+            throw new PermisoDenegadoException(
+                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+            );
+        }
+
         DB::connection("usuarios")->transaction(function () use ($item, $usuario) {
             $tarea = $item->tarea;
             $itemId = $item->id;
@@ -152,7 +191,7 @@ class ChecklistService
         }
 
         throw new PermisoDenegadoException(
-            "El due�o del checklist debe ser el responsable o un colaborador de la tarea."
+            "El dueño del checklist debe ser el responsable o un colaborador de la tarea."
         );
     }
 }

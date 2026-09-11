@@ -80,6 +80,21 @@ mover ni renombrar la tarjeta en sí.
   es la regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una
   tarea dependiente completa.
 
+**Fix de permisos aplicado por Franco (11-09-2026) sobre `ChecklistController`/`ChecklistService`:**
+el backend original no tenía ningún control de acceso (cualquier usuario autenticado podía
+crear/editar/marcar/eliminar ítems de cualquier tarea vía la URL). Se agregó `PermisosService`
+inyectado en `ChecklistService` con tres reglas nuevas:
+- `puedeUsarChecklist()` — crear/editar-texto/eliminar: solo responsable o colaborador de la tarea.
+- `puedeAsignarDuenoChecklist()` — solo el creador (aplica la regla de arriba, ahora reforzada).
+- `puedeMarcarChecklistItem()` — **nueva regla de Franco**: si el ítem tiene `dueno_id`, **solo
+  ese usuario** puede marcarlo/desmarcarlo (ni el responsable ni otro colaborador pueden hacerlo
+  por él, para evitar que alguien declare terminado un trabajo que no es suyo). Si el ítem no
+  tiene dueño asignado, cualquiera con acceso al checklist puede marcarlo.
+Si construyes UI nueva sobre estas acciones, estos permisos ya vienen resueltos desde el
+controller (lanzan `PermisoDenegadoException` → sesión con `error`), no hace falta duplicarlos
+en el frontend, pero sí ocultar/deshabilitar el botón de marcar si `auth.user.id !== item.dueno_id`
+para no mostrar una acción que el backend va a rechazar.
+
 **Decisión sobre RF-21/22 (Oscar):** el responsable de una tarea hija debe mostrarse bien
 visible en la sección Dependencias de la tarea padre (con avatar, `PersonaAvatar`, link a su
 propio detalle) — pero **no se agrega como colaborador** de la tarea padre (`colaboradores_tarea`).

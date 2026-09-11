@@ -28,7 +28,7 @@ class ChecklistController extends Controller
             $request->user(),
         );
 
-        return back()->with("success", "Ítem de checklist creado correctamente.");
+        return back()->with("success", "Ãtem de checklist creado correctamente.");
     }
 
     public function update(EditarChecklistItemRequest $request, ChecklistItem $checklistItem): RedirectResponse
@@ -42,28 +42,28 @@ class ChecklistController extends Controller
             $request->user(),
         );
 
-        return back()->with("success", "Ítem de checklist actualizado correctamente.");
+        return back()->with("success", "Ãtem de checklist actualizado correctamente.");
     }
 
     public function marcar(ChecklistItem $checklistItem): RedirectResponse
     {
         $this->checklistService->marcar($checklistItem, request()->user());
 
-        return back()->with("success", "Ítem de checklist marcado correctamente.");
+        return back()->with("success", "Ãtem de checklist marcado correctamente.");
     }
 
     public function desmarcar(ChecklistItem $checklistItem): RedirectResponse
     {
         $this->checklistService->desmarcar($checklistItem, request()->user());
 
-        return back()->with("success", "Ítem de checklist desmarcado correctamente.");
+        return back()->with("success", "Ãtem de checklist desmarcado correctamente.");
     }
 
     public function destroy(ChecklistItem $checklistItem): RedirectResponse
     {
         $this->checklistService->eliminar($checklistItem, request()->user());
 
-        return back()->with("success", "Ítem de checklist eliminado correctamente.");
+        return back()->with("success", "Ãtem de checklist eliminado correctamente.");
     }
 }
 
