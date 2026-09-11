@@ -24,11 +24,9 @@ import {
     ListTodo,
     MessageSquareWarning,
     Paperclip,
+    Pencil,
     Plus,
-    Undo2,
     User,
-    UserCog,
-    UserPlus,
     UserX,
     Users,
 } from 'lucide-react';
@@ -46,6 +44,13 @@ function formatearFecha(fecha: string | null): string {
     return new Date(fecha).toLocaleDateString('es-CL');
 }
 
+/** Plazo = diferencia entre fecha_inicio y fecha_compromiso (fecha término). */
+function calcularPlazo(fechaInicio: string | null, fechaCompromiso: string): string {
+    if (!fechaInicio) return '—';
+    const dias = Math.round((new Date(fechaCompromiso).getTime() - new Date(fechaInicio).getTime()) / 86_400_000);
+    return `${dias} día${dias === 1 ? '' : 's'}`;
+}
+
 export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, permisos }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -60,133 +65,74 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                 <Card className="overflow-hidden border-t-4 border-t-verde-5">
                     <CardHeader>
                         <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div className="space-y-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <CardTitle>{tarea.titulo}</CardTitle>
-                                    {rolUsuario && (
-                                        <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
-                                            Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <EstadoBadge estado={tarea.estado} />
-                                    {tarea.esta_atrasada && <AtrasadaBadge />}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {permisos.puedeCompletar && (
-                                    <ConfirmarCompletarDialog
-                                        tareaId={tarea.id}
-                                        trigger={
-                                            <Button>
-                                                <CircleCheckBig /> Completar
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeReasignar && (
-                                    <ReasignarDialog
-                                        tareaId={tarea.id}
-                                        personas={usuarios}
-                                        trigger={
-                                            <Button variant="outline">
-                                                <UserCog /> Reasignar
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeAgregarColaborador && (
-                                    <AgregarColaboradorDialog
-                                        tareaId={tarea.id}
-                                        personas={usuarios}
-                                        trigger={
-                                            <Button variant="outline">
-                                                <UserPlus /> Agregar colaborador
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeRetroceder && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.retroceder"
-                                        title="Retroceder a Pendiente"
-                                        description="Devuelve la tarea a Pendiente para reordenar tu propio trabajo. El responsable y los colaboradores no cambian."
-                                        submitLabel="Retroceder"
-                                        submitIcon={Undo2}
-                                        trigger={
-                                            <Button variant="outline">
-                                                <Undo2 /> Retroceder
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeReportarProblema && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.reportar-problema"
-                                        title="Reportar problema"
-                                        description="Avisa que la tarea está mal definida. No cambia su estado ni interrumpe el trabajo: solo notifica a quien puede corregirla (el creador si reportás como responsable, el responsable si reportás como colaborador)."
-                                        submitLabel="Reportar problema"
-                                        submitIcon={MessageSquareWarning}
-                                        trigger={
-                                            <Button variant="outline">
-                                                <MessageSquareWarning /> Reportar problema
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeReportarNoParticipacion && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.no-participar"
-                                        title="No puedo ser parte de esto"
-                                        description="Avisá que no podés o no querés seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si sos el responsable, el responsable si sos colaborador)."
-                                        submitLabel="Enviar aviso"
-                                        submitIcon={UserX}
-                                        trigger={
-                                            <Button variant="outline">
-                                                <UserX /> No puedo ser parte
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeCancelar && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.cancelar"
-                                        title="Cancelar tarea"
-                                        description="Cierre definitivo: la tarea no vuelve a nadie y no se puede revertir."
-                                        submitLabel="Cancelar tarea"
-                                        submitIcon={Ban}
-                                        variant="destructive"
-                                        trigger={
-                                            <Button variant="destructive">
-                                                <Ban /> Cancelar
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                            </div>
+                            <CardTitle>{tarea.titulo}</CardTitle>
+                            {rolUsuario && (
+                                <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
+                                    Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}
+                                </span>
+                            )}
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="mb-2 text-sm font-semibold text-gris-2">Descripción</h3>
-                            <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-gris-2">
-                                {tarea.descripcion || <span className="text-muted-foreground">Sin descripción.</span>}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 text-sm sm:grid-cols-3">
+                        <div className="grid gap-6 sm:grid-cols-[1fr_auto]">
                             <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Responsable</p>
-                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
-                                    <User className="size-4 shrink-0 text-gris-1" /> {tarea.responsable.name}
+                                <h3 className="mb-2 text-sm font-semibold text-gris-2">Descripción</h3>
+                                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-gris-2">
+                                    {tarea.descripcion || <span className="text-muted-foreground">Sin descripción.</span>}
+                                </p>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Creada el {formatearFecha(tarea.created_at)} por {tarea.creador.name}
                                 </p>
                             </div>
+
+                            <div className="space-y-3 text-sm sm:w-56">
+                                <div>
+                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                        <EstadoBadge estado={tarea.estado} />
+                                        {tarea.esta_atrasada && <AtrasadaBadge />}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha inicio / término</p>
+                                    <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                        <Calendar className="size-4 shrink-0 text-gris-1" />
+                                        {formatearFecha(tarea.fecha_inicio)} — {formatearFecha(tarea.fecha_compromiso)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Plazo</p>
+                                    <p className="mt-1 font-medium text-gris-2">{calcularPlazo(tarea.fecha_inicio, tarea.fecha_compromiso)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {tarea.estado === 'cancelada' && tarea.motivo_cancelacion && (
+                            <p className="rounded-md border border-gris-1/30 bg-gris-1/10 p-3 text-sm text-gris-2">
+                                Motivo de cancelación: {tarea.motivo_cancelacion}
+                            </p>
+                        )}
+
+                        <div className="grid gap-6 sm:grid-cols-3">
+                            <div>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Responsable</p>
+                                <div className="mt-1 flex items-center gap-1.5">
+                                    <User className="size-4 shrink-0 text-gris-1" />
+                                    <span className="font-medium text-gris-2">{tarea.responsable.name}</span>
+                                    {permisos.puedeReasignar && (
+                                        <ReasignarDialog
+                                            tareaId={tarea.id}
+                                            personas={usuarios}
+                                            trigger={
+                                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Reasignar responsable">
+                                                    <Pencil className="size-3.5" />
+                                                </button>
+                                            }
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
                             <div>
                                 <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Colaboradores</p>
                                 <div className="mt-1 flex items-center gap-1.5">
@@ -209,40 +155,66 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                                     )}
                                 </div>
                             </div>
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Creador</p>
-                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
-                                    <User className="size-4 shrink-0 text-gris-1" /> {tarea.creador.name}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha de inicio</p>
-                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
-                                    <Calendar className="size-4 shrink-0 text-gris-1" /> {formatearFecha(tarea.fecha_inicio)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha de compromiso</p>
-                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
-                                    <Calendar className="size-4 shrink-0 text-gris-1" /> {formatearFecha(tarea.fecha_compromiso)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                    {tarea.estado === 'cancelada' ? 'Cancelada' : 'Creada'}
-                                </p>
-                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
-                                    <Calendar className="size-4 shrink-0 text-gris-1" />{' '}
-                                    {tarea.estado === 'cancelada' ? formatearFecha(tarea.fecha_cancelacion) : formatearFecha(tarea.created_at)}
-                                </p>
+
+                            <div className="flex flex-col gap-2">
+                                {permisos.puedeCompletar && (
+                                    <ConfirmarCompletarDialog
+                                        tareaId={tarea.id}
+                                        trigger={
+                                            <Button size="sm">
+                                                <CircleCheckBig /> Completar
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                                {permisos.puedeCancelar && (
+                                    <MotivoDialog
+                                        tareaId={tarea.id}
+                                        routeName="tareas.cancelar"
+                                        title="Cancelar tarea"
+                                        description="Cierre definitivo: la tarea no vuelve a nadie y no se puede revertir."
+                                        submitLabel="Cancelar tarea"
+                                        submitIcon={Ban}
+                                        variant="destructive"
+                                        trigger={
+                                            <Button size="sm" variant="destructive">
+                                                <Ban /> Cancelar
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                                {permisos.puedeReportarProblema && (
+                                    <MotivoDialog
+                                        tareaId={tarea.id}
+                                        routeName="tareas.reportar-problema"
+                                        title="Reportar problema"
+                                        description="Avisa que la tarea está mal definida. No cambia su estado ni interrumpe el trabajo: solo notifica a quien puede corregirla (el creador si reportás como responsable, el responsable si reportás como colaborador)."
+                                        submitLabel="Reportar problema"
+                                        submitIcon={MessageSquareWarning}
+                                        trigger={
+                                            <Button size="sm" variant="outline">
+                                                <MessageSquareWarning /> Notificar problema
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                                {permisos.puedeReportarNoParticipacion && (
+                                    <MotivoDialog
+                                        tareaId={tarea.id}
+                                        routeName="tareas.no-participar"
+                                        title="No puedo ser parte de esto"
+                                        description="Avisá que no podés o no querés seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si sos el responsable, el responsable si sos colaborador)."
+                                        submitLabel="Enviar aviso"
+                                        submitIcon={UserX}
+                                        trigger={
+                                            <Button size="sm" variant="outline">
+                                                <UserX /> No puedo ser parte
+                                            </Button>
+                                        }
+                                    />
+                                )}
                             </div>
                         </div>
-
-                        {tarea.estado === 'cancelada' && tarea.motivo_cancelacion && (
-                            <p className="rounded-md border border-gris-1/30 bg-gris-1/10 p-3 text-sm text-gris-2">
-                                Motivo de cancelación: {tarea.motivo_cancelacion}
-                            </p>
-                        )}
                     </CardContent>
                 </Card>
 
