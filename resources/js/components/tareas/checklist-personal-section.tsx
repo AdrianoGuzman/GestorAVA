@@ -52,7 +52,7 @@ export function ChecklistPersonalSection({ tareaId, items }: { tareaId: number; 
                     {items.map((item) => (
                         <li key={item.id} className="group flex items-center gap-2">
                             <Checkbox checked={item.completado} onCheckedChange={() => alternar(item)} />
-                            <span className={cn('flex-1 text-sm text-gris-2', item.completado && 'text-muted-foreground line-through')}>
+                            <span className={cn('flex-1 text-sm text-foreground', item.completado && 'text-muted-foreground line-through')}>
                                 {item.texto}
                             </span>
                             <button

@@ -32,12 +32,12 @@ export function HistorialTimeline({ eventos }: { eventos: HistorialEvento[] }) {
             {eventos.map((evento) => (
                 <li key={evento.id} className="relative">
                     <span className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-verde-5" />
-                    <p className="text-sm font-medium text-gris-2">
+                    <p className="text-sm font-medium text-foreground">
                         {evento.usuario?.name ?? 'Sistema'} — {ETIQUETAS_EVENTO[evento.tipo_evento]}
                     </p>
                     <p className="text-xs text-muted-foreground">{new Date(evento.created_at).toLocaleString('es-CL')}</p>
                     {typeof evento.datos_evento?.motivo === 'string' && (
-                        <p className="mt-1 text-sm text-gris-2">Motivo: {evento.datos_evento.motivo}</p>
+                        <p className="mt-1 text-sm text-foreground">Motivo: {evento.datos_evento.motivo}</p>
                     )}
                 </li>
             ))}

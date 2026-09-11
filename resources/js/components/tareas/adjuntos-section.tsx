@@ -56,7 +56,7 @@ export function AdjuntosSection({ tareaId, adjuntos, puedeAdjuntar }: { tareaId:
                     >
                         <input {...getInputProps()} />
                         <Paperclip className="size-6 text-gris-1" />
-                        <p className="text-sm text-gris-2">
+                        <p className="text-sm text-foreground">
                             {subiendo ? 'Subiendo...' : isDragActive ? 'Soltá el archivo acá...' : 'Arrastrá un archivo o hacé click para elegirlo'}
                         </p>
                         <p className="text-xs text-muted-foreground">PDF, imágenes, Word o Excel — máx. 10MB</p>
@@ -75,7 +75,7 @@ export function AdjuntosSection({ tareaId, adjuntos, puedeAdjuntar }: { tareaId:
                             <li key={adjunto.id} className="flex items-center gap-3 rounded-md border border-border p-2.5">
                                 <Icono className="size-5 shrink-0 text-gris-1" />
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium text-gris-2">{adjunto.nombre_original}</p>
+                                    <p className="truncate text-sm font-medium text-foreground">{adjunto.nombre_original}</p>
                                     <p className="text-xs text-muted-foreground">
                                         {formatearTamano(adjunto.tamano_bytes)} · {adjunto.usuario?.name ?? 'Sistema'} ·{' '}
                                         {new Date(adjunto.created_at).toLocaleDateString('es-CL')}
