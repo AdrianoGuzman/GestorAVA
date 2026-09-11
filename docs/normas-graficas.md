@@ -21,7 +21,7 @@ Paleta AVA para usar en Tailwind.
 | `azul-1` | `#008DE7` | ![#008DE7](https://placehold.co/48x16/008DE7/008DE7.png) |
 | `azul-2` | `#04008b` | ![#04008b](https://placehold.co/48x16/04008B/04008B.png) |
 | `indigo-1` | `#6F00FF` | ![#6F00FF](https://placehold.co/48x16/6F00FF/6F00FF.png) |
-| `morado-1` | `#800080` | ![#800080](https://placehold.co/48x16/800080/800080.png) |
+| `morado-1` | `#8e48ff` | ![#8e48ff](https://placehold.co/48x16/8e48ff/8e48ff.png) |
 
 ## CDN de SVGs
 

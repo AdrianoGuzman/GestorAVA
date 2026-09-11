@@ -8,7 +8,31 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /*
+      Paleta de marca AVA (Ava_Manual_2024.pdf, pág. 18 "Colores corporativos",
+      y docs/normas-graficas.md). El verde es un color principal pero el manual
+      exige que se use solo como detalle/acento (botones primarios, estados
+      activos), nunca como color dominante de fondo o superficie -- blanco y
+      negro son los protagonistas.
+    */
+    --color-gris-1: #7a7f85;
+    --color-gris-2: #2d3238;
+    --color-verde-1: #f3faec;
+    --color-verde-2: #ecf3e5;
+    --color-verde-3: #dbe0d5;
+    --color-verde-4: #c1f75e;
+    --color-verde-5: #a0f700;
+    --color-verde-6: #86cf00;
+    --color-rojo-1: #f80000;
+    --color-rojo-2: #b70000;
+    --color-naranjo-1: #ff5900;
+    --color-amarillo-1: #ffcb00;
+    --color-azul-1: #008de7;
+    --color-azul-2: #04008b;
+    --color-indigo-1: #6f00ff;
+    --color-morado-1: #8e48ff;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -78,24 +102,30 @@
 
 :root {
     --background: hsl(0, 0%, 100%);
-    --foreground: hsl(0, 0%, 3.9%);
+    --foreground: #2d3238;
     --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(0, 0%, 3.9%);
+    --card-foreground: #2d3238;
     --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(0, 0%, 3.9%);
-    --primary: hsl(0, 0%, 9%);
-    --primary-foreground: hsl(0, 0%, 98%);
+    --popover-foreground: #2d3238;
+    /*
+      El manual reserva el verde para "un detalle en las graficas" salvo dos
+      excepciones explicitas: botones primarios y estados activos (pag. 18).
+      Por eso --primary usa verde, no negro -- el negro/blanco siguen
+      dominando el resto de la superficie (fondos, texto, bordes).
+    */
+    --primary: #a0f700;
+    --primary-foreground: #2d3238;
     --secondary: hsl(0, 0%, 96.1%);
-    --secondary-foreground: hsl(0, 0%, 9%);
+    --secondary-foreground: #2d3238;
     --muted: hsl(0, 0%, 96.1%);
-    --muted-foreground: hsl(0, 0%, 45.1%);
-    --accent: hsl(0, 0%, 96.1%);
-    --accent-foreground: hsl(0, 0%, 9%);
-    --destructive: hsl(0, 84.2%, 60.2%);
-    --destructive-foreground: hsl(0, 0%, 98%);
+    --muted-foreground: #7a7f85;
+    --accent: #f3faec;
+    --accent-foreground: #2d3238;
+    --destructive: #f80000;
+    --destructive-foreground: hsl(0, 0%, 100%);
     --border: hsl(0, 0%, 92.8%);
     --input: hsl(0, 0%, 89.8%);
-    --ring: hsl(0, 0%, 3.9%);
+    --ring: #a0f700;
     --chart-1: hsl(12, 76%, 61%);
     --chart-2: hsl(173, 58%, 39%);
     --chart-3: hsl(197, 37%, 24%);
@@ -113,25 +143,25 @@
 }
 
 .dark {
-    --background: hsl(0, 0%, 3.9%);
+    --background: #2d3238;
     --foreground: hsl(0, 0%, 98%);
-    --card: hsl(0, 0%, 3.9%);
+    --card: #2d3238;
     --card-foreground: hsl(0, 0%, 98%);
-    --popover: hsl(0, 0%, 3.9%);
+    --popover: #2d3238;
     --popover-foreground: hsl(0, 0%, 98%);
-    --primary: hsl(0, 0%, 98%);
-    --primary-foreground: hsl(0, 0%, 9%);
+    --primary: #a0f700;
+    --primary-foreground: #2d3238;
     --secondary: hsl(0, 0%, 14.9%);
     --secondary-foreground: hsl(0, 0%, 98%);
     --muted: hsl(0, 0%, 6.9%);
-    --muted-foreground: hsl(0, 0%, 63.9%);
+    --muted-foreground: #7a7f85;
     --accent: hsl(0, 0%, 14.9%);
     --accent-foreground: hsl(0, 0%, 98%);
-    --destructive: hsl(0, 84%, 60%);
+    --destructive: #f80000;
     --destructive-foreground: hsl(0, 0%, 98%);
     --border: hsl(0, 0%, 14.9%);
     --input: hsl(0, 0%, 14.9%);
-    --ring: hsl(0, 0%, 83.1%);
+    --ring: #a0f700;
     --chart-1: hsl(220, 70%, 50%);
     --chart-2: hsl(160, 60%, 45%);
     --chart-3: hsl(30, 80%, 55%);
