@@ -7,9 +7,11 @@ use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
+use App\Http\Requests\Tarea\ReportarNoParticipacionRequest;
 use App\Http\Requests\Tarea\ReportarProblemaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\AdjuntoTarea;
+use App\Models\ChecklistPersonalItem;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Services\AdjuntoService;
@@ -17,6 +19,7 @@ use App\Services\CancelacionService;
 use App\Services\ColaboradorService;
 use App\Services\FinalizacionService;
 use App\Services\MisTareasService;
+use App\Services\NoParticipacionService;
 use App\Services\PermisosService;
 use App\Services\ReasignacionService;
 use App\Services\ReporteProblemaService;
@@ -39,6 +42,7 @@ class TareaController extends Controller
         private readonly FinalizacionService $finalizacionService,
         private readonly RetrocesoService $retrocesoService,
         private readonly ReporteProblemaService $reporteProblemaService,
+        private readonly NoParticipacionService $noParticipacionService,
         private readonly CancelacionService $cancelacionService,
         private readonly AdjuntoService $adjuntoService,
         private readonly PermisosService $permisos,
@@ -69,14 +73,20 @@ class TareaController extends Controller
             "tarea" => $tarea,
             "rolUsuario" => $this->misTareasService->rolDe($tarea, $usuario),
             "usuarios" => User::select(["id", "nombre_1", "nombre_2", "apellido_1", "apellido_2", "email"])->get(),
+            "checklistPersonal" => ChecklistPersonalItem::where("tarea_id", $tarea->id)
+                ->where("usuario_id", $usuario->id)
+                ->orderBy("created_at")
+                ->get(),
             "permisos" => [
                 "puedeReasignar" => $this->permisos->puedeReasignar($tarea, $usuario),
                 "puedeAgregarColaborador" => $this->permisos->puedeAgregarColaborador($tarea, $usuario),
                 "puedeCompletar" => $this->permisos->puedeCompletar($tarea, $usuario),
                 "puedeRetroceder" => $this->permisos->puedeRetroceder($tarea, $usuario),
                 "puedeReportarProblema" => $this->permisos->puedeReportarProblema($tarea, $usuario),
+                "puedeReportarNoParticipacion" => $this->permisos->puedeReportarNoParticipacion($tarea, $usuario),
                 "puedeCancelar" => $this->permisos->puedeCancelar($tarea, $usuario),
                 "puedeAdjuntar" => $this->permisos->puedeAdjuntar($tarea, $usuario),
+                "puedeUsarChecklistPersonal" => $this->permisos->puedeUsarChecklistPersonal($tarea, $usuario),
             ],
         ]);
     }
@@ -156,5 +166,12 @@ class TareaController extends Controller
         $this->cancelacionService->cancelar($tarea, $request->user(), $request->validated("motivo"));
 
         return back()->with("success", "Tarea cancelada.");
+    }
+
+    public function reportarNoParticipacion(ReportarNoParticipacionRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->noParticipacionService->reportar($tarea, $request->user(), $request->validated("motivo"));
+
+        return back()->with("success", "Aviso enviado correctamente.");
     }
 }

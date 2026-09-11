@@ -9,6 +9,7 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     completada: 'Marcó la tarea como completada',
     retroceso: 'Retrocedió la tarea a Pendiente',
     problema_reportado: 'Reportó un problema en la tarea',
+    no_participacion_reportada: 'Avisó que no puede seguir participando',
     cancelacion: 'Canceló la tarea',
     dependencia_creada: 'Creó una dependencia',
     dependencia_resuelta: 'Resolvió una dependencia',

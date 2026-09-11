@@ -1,5 +1,6 @@
 import { AdjuntosSection } from '@/components/tareas/adjuntos-section';
 import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborador-dialog';
+import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
@@ -11,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import type { PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
+import type { ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import { Head } from '@inertiajs/react';
 import {
     Ban,
@@ -20,6 +21,7 @@ import {
     GitBranch,
     History,
     ListChecks,
+    ListTodo,
     MessageSquareWarning,
     Paperclip,
     Plus,
@@ -27,6 +29,7 @@ import {
     User,
     UserCog,
     UserPlus,
+    UserX,
     Users,
 } from 'lucide-react';
 
@@ -34,6 +37,7 @@ interface Props {
     tarea: TareaDetalle;
     rolUsuario: RolUsuarioTarea;
     usuarios: Persona[];
+    checklistPersonal: ChecklistPersonalItem[];
     permisos: PermisosTarea;
 }
 
@@ -42,7 +46,7 @@ function formatearFecha(fecha: string | null): string {
     return new Date(fecha).toLocaleDateString('es-CL');
 }
 
-export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Props) {
+export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, permisos }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: tarea.titulo, href: `/tareas/${tarea.id}` },
@@ -130,6 +134,21 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                                         trigger={
                                             <Button variant="outline">
                                                 <MessageSquareWarning /> Reportar problema
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                                {permisos.puedeReportarNoParticipacion && (
+                                    <MotivoDialog
+                                        tareaId={tarea.id}
+                                        routeName="tareas.no-participar"
+                                        title="No puedo ser parte de esto"
+                                        description="Avisá que no podés o no querés seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si sos el responsable, el responsable si sos colaborador)."
+                                        submitLabel="Enviar aviso"
+                                        submitIcon={UserX}
+                                        trigger={
+                                            <Button variant="outline">
+                                                <UserX /> No puedo ser parte
                                             </Button>
                                         }
                                     />
@@ -238,7 +257,20 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-6 lg:grid-cols-3">
+                    {permisos.puedeUsarChecklistPersonal && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <ListTodo className="size-4 text-verde-6" /> Mi checklist
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ChecklistPersonalSection tareaId={tarea.id} items={checklistPersonal} />
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">

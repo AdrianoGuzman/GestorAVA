@@ -9,6 +9,7 @@ export type TipoEvento =
     | 'completada'
     | 'retroceso'
     | 'problema_reportado'
+    | 'no_participacion_reportada'
     | 'cancelacion'
     | 'dependencia_creada'
     | 'dependencia_resuelta'
@@ -44,6 +45,13 @@ export interface AdjuntoTarea {
     usuario: UsuarioTarea | null;
 }
 
+export interface ChecklistPersonalItem {
+    id: number;
+    texto: string;
+    completado: boolean;
+    created_at: string;
+}
+
 export interface TareaDetalle {
     id: number;
     titulo: string;
@@ -71,6 +79,8 @@ export interface PermisosTarea {
     puedeCompletar: boolean;
     puedeRetroceder: boolean;
     puedeReportarProblema: boolean;
+    puedeReportarNoParticipacion: boolean;
     puedeCancelar: boolean;
     puedeAdjuntar: boolean;
+    puedeUsarChecklistPersonal: boolean;
 }

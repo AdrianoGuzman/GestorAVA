@@ -101,6 +101,28 @@ class PermisosService
     }
 
     /**
+     * El responsable o un colaborador puede avisar que no puede o no quiere
+     * seguir participando en la tarea. Solo notifica, no cambia nada por su
+     * cuenta (a diferencia de agregar/quitar colaboradores, RF-06).
+     */
+    public function puedeReportarNoParticipacion(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * "Mi checklist" personal: el responsable o un colaborador de la tarea
+     * puede tener su propia guia privada, sin dueño que asignar (siempre es
+     * uno mismo) y sin bloquear nada.
+     */
+    public function puedeUsarChecklistPersonal(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
      * RF-25: solo el responsable principal puede cancelar la tarea (mismo
      * criterio de rendición de cuentas que RF-11); no se extiende al
      * superior de unidad como sí ocurre con la reasignación de RF-05.
