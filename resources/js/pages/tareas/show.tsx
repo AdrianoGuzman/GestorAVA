@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, SharedData } from '@/types';
 import type { ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
     Ban,
     Calendar,
@@ -52,6 +52,7 @@ function calcularPlazo(fechaInicio: string | null, fechaCompromiso: string): str
 }
 
 export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, permisos }: Props) {
+    const { auth } = usePage<SharedData>().props;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: tarea.titulo, href: `/tareas/${tarea.id}` },
@@ -86,26 +87,26 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                                     </p>
                                 </div>
 
-                                <div className="space-y-3 text-sm sm:w-56">
+                                <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4 text-sm sm:w-64">
                                     <div>
                                         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
-                                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                                            <EstadoBadge estado={tarea.estado} />
-                                            {tarea.esta_atrasada && <AtrasadaBadge />}
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                            <EstadoBadge estado={tarea.estado} className="px-3 py-1 text-sm" />
+                                            {tarea.esta_atrasada && <AtrasadaBadge className="px-3 py-1 text-sm" />}
                                         </div>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                             Fecha inicio / término
                                         </p>
-                                        <p className="mt-1 flex items-center gap-1.5 font-medium text-foreground">
+                                        <p className="mt-1.5 flex items-center gap-1.5 font-medium text-foreground">
                                             <Calendar className="size-4 shrink-0 text-gris-1" />
                                             {formatearFecha(tarea.fecha_inicio)} — {formatearFecha(tarea.fecha_compromiso)}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Plazo</p>
-                                        <p className="mt-1 font-medium text-foreground">
+                                        <p className="mt-1.5 font-medium text-foreground">
                                             {calcularPlazo(tarea.fecha_inicio, tarea.fecha_compromiso)}
                                         </p>
                                     </div>
@@ -121,9 +122,9 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                             <div className="grid gap-6 sm:grid-cols-3">
                                 <div>
                                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Responsable</p>
-                                    <div className="mt-1 flex items-center gap-1.5">
-                                        <User className="size-4 shrink-0 text-gris-1" />
-                                        <span className="font-medium text-foreground">{tarea.responsable.name}</span>
+                                    <div className="mt-1.5 flex items-center gap-2">
+                                        <User className="size-5 shrink-0 text-gris-1" />
+                                        <span className="text-base font-semibold text-foreground">{tarea.responsable.name}</span>
                                         {permisos.puedeReasignar && (
                                             <ReasignarDialog
                                                 tareaId={tarea.id}
@@ -134,7 +135,7 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                                                         className="text-verde-6 hover:text-verde-5"
                                                         title="Reasignar responsable"
                                                     >
-                                                        <Pencil className="size-3.5" />
+                                                        <Pencil className="size-4" />
                                                     </button>
                                                 }
                                             />
@@ -273,7 +274,12 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <AdjuntosSection tareaId={tarea.id} adjuntos={tarea.adjuntos} puedeAdjuntar={permisos.puedeAdjuntar} />
+                            <AdjuntosSection
+                                tareaId={tarea.id}
+                                adjuntos={tarea.adjuntos}
+                                puedeAdjuntar={permisos.puedeAdjuntar}
+                                usuarioActualId={auth.user.id}
+                            />
                         </CardContent>
                     </Card>
                 </div>
