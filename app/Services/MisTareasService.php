@@ -49,6 +49,38 @@ class MisTareasService
         return $secciones;
     }
 
+    /**
+     * RF-24 D4: rol del usuario respecto de una tarea puntual, coherente con
+     * las secciones (mutuamente excluyentes) de RF-09. Null si quien
+     * consulta no tiene ninguna de esas relaciones directas (ej. un
+     * superior de unidad que solo tiene permiso de RF-05).
+     */
+    public function rolDe(Tarea $tarea, User $usuario): ?string
+    {
+        if ($usuario->id === $tarea->responsable_id) {
+            return "responsable";
+        }
+
+        if ($tarea->colaboradores->contains("id", $usuario->id)) {
+            return "colaborador";
+        }
+
+        $delego = $tarea->historial
+            ->whereIn("tipo_evento", [TipoEvento::Reasignacion, TipoEvento::ReasignacionExcepcional])
+            ->where("usuario_id", $usuario->id)
+            ->isNotEmpty();
+
+        if ($delego) {
+            return "delegado";
+        }
+
+        if ($usuario->id === $tarea->creador_id) {
+            return "creador";
+        }
+
+        return null;
+    }
+
     private function seccion(Collection $tareas, string $rol): array
     {
         return [

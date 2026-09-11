@@ -5,9 +5,10 @@ namespace App\Services;
 use App\Enums\TipoNotificacion;
 use App\Models\Tarea;
 use App\Models\User;
+use App\Notifications\NoParticipacionReportadaNotification;
+use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
 use App\Notifications\TareaCanceladaNotification;
-use App\Notifications\TareaRechazadaNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
@@ -43,18 +44,35 @@ class NotificacionService
     }
 
     /**
-     * RF-13 D5 / RF-17 D4: notifica al usuario que debe corregir y reasignar
-     * la tarea (quien la delegó por última vez) cuando esta es rechazada.
+     * RF-13 (rediseñado): notifica a quien puede corregir la definición de
+     * la tarea -- el creador si reporta el responsable, o el responsable si
+     * reporta un colaborador -- sin cambiar el estado de la tarea.
      */
-    public function notificarRechazo(User $delegador, Tarea $tarea, User $quienRechaza, string $motivo): void
+    public function notificarProblemaReportado(User $destinatario, Tarea $tarea, User $quienReporta, string $motivo): void
     {
-        $delegador->notificacionesRecibidas()->create([
+        $destinatario->notificacionesRecibidas()->create([
             "tarea_id" => $tarea->id,
-            "tipo" => TipoNotificacion::Rechazo,
-            "mensaje" => "{$quienRechaza->name} rechazó la tarea \"{$tarea->titulo}\".",
+            "tipo" => TipoNotificacion::ProblemaReportado,
+            "mensaje" => "{$quienReporta->name} reportó un problema en la tarea \"{$tarea->titulo}\".",
         ]);
 
-        $delegador->notify(new TareaRechazadaNotification($tarea, $quienRechaza, $motivo));
+        $destinatario->notify(new ProblemaReportadoNotification($tarea, $quienReporta, $motivo));
+    }
+
+    /**
+     * El responsable o un colaborador avisa que no puede/quiere seguir
+     * participando. Mismo destinatario que reportar problema: el creador si
+     * avisa el responsable, el responsable si avisa un colaborador.
+     */
+    public function notificarNoParticipacion(User $destinatario, Tarea $tarea, User $quienReporta, string $motivo): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::NoParticipacionReportada,
+            "mensaje" => "{$quienReporta->name} avisó que no puede seguir en la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $destinatario->notify(new NoParticipacionReportadaNotification($tarea, $quienReporta, $motivo));
     }
 
     /**

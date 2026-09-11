@@ -156,20 +156,4 @@ class CancelarTareaTest extends TestCase
         ])->assertSessionHasErrors("estado");
     }
 
-    public function test_se_puede_cancelar_una_tarea_rechazada(): void
-    {
-        $obra = UnidadOrganizacional::factory()->create();
-        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
-        $tarea = Tarea::factory()->create([
-            "responsable_id" => $responsable->id,
-            "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::Rechazada,
-        ]);
-
-        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/cancelar", [
-            "motivo" => "Ya no aplica.",
-        ])->assertRedirect()->assertSessionHas("success");
-
-        $this->assertSame(EstadoTarea::Cancelada, $tarea->fresh()->estado);
-    }
 }

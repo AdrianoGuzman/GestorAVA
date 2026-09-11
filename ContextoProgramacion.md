@@ -38,8 +38,11 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `NotificacionService::notificarAsignacion()` — crea notificación in-app + dispara mail.
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
-- **Ya implementado (backend)**: RF-04 (crear tarea), RF-05 (reasignar responsable, incl. RN-12),
-  RF-06 (agregar colaborador), RF-10 (transición automática a en progreso), RF-11 (completar tarea).
+- **Ya implementado (backend + frontend)**: RF-04 (crear tarea), RF-05 (reasignar responsable,
+  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend), RF-10 (transición
+  automática), RF-11 (completar), RF-12 (retroceso), RF-13 (reportar problema, rediseñado --
+  ya no cambia el estado de la tarea, ver `ReporteProblemaService.php`), RF-19 (adjuntar evidencia),
+  RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
 
@@ -57,6 +60,61 @@ conozca la lógica de ambos módulos, existe un punto de extensión:
 Con eso alcanza — no hay que tocar `FinalizacionService.php` ni `TareaController.php`.
 Ejemplo de test que verifica el mecanismo: `tests/Feature/Tarea/CompletarTareaTest.php`
 (casos `un_guard_registrado_*`) y `tests/Support/GuardDeBloqueoDePruebas.php`.
+
+## Convenciones de UI para Jeremy y Oscar (cuando construyan su frontend)
+
+La vista de detalle (`resources/js/pages/tareas/show.tsx`) ya tiene reservadas dos tarjetas
+placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependencias**
+(RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
+mover ni renombrar la tarjeta en sí.
+
+**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026), distintas de la spec original:**
+- **Solo el creador de la tarea asigna el dueño de un ítem** — no hay autoasignación por parte
+  de un colaborador, para evitar confusión en la interfaz. Es una restricción más estricta
+  que el D1.4 de la spec original ("autoasignación permitida"); prevalece esta decisión.
+- **La sección de Checklist solo se muestra si la tarea tiene colaboradores.** Si el
+  responsable es el único involucrado (sin colaboradores), esa tarjeta no debe aparecer —
+  en ese caso el responsable usa un "checklist personal" propio (ver abajo, no es RF-23).
+- **Actividad chica y binaria → checklist (RF-23). Actividad grande que necesita su propio
+  responsable y seguimiento → tarea hija (RF-21/22, Oscar), no un ítem de checklist.** Esta
+  es la regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una
+  tarea dependiente completa.
+
+**Decisión sobre RF-21/22 (Oscar):** el responsable de una tarea hija debe mostrarse bien
+visible en la sección Dependencias de la tarea padre (con avatar, `PersonaAvatar`, link a su
+propio detalle) — pero **no se agrega como colaborador** de la tarea padre (`colaboradores_tarea`).
+Son conceptualmente distintos: un colaborador comparte la misma tarea y hereda sus permisos
+(RF-06); el responsable de una tarea hija tiene su propia tarea separada y no debería tener
+permisos sobre la tarea padre solo por estar vinculado como dependencia.
+
+**Ojo: la sección Dependencias NUNCA se oculta por falta de colaboradores** (a diferencia de
+Checklist, ver arriba) — incluso una tarea chica y sin colaboradores puede necesitar pedir
+ayuda externa creando una tarea hija, así que esa tarjeta siempre debe estar disponible.
+
+**Ya construido y usable por Oscar sin que tenga que hacer nada extra:** cuando alguien sube
+un adjunto con categoría "evidencia" (RF-19) en una tarea que tiene `tarea_padre_id` seteado,
+ese archivo aparece automáticamente en "Necesarios para la tarea" de la tarea padre (ver
+`AdjuntoService::deTareasHijas()` y `resources/js/components/tareas/adjuntos-section.tsx`).
+Las relaciones `Tarea::tareaPadre()`/`tareasHijas()` ya existen desde el modelo original — en
+cuanto Oscar construya el flujo de "crear tarea hija" y setee `tarea_padre_id`, esto funciona
+solo, sin que tenga que tocar nada de adjuntos.
+
+**Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
+ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
+importar si hay colaboradores. Ver `ChecklistPersonalService.php`.
+
+Reusar en vez de crear de nuevo:
+- `PersonaAvatar` (`resources/js/components/tareas/persona-avatar.tsx`) — avatar circular
+  con iniciales + tooltip con el nombre. Pedido explícito de Franco: cada ítem del
+  checklist debe mostrar el avatar del colaborador dueño del ítem (si tiene uno asignado),
+  usando este mismo componente.
+- `PersonaPicker` (`resources/js/components/tareas/persona-picker.tsx`) — selector de
+  personas estilo Trello (click, buscar, elegir), usado hoy para reasignar/agregar
+  colaboradores. Sirve igual para elegir el dueño de un ítem de checklist o la tarea a
+  vincular como dependencia.
+- Los tokens de color de marca (`bg-verde-*`, `text-gris-*`, etc.) y el patrón de
+  ícono + texto en los botones de acción (`lucide-react`) — ver `docs/contexto-diseno-ia.md`
+  para la paleta completa y las reglas de uso del verde.
 
 ## Base de datos
 

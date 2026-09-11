@@ -11,7 +11,7 @@ enum TipoEvento: string
     case TransicionAutomatica = 'transicion_automatica';
     case Completada = 'completada';
     case Retroceso = 'retroceso';
-    case Rechazo = 'rechazo';
+    case ProblemaReportado = 'problema_reportado';
     case Cancelacion = 'cancelacion';
     case DependenciaCreada = 'dependencia_creada';
     case DependenciaResuelta = 'dependencia_resuelta';
@@ -20,4 +20,6 @@ enum TipoEvento: string
     case ChecklistItemDesmarcado = 'checklist_item_desmarcado';
     case ChecklistItemEditado = 'checklist_item_editado';
     case ChecklistItemEliminado = 'checklist_item_eliminado';
+    case AdjuntoAgregado = 'adjunto_agregado';
+    case NoParticipacionReportada = 'no_participacion_reportada';
 }

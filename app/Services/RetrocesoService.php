@@ -20,9 +20,11 @@ class RetrocesoService
 
     /**
      * RF-12: el responsable o un colaborador devuelve una tarea En progreso
-     * a Pendiente, sin cambiar responsable ni colaboradores (D4). No
-     * reutiliza EstadoTarea::puedeTransicionarA() porque esa matriz tambien
-     * permite Rechazada -> Pendiente, que es el mecanismo de RF-13, no este.
+     * a Pendiente, sin cambiar responsable ni colaboradores (D4). Restringe
+     * explicitamente el estado de origen a EnProgreso en vez de reutilizar
+     * EstadoTarea::puedeTransicionarA(), que tambien permite Pendiente y
+     * Cancelada como destino desde otros estados -- este metodo solo cubre
+     * el caso puntual de RF-12.
      */
     public function retroceder(Tarea $tarea, User $solicitante, string $motivo): Tarea
     {

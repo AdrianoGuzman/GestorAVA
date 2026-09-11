@@ -91,10 +91,32 @@ class PermisosService
     }
 
     /**
-     * RF-13 D1: el responsable o un colaborador de la tarea puede
-     * rechazarla.
+     * RF-13 (rediseñado) D1: el responsable o un colaborador de la tarea
+     * puede reportar que está mal definida.
      */
-    public function puedeRechazar(Tarea $tarea, User $solicitante): bool
+    public function puedeReportarProblema(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * El responsable o un colaborador puede avisar que no puede o no quiere
+     * seguir participando en la tarea. Solo notifica, no cambia nada por su
+     * cuenta (a diferencia de agregar/quitar colaboradores, RF-06).
+     */
+    public function puedeReportarNoParticipacion(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * "Mi checklist" personal: el responsable o un colaborador de la tarea
+     * puede tener su propia guia privada, sin dueño que asignar (siempre es
+     * uno mismo) y sin bloquear nada.
+     */
+    public function puedeUsarChecklistPersonal(Tarea $tarea, User $solicitante): bool
     {
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
@@ -108,5 +130,15 @@ class PermisosService
     public function puedeCancelar(Tarea $tarea, User $solicitante): bool
     {
         return $solicitante->id === $tarea->responsable_id;
+    }
+
+    /**
+     * RF-19 D1: el responsable o un colaborador de la tarea puede adjuntar
+     * archivos.
+     */
+    public function puedeAdjuntar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
     }
 }

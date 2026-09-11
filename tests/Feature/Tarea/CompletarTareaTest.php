@@ -88,22 +88,6 @@ class CompletarTareaTest extends TestCase
             ->assertSessionHasErrors("estado");
     }
 
-    public function test_no_se_puede_completar_una_tarea_rechazada(): void
-    {
-        $obra = UnidadOrganizacional::factory()->create();
-        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
-        $tarea = Tarea::factory()->create([
-            "responsable_id" => $responsable->id,
-            "unidad_organizacional_id" => $obra->id,
-            "estado" => EstadoTarea::Rechazada,
-        ]);
-
-        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
-            ->assertSessionHasErrors("estado");
-
-        $this->assertSame(EstadoTarea::Rechazada, $tarea->fresh()->estado);
-    }
-
     public function test_un_guard_registrado_bloquea_el_completado_con_su_motivo(): void
     {
         config(["tareas.guards_completar" => [GuardDeBloqueoDePruebas::class]]);

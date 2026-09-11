@@ -9,13 +9,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TareaRechazadaNotification extends Notification implements ShouldQueue
+class NoParticipacionReportadaNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(
         private readonly Tarea $tarea,
-        private readonly User $quienRechaza,
+        private readonly User $quienReporta,
         private readonly string $motivo,
     ) {
         $this->onQueue('cola');
@@ -29,11 +29,11 @@ class TareaRechazadaNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Rechazaron una tarea: {$this->tarea->titulo}")
+            ->subject("Alguien no puede seguir en una tarea: {$this->tarea->titulo}")
             ->greeting("Hola {$notifiable->name},")
-            ->line("{$this->quienRechaza->name} rechazó la tarea \"{$this->tarea->titulo}\" que le asignaste.")
+            ->line("{$this->quienReporta->name} avisó que no puede o no quiere seguir participando en la tarea \"{$this->tarea->titulo}\".")
             ->line("Motivo: {$this->motivo}")
-            ->line("Queda a la espera de que la corrijas y la reasignes.")
+            ->line("La tarea sigue igual por ahora; este es solo un aviso para que decidas cómo seguir.")
             ->action('Ver tarea', url("/tareas/{$this->tarea->id}"))
             ->line('Gestor de Proyectos AVA');
     }

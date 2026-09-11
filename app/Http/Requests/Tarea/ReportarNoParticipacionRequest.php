@@ -5,9 +5,9 @@ namespace App\Http\Requests\Tarea;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF-13: rechazo de una tarea con motivo obligatorio (D1.1).
+ * "No puedo/quiero ser parte de esto": motivo obligatorio.
  */
-class RechazarTareaRequest extends FormRequest
+class ReportarNoParticipacionRequest extends FormRequest
 {
     public function authorize(): bool
     {
