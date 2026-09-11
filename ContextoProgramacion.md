@@ -1,9 +1,9 @@
 # Gestor de Proyectos AVA — contexto para IA
 
-Este archivo lo lee automáticamente Claude Code (y sirve como referencia para cualquier
-otra IA) al trabajar en este repo. Está para que los 4 integrantes trabajen en paralelo
-sin pisarse ni duplicar lógica. Si algo de acá quedó desactualizado, corregirlo en vez
-de ignorarlo.
+Este archivo es contexto compartido para cualquier IA (Claude, ChatGPT, Copilot, etc.)
+que ayude a programar este proyecto. Está para que los 4 integrantes trabajen en
+paralelo sin pisarse ni duplicar lógica. Si algo de acá quedó desactualizado,
+corregirlo en vez de ignorarlo.
 
 ## Módulos y quién es dueño de cada uno (Sprint 1)
 
@@ -36,7 +36,27 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
 - **Servicios compartidos, reusar en vez de duplicar lógica**:
   - `HistorialService::registrar()` — registrar cualquier evento sobre una tarea.
   - `NotificacionService::notificarAsignacion()` — crea notificación in-app + dispara mail.
-  - `PermisosService` — quién puede reasignar/autorizar excepciones sobre una tarea.
+  - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
+    sobre una tarea.
+- **Ya implementado (backend)**: RF-04 (crear tarea), RF-05 (reasignar responsable, incl. RN-12),
+  RF-06 (agregar colaborador), RF-10 (transición automática a en progreso), RF-11 (completar tarea).
+  Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
+  `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
+
+## Guards de completado (importante para Oscar y Jeremy)
+
+RF-11 (completar tarea) tiene que bloquearse si hay dependencias hijas pendientes (RF-22,
+Oscar) o ítems de checklist sin marcar (RF-23, Jeremy). En vez de que `FinalizacionService`
+conozca la lógica de ambos módulos, existe un punto de extensión:
+
+1. Crear una clase que implemente `App\Contracts\GuardCompletarTareaInterface`
+   (método `verificar(Tarea $tarea): array` — devuelve un array de strings con los motivos
+   de bloqueo, o `[]` si no bloquea nada).
+2. Registrarla en `config/tareas.php`, clave `guards_completar`.
+
+Con eso alcanza — no hay que tocar `FinalizacionService.php` ni `TareaController.php`.
+Ejemplo de test que verifica el mecanismo: `tests/Feature/Tarea/CompletarTareaTest.php`
+(casos `un_guard_registrado_*`) y `tests/Support/GuardDeBloqueoDePruebas.php`.
 
 ## Base de datos
 
@@ -53,5 +73,5 @@ Ver [README.md](README.md#tests) — **siempre `composer test`**, nunca `php art
 
 - Se trabaja en la rama personal de cada uno, nunca directo en `main`.
 - Integrar seguido desde `Dev` a la rama propia (mergear Dev→tu rama) para no divergir
-  mucho y evitar conflictos grandes como el de hoy.
+  mucho y evitar conflictos grandes.
 - Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, etc.), commits chicos y enfocados.

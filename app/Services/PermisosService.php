@@ -59,4 +59,54 @@ class PermisosService
 
         return $usuario->nivel_jerarquico->esSuperiorA($responsable->nivel_jerarquico);
     }
+
+    /**
+     * RF-06 D1: el responsable de la tarea o cualquier colaborador ya
+     * existente puede agregar nuevos colaboradores, sin restriccion de nivel
+     * jerarquico ni de unidad organizacional (RN-04).
+     */
+    public function puedeAgregarColaborador(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * RF-11 D1 / RN-14: solo el responsable principal puede marcar la tarea
+     * como completada; un colaborador no tiene esta accion disponible.
+     */
+    public function puedeCompletar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id;
+    }
+
+    /**
+     * RF-12 D1: el responsable o un colaborador de la tarea puede
+     * retrocederla de En progreso a Pendiente.
+     */
+    public function puedeRetroceder(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * RF-13 D1: el responsable o un colaborador de la tarea puede
+     * rechazarla.
+     */
+    public function puedeRechazar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $tarea->colaboradores->contains("id", $solicitante->id);
+    }
+
+    /**
+     * RF-25: solo el responsable principal puede cancelar la tarea (mismo
+     * criterio de rendición de cuentas que RF-11); no se extiende al
+     * superior de unidad como sí ocurre con la reasignación de RF-05.
+     */
+    public function puedeCancelar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id;
+    }
 }
