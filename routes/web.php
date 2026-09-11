@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MisTareasController;
 use App\Http\Controllers\TareaController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
+    Route::get('mis-tareas', [MisTareasController::class, 'index'])->name('mis-tareas.index');
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
     Route::get('tareas/{tarea}', [TareaController::class, 'show'])->name('tareas.show');
     Route::patch('tareas/{tarea}/reasignar', [TareaController::class, 'reasignar'])->name('tareas.reasignar');
