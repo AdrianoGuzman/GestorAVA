@@ -19,13 +19,13 @@ class MisTareasService
      */
     public function obtener(User $usuario, ?string $filtroRol = null): array
     {
-        $responsable = $usuario->tareasComoResponsable()->get();
-        $colaborador = $usuario->tareasComoColaborador()->get();
+        $responsable = $usuario->tareasComoResponsable()->with("responsable")->get();
+        $colaborador = $usuario->tareasComoColaborador()->with("responsable")->get();
 
         $delegadasPorMi = Tarea::whereHas("historial", function ($query) use ($usuario) {
             $query->whereIn("tipo_evento", [TipoEvento::Reasignacion, TipoEvento::ReasignacionExcepcional])
                 ->where("usuario_id", $usuario->id);
-        })->get();
+        })->with("responsable")->get();
 
         $idsExcluidos = $responsable->pluck("id")
             ->merge($colaborador->pluck("id"))
@@ -33,6 +33,7 @@ class MisTareasService
 
         $creadasPorMi = $usuario->tareasComoCreador()
             ->whereNotIn("id", $idsExcluidos)
+            ->with("responsable")
             ->get();
 
         $secciones = [

@@ -94,6 +94,34 @@ export interface TareaDetalle {
 /** Rol del usuario que consulta respecto de esta tarea (RF-24 D4), coherente con las secciones de RF-09. */
 export type RolUsuarioTarea = 'responsable' | 'colaborador' | 'delegado' | 'creador' | null;
 
+/** Fila de tarea dentro de "Mis tareas" (RF-09) — no es el detalle completo, solo lo necesario para listar. */
+export interface TareaResumen {
+    id: number;
+    titulo: string;
+    estado: EstadoTarea;
+    esta_atrasada: boolean;
+    fecha_compromiso: string;
+    responsable: UsuarioTarea;
+}
+
+export interface SeccionMisTareas {
+    rol: NonNullable<RolUsuarioTarea>;
+    contadores: {
+        total: number;
+        atrasadas: number;
+        en_progreso: number;
+        completadas: number;
+    };
+    tareas: TareaResumen[];
+}
+
+export interface SeccionesMisTareas {
+    responsable?: SeccionMisTareas;
+    colaborador?: SeccionMisTareas;
+    delegadas_por_mi?: SeccionMisTareas;
+    creadas_por_mi?: SeccionMisTareas;
+}
+
 export interface PermisosTarea {
     puedeReasignar: boolean;
     puedeAgregarColaborador: boolean;

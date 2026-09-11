@@ -26,10 +26,15 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        foreach (["responsable", "colaborador", "delegadas_por_mi", "creadas_por_mi"] as $seccion) {
-            $response->assertJsonPath("{$seccion}.contadores.total", 0);
-            $response->assertJsonCount(0, "{$seccion}.tareas");
-        }
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.responsable.contadores.total", 0)
+            ->where("secciones.colaborador.contadores.total", 0)
+            ->where("secciones.delegadas_por_mi.contadores.total", 0)
+            ->where("secciones.creadas_por_mi.contadores.total", 0)
+            ->has("secciones.responsable.tareas", 0)
+            ->has("secciones.colaborador.tareas", 0)
+            ->has("secciones.delegadas_por_mi.tareas", 0)
+            ->has("secciones.creadas_por_mi.tareas", 0));
     }
 
     public function test_una_tarea_donde_es_responsable_aparece_en_esa_seccion(): void
@@ -44,10 +49,11 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 1);
-        $response->assertJsonPath("responsable.contadores.en_progreso", 1);
-        $response->assertJsonPath("responsable.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "colaborador.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.responsable.contadores.total", 1)
+            ->where("secciones.responsable.contadores.en_progreso", 1)
+            ->where("secciones.responsable.tareas.0.id", $tarea->id)
+            ->has("secciones.colaborador.tareas", 0));
     }
 
     public function test_una_tarea_donde_es_colaborador_aparece_en_esa_seccion(): void
@@ -63,8 +69,9 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("colaborador.contadores.total", 1);
-        $response->assertJsonPath("colaborador.tareas.0.id", $tarea->id);
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.colaborador.contadores.total", 1)
+            ->where("secciones.colaborador.tareas.0.id", $tarea->id));
     }
 
     public function test_una_tarea_que_reasigno_aparece_en_delegadas_por_mi_aunque_ya_no_participe(): void
@@ -84,11 +91,12 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("delegadas_por_mi.contadores.total", 1);
-        $response->assertJsonPath("delegadas_por_mi.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "responsable.tareas");
-        $response->assertJsonCount(0, "colaborador.tareas");
-        $response->assertJsonCount(0, "creadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.delegadas_por_mi.contadores.total", 1)
+            ->where("secciones.delegadas_por_mi.tareas.0.id", $tarea->id)
+            ->has("secciones.responsable.tareas", 0)
+            ->has("secciones.colaborador.tareas", 0)
+            ->has("secciones.creadas_por_mi.tareas", 0));
     }
 
     public function test_creada_y_asignada_a_otro_sin_reasignacion_aparece_solo_en_creadas_por_mi(): void
@@ -104,9 +112,10 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($creador)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("creadas_por_mi.contadores.total", 1);
-        $response->assertJsonPath("creadas_por_mi.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "delegadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.creadas_por_mi.contadores.total", 1)
+            ->where("secciones.creadas_por_mi.tareas.0.id", $tarea->id)
+            ->has("secciones.delegadas_por_mi.tareas", 0));
     }
 
     public function test_creada_y_responsable_no_se_duplica_en_creadas_por_mi(): void
@@ -121,8 +130,9 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 1);
-        $response->assertJsonCount(0, "creadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.responsable.contadores.total", 1)
+            ->has("secciones.creadas_por_mi.tareas", 0));
     }
 
     public function test_contadores_agregados_por_seccion(): void
@@ -148,10 +158,11 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 3);
-        $response->assertJsonPath("responsable.contadores.atrasadas", 1);
-        $response->assertJsonPath("responsable.contadores.en_progreso", 1);
-        $response->assertJsonPath("responsable.contadores.completadas", 1);
+        $response->assertInertia(fn ($page) => $page
+            ->where("secciones.responsable.contadores.total", 3)
+            ->where("secciones.responsable.contadores.atrasadas", 1)
+            ->where("secciones.responsable.contadores.en_progreso", 1)
+            ->where("secciones.responsable.contadores.completadas", 1));
     }
 
     public function test_filtro_rol_devuelve_solo_esa_seccion(): void
@@ -165,10 +176,11 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas?filtro_rol=responsable")->assertOk();
 
-        $response->assertJsonStructure(["responsable"]);
-        $response->assertJsonMissingPath("colaborador");
-        $response->assertJsonMissingPath("delegadas_por_mi");
-        $response->assertJsonMissingPath("creadas_por_mi");
+        $response->assertInertia(fn ($page) => $page
+            ->has("secciones.responsable")
+            ->missing("secciones.colaborador")
+            ->missing("secciones.delegadas_por_mi")
+            ->missing("secciones.creadas_por_mi"));
     }
 
     public function test_filtro_rol_invalido_es_rechazado(): void

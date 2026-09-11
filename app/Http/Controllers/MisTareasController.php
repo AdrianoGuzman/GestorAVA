@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Tarea\MisTareasRequest;
 use App\Services\MisTareasService;
-use Illuminate\Http\JsonResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
- * RF-09: vista única "Mis tareas" (endpoint minimo, responde JSON hasta que
- * RF-24 construya la vista de detalle/listado real).
+ * RF-09: vista única "Mis tareas", agrupada en 4 secciones segun el rol del
+ * usuario respecto de cada tarea (ver MisTareasService::obtener()).
  */
 class MisTareasController extends Controller
 {
@@ -17,13 +18,15 @@ class MisTareasController extends Controller
     ) {
     }
 
-    public function index(MisTareasRequest $request): JsonResponse
+    public function index(MisTareasRequest $request): Response
     {
         $secciones = $this->misTareasService->obtener(
             $request->user(),
             $request->validated("filtro_rol"),
         );
 
-        return response()->json($secciones);
+        return Inertia::render("mis-tareas/index", [
+            "secciones" => $secciones,
+        ]);
     }
 }
