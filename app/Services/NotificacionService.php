@@ -5,7 +5,11 @@ namespace App\Services;
 use App\Enums\TipoNotificacion;
 use App\Models\Tarea;
 use App\Models\User;
+use App\Notifications\NoParticipacionReportadaNotification;
+use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaCanceladaNotification;
+use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
 {
@@ -22,5 +26,67 @@ class NotificacionService
         ]);
 
         $destinatario->notify(new TareaAsignadaNotification($tarea, $rol));
+    }
+
+    /**
+     * RF-12 D5: si quien retrocede la tarea es un colaborador, se notifica
+     * al responsable principal.
+     */
+    public function notificarRetroceso(User $responsable, Tarea $tarea, User $colaborador, string $motivo): void
+    {
+        $responsable->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Retroceso,
+            "mensaje" => "{$colaborador->name} retrocedió la tarea \"{$tarea->titulo}\" a Pendiente.",
+        ]);
+
+        $responsable->notify(new TareaRetrocedidaNotification($tarea, $colaborador, $motivo));
+    }
+
+    /**
+     * RF-13 (rediseñado): notifica a quien puede corregir la definición de
+     * la tarea -- el creador si reporta el responsable, o el responsable si
+     * reporta un colaborador -- sin cambiar el estado de la tarea.
+     */
+    public function notificarProblemaReportado(User $destinatario, Tarea $tarea, User $quienReporta, string $motivo): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::ProblemaReportado,
+            "mensaje" => "{$quienReporta->name} reportó un problema en la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $destinatario->notify(new ProblemaReportadoNotification($tarea, $quienReporta, $motivo));
+    }
+
+    /**
+     * El responsable o un colaborador avisa que no puede/quiere seguir
+     * participando. Mismo destinatario que reportar problema: el creador si
+     * avisa el responsable, el responsable si avisa un colaborador.
+     */
+    public function notificarNoParticipacion(User $destinatario, Tarea $tarea, User $quienReporta, string $motivo): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::NoParticipacionReportada,
+            "mensaje" => "{$quienReporta->name} avisó que no puede seguir en la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $destinatario->notify(new NoParticipacionReportadaNotification($tarea, $quienReporta, $motivo));
+    }
+
+    /**
+     * RF-25: notifica a un colaborador que la tarea en la que participaba
+     * fue cancelada por el responsable principal.
+     */
+    public function notificarCancelacion(User $colaborador, Tarea $tarea, string $motivo): void
+    {
+        $colaborador->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Cancelacion,
+            "mensaje" => "Se canceló la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $colaborador->notify(new TareaCanceladaNotification($tarea, $motivo));
     }
 }

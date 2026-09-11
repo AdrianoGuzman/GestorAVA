@@ -1,0 +1,129 @@
+<?php
+
+namespace Tests\Feature\Tarea;
+
+use App\Enums\EstadoTarea;
+use App\Enums\NivelJerarquico;
+use App\Enums\TipoEvento;
+use App\Models\Tarea;
+use App\Models\UnidadOrganizacional;
+use App\Models\User;
+use App\Notifications\ProblemaReportadoNotification;
+use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\RefreshesDualSchemaDatabase;
+use Tests\TestCase;
+
+class ReportarProblemaTest extends TestCase
+{
+    use RefreshesDualSchemaDatabase;
+
+    private function usuario(NivelJerarquico $nivel, ?UnidadOrganizacional $unidad = null): User
+    {
+        return User::factory()->conNivel($nivel, $unidad)->create();
+    }
+
+    public function test_el_responsable_reporta_y_se_notifica_al_creador_sin_cambiar_el_estado(): void
+    {
+        Notification::fake();
+
+        $obra = UnidadOrganizacional::factory()->create();
+        $creador = $this->usuario(NivelJerarquico::JefeArea, $obra);
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $creador->id,
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "La especificación técnica tiene un error.",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $tarea->refresh();
+        $this->assertSame(EstadoTarea::EnProgreso, $tarea->estado);
+
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->first();
+        $this->assertNotNull($evento);
+        $this->assertSame("La especificación técnica tiene un error.", $evento->datos_evento["motivo"]);
+
+        Notification::assertSentTo($creador, ProblemaReportadoNotification::class);
+    }
+
+    public function test_un_colaborador_reporta_y_se_notifica_al_responsable_sin_cambiar_el_estado(): void
+    {
+        Notification::fake();
+
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $colaborador = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Pendiente,
+        ]);
+        $tarea->colaboradores()->attach($colaborador->id);
+
+        $this->actingAs($colaborador)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "No tengo la información necesaria.",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $this->assertSame(EstadoTarea::Pendiente, $tarea->fresh()->estado);
+
+        Notification::assertSentTo($responsable, ProblemaReportadoNotification::class);
+        Notification::assertNotSentTo($colaborador, ProblemaReportadoNotification::class);
+    }
+
+    public function test_si_el_responsable_es_tambien_el_creador_no_hay_a_quien_notificar(): void
+    {
+        Notification::fake();
+
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $responsable->id,
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "Ya no aplica como la definí.",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $this->assertTrue($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
+        Notification::assertNothingSent();
+    }
+
+    public function test_un_usuario_ajeno_no_puede_reportar(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $ajeno = $this->usuario(NivelJerarquico::JefeArea, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($ajeno)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "Intento invalido",
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
+    }
+
+    public function test_el_motivo_es_obligatorio(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
+            "motivo" => "",
+        ])->assertSessionHasErrors("motivo");
+
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
+    }
+}

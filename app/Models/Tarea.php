@@ -73,4 +73,8 @@ class Tarea extends Model {
     public function notificaciones(): HasMany {
         return $this->hasMany(Notificacion::class, "tarea_id");
     }
+
+    public function adjuntos(): HasMany {
+        return $this->hasMany(AdjuntoTarea::class, "tarea_id");
+    }
 }
