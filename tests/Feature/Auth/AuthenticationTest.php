@@ -42,6 +42,31 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    /**
+     * RF-01, D2.2: el sistema no debe indicar cual de los dos datos
+     * (usuario o contrasena) fue el incorrecto. Una contrasena erronea y un
+     * correo inexistente deben producir exactamente el mismo mensaje.
+     */
+    public function test_login_failure_message_is_generic_regardless_of_which_field_was_wrong()
+    {
+        $user = User::factory()->create();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors('email');
+        $mensajeConPasswordInvalida = session('errors')->first('email');
+
+        $this->post('/login', [
+            'email' => 'no-existe@ava.cl',
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+        $mensajeConCorreoInexistente = session('errors')->first('email');
+
+        $this->assertSame($mensajeConPasswordInvalida, $mensajeConCorreoInexistente);
+        $this->assertGuest();
+    }
+
     public function test_users_can_logout()
     {
         $user = User::factory()->create();
