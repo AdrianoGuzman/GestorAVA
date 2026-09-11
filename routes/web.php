@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistPersonalController;
 use App\Http\Controllers\MisTareasController;
 use App\Http\Controllers\TareaController;
@@ -27,6 +28,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('tareas/{tarea}/cancelar', [TareaController::class, 'cancelar'])->name('tareas.cancelar');
     Route::post('tareas/{tarea}/adjuntos', [TareaController::class, 'agregarAdjunto'])->name('tareas.adjuntos.store');
     Route::get('tareas/{tarea}/adjuntos/{adjunto}/descargar', [TareaController::class, 'descargarAdjunto'])->name('tareas.adjuntos.descargar');
+    Route::post('tareas/{tarea}/checklist', [ChecklistController::class, 'store'])->name('checklist.store');
+    Route::patch('checklist/{checklistItem}', [ChecklistController::class, 'update'])->name('checklist.update');
+    Route::patch('checklist/{checklistItem}/marcar', [ChecklistController::class, 'marcar'])->name('checklist.marcar');
+    Route::patch('checklist/{checklistItem}/desmarcar', [ChecklistController::class, 'desmarcar'])->name('checklist.desmarcar');
+    Route::delete('checklist/{checklistItem}', [ChecklistController::class, 'destroy'])->name('checklist.destroy');
     Route::post('tareas/{tarea}/checklist-personal', [ChecklistPersonalController::class, 'store'])->name('tareas.checklist-personal.store');
     Route::patch('tareas/{tarea}/checklist-personal/{item}', [ChecklistPersonalController::class, 'alternar'])->name('tareas.checklist-personal.alternar');
     Route::delete('tareas/{tarea}/checklist-personal/{item}', [ChecklistPersonalController::class, 'destroy'])->name('tareas.checklist-personal.destroy');
