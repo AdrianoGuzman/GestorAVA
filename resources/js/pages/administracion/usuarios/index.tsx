@@ -1,4 +1,5 @@
 import { CrearUsuarioDialog } from '@/components/administracion/crear-usuario-dialog';
+import { EditarUsuarioDialog } from '@/components/administracion/editar-usuario-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -33,6 +34,7 @@ export default function UsuariosIndex({ usuarios, unidades }: Props) {
                                         <th className="py-2 pr-4 font-medium">Cargo</th>
                                         <th className="py-2 pr-4 font-medium">Nivel jerárquico</th>
                                         <th className="py-2 pr-4 font-medium">Unidad organizacional</th>
+                                        <th className="py-2 pr-4 font-medium"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -45,6 +47,9 @@ export default function UsuariosIndex({ usuarios, unidades }: Props) {
                                                 {usuario.nivel_jerarquico ? NIVEL_JERARQUICO_LABELS[usuario.nivel_jerarquico] : '—'}
                                             </td>
                                             <td className="py-2 pr-4">{usuario.unidad_organizacional?.nombre ?? '—'}</td>
+                                            <td className="py-2 pr-4">
+                                                <EditarUsuarioDialog usuario={usuario} unidades={unidades} />
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

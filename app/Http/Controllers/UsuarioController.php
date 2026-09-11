@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Usuario\CrearUsuarioRequest;
+use App\Http\Requests\Usuario\EditarNivelYUnidadRequest;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
 use App\Services\UsuarioService;
@@ -12,10 +13,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * RNF-08: administracion minima de la estructura organizacional (alta de
- * usuarios con su nivel jerarquico y unidad). Solo Directorio y Gerencia
- * pueden acceder — NivelJerarquico::puedeAdministrarEstructura(). Edicion,
- * baja y gestion completa de la estructura quedan para Fase 2.
+ * RNF-08: administracion minima de la estructura organizacional -- alta de
+ * usuarios y edicion de su nivel jerarquico/unidad. Solo Directorio y
+ * Gerencia pueden acceder — NivelJerarquico::puedeAdministrarEstructura().
+ * Baja de usuarios y gestion completa de la estructura quedan para Fase 2.
  */
 class UsuarioController extends Controller
 {
@@ -40,5 +41,12 @@ class UsuarioController extends Controller
         $usuario = $this->usuarioService->crear($request->validated(), $request->user());
 
         return back()->with("success", "Usuario \"{$usuario->name}\" creado correctamente.");
+    }
+
+    public function update(EditarNivelYUnidadRequest $request, User $usuario): RedirectResponse
+    {
+        $usuario = $this->usuarioService->actualizarNivelYUnidad($usuario, $request->validated(), $request->user());
+
+        return back()->with("success", "Usuario \"{$usuario->name}\" actualizado correctamente.");
     }
 }
