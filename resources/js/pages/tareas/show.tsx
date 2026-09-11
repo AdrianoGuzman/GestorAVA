@@ -4,7 +4,6 @@ import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completa
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
-import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,22 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import { Head } from '@inertiajs/react';
-import { Ban, CircleCheckBig, GitBranch, History, ListChecks, Paperclip, Plus, Undo2, UserCog, UserPlus, XCircle } from 'lucide-react';
+import {
+    Ban,
+    Calendar,
+    CircleCheckBig,
+    GitBranch,
+    History,
+    ListChecks,
+    Paperclip,
+    Plus,
+    Undo2,
+    User,
+    UserCog,
+    UserPlus,
+    Users,
+    XCircle,
+} from 'lucide-react';
 
 interface Props {
     tarea: TareaDetalle;
@@ -54,31 +68,6 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                                 <div className="flex flex-wrap items-center gap-2">
                                     <EstadoBadge estado={tarea.estado} />
                                     {tarea.esta_atrasada && <AtrasadaBadge />}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center -space-x-2">
-                                        <PersonaAvatar nombre={tarea.responsable.name} destacado />
-                                        {tarea.colaboradores.map((colaborador) => (
-                                            <PersonaAvatar key={colaborador.id} nombre={colaborador.name} />
-                                        ))}
-                                        {permisos.puedeAgregarColaborador && (
-                                            <AgregarColaboradorDialog
-                                                tareaId={tarea.id}
-                                                personas={usuarios}
-                                                trigger={
-                                                    <button
-                                                        type="button"
-                                                        className="flex size-8 items-center justify-center rounded-full border-2 border-dashed border-gris-3 bg-background text-gris-1 transition-colors hover:border-verde-5 hover:text-verde-6"
-                                                        title="Agregar colaborador"
-                                                    >
-                                                        <Plus className="size-4" />
-                                                    </button>
-                                                }
-                                            />
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Creado por {tarea.creador.name}</p>
                                 </div>
                             </div>
 
@@ -173,25 +162,62 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, permisos }: Pro
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 text-sm sm:grid-cols-3">
                             <div>
-                                <p className="text-muted-foreground">Creada</p>
-                                <p className="font-medium text-gris-2">{formatearFecha(tarea.created_at)}</p>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Responsable</p>
+                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                    <User className="size-4 shrink-0 text-gris-1" /> {tarea.responsable.name}
+                                </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Fecha de inicio</p>
-                                <p className="font-medium text-gris-2">{formatearFecha(tarea.fecha_inicio)}</p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground">Fecha de compromiso</p>
-                                <p className="font-medium text-gris-2">{formatearFecha(tarea.fecha_compromiso)}</p>
-                            </div>
-                            {tarea.estado === 'cancelada' && (
-                                <div>
-                                    <p className="text-muted-foreground">Cancelada</p>
-                                    <p className="font-medium text-gris-2">{formatearFecha(tarea.fecha_cancelacion)}</p>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Colaboradores</p>
+                                <div className="mt-1 flex items-center gap-1.5">
+                                    <Users className="size-4 shrink-0 text-gris-1" />
+                                    {tarea.colaboradores.length === 0 ? (
+                                        <span className="text-muted-foreground">Nadie más</span>
+                                    ) : (
+                                        <span className="font-medium text-gris-2">{tarea.colaboradores.map((c) => c.name).join(', ')}</span>
+                                    )}
+                                    {permisos.puedeAgregarColaborador && (
+                                        <AgregarColaboradorDialog
+                                            tareaId={tarea.id}
+                                            personas={usuarios}
+                                            trigger={
+                                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Agregar colaborador">
+                                                    <Plus className="size-4" />
+                                                </button>
+                                            }
+                                        />
+                                    )}
                                 </div>
-                            )}
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Creador</p>
+                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                    <User className="size-4 shrink-0 text-gris-1" /> {tarea.creador.name}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha de inicio</p>
+                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                    <Calendar className="size-4 shrink-0 text-gris-1" /> {formatearFecha(tarea.fecha_inicio)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha de compromiso</p>
+                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                    <Calendar className="size-4 shrink-0 text-gris-1" /> {formatearFecha(tarea.fecha_compromiso)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                    {tarea.estado === 'cancelada' ? 'Cancelada' : 'Creada'}
+                                </p>
+                                <p className="mt-1 flex items-center gap-1.5 font-medium text-gris-2">
+                                    <Calendar className="size-4 shrink-0 text-gris-1" />{' '}
+                                    {tarea.estado === 'cancelada' ? formatearFecha(tarea.fecha_cancelacion) : formatearFecha(tarea.created_at)}
+                                </p>
+                            </div>
                         </div>
 
                         {tarea.estado === 'cancelada' && tarea.motivo_cancelacion && (
