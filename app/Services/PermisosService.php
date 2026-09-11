@@ -99,4 +99,14 @@ class PermisosService
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
     }
+
+    /**
+     * RF-25: solo el responsable principal puede cancelar la tarea (mismo
+     * criterio de rendición de cuentas que RF-11); no se extiende al
+     * superior de unidad como sí ocurre con la reasignación de RF-05.
+     */
+    public function puedeCancelar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id;
+    }
 }

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
+use App\Http\Requests\Tarea\CancelarTareaRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
 use App\Http\Requests\Tarea\RechazarTareaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\Tarea;
 use App\Models\User;
+use App\Services\CancelacionService;
 use App\Services\ColaboradorService;
 use App\Services\FinalizacionService;
 use App\Services\ReasignacionService;
@@ -30,6 +32,7 @@ class TareaController extends Controller
         private readonly FinalizacionService $finalizacionService,
         private readonly RetrocesoService $retrocesoService,
         private readonly RechazoService $rechazoService,
+        private readonly CancelacionService $cancelacionService,
     ) {
     }
 
@@ -99,5 +102,12 @@ class TareaController extends Controller
         $this->rechazoService->rechazar($tarea, $request->user(), $request->validated("motivo"));
 
         return back()->with("success", "Tarea rechazada.");
+    }
+
+    public function cancelar(CancelarTareaRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->cancelacionService->cancelar($tarea, $request->user(), $request->validated("motivo"));
+
+        return back()->with("success", "Tarea cancelada.");
     }
 }

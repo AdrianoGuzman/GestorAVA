@@ -22,6 +22,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('tareas/{tarea}/completar', [TareaController::class, 'completar'])->name('tareas.completar');
     Route::patch('tareas/{tarea}/retroceder', [TareaController::class, 'retroceder'])->name('tareas.retroceder');
     Route::patch('tareas/{tarea}/rechazar', [TareaController::class, 'rechazar'])->name('tareas.rechazar');
+    Route::patch('tareas/{tarea}/cancelar', [TareaController::class, 'cancelar'])->name('tareas.cancelar');
 });
 
 require __DIR__.'/settings.php';

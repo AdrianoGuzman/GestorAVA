@@ -6,6 +6,7 @@ use App\Enums\TipoNotificacion;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaCanceladaNotification;
 use App\Notifications\TareaRechazadaNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
@@ -54,5 +55,20 @@ class NotificacionService
         ]);
 
         $delegador->notify(new TareaRechazadaNotification($tarea, $quienRechaza, $motivo));
+    }
+
+    /**
+     * RF-25: notifica a un colaborador que la tarea en la que participaba
+     * fue cancelada por el responsable principal.
+     */
+    public function notificarCancelacion(User $colaborador, Tarea $tarea, string $motivo): void
+    {
+        $colaborador->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Cancelacion,
+            "mensaje" => "Se canceló la tarea \"{$tarea->titulo}\".",
+        ]);
+
+        $colaborador->notify(new TareaCanceladaNotification($tarea, $motivo));
     }
 }
