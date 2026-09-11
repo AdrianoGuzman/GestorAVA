@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // RF-03 D2.1: distintos niveles ven distintas opciones de menu.
+                // Se calcula aca (Enum) para no duplicar la regla en el frontend.
+                'puedeAdministrarEstructura' => $request->user()?->nivel_jerarquico?->puedeAdministrarEstructura() ?? false,
             ],
         ]);
     }
