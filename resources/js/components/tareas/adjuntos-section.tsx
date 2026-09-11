@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import type { AdjuntoTarea, CategoriaAdjunto } from '@/types/tarea';
+import type { AdjuntoDeTareaHija, AdjuntoTarea, CategoriaAdjunto } from '@/types/tarea';
 import { router } from '@inertiajs/react';
-import { Download, File as FileIcon, FileImage, FileSpreadsheet, FileText, Paperclip } from 'lucide-react';
+import { Download, File as FileIcon, FileImage, FileSpreadsheet, FileText, Link2, Paperclip } from 'lucide-react';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -18,7 +18,8 @@ function formatearTamano(bytes: number): string {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos: AdjuntoTarea[]; vacio: string }) {
+/** Cada adjunto trae su propio tarea_id (puede ser de una tarea hija), asi el link de descarga siempre apunta a la tarea dueña real. */
+function ListaAdjuntos({ adjuntos, vacio }: { adjuntos: (AdjuntoTarea | AdjuntoDeTareaHija)[]; vacio: string }) {
     if (adjuntos.length === 0) {
         return <p className="text-center text-sm text-muted-foreground">{vacio}</p>;
     }
@@ -27,8 +28,9 @@ function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos
         <ul className="space-y-2">
             {adjuntos.map((adjunto) => {
                 const Icono = iconoParaMime(adjunto.mime_type);
+                const deTareaHija = 'tarea_hija_titulo' in adjunto;
                 return (
-                    <li key={adjunto.id} className="flex items-center gap-3 rounded-md border border-border p-2.5">
+                    <li key={`${adjunto.tarea_id}-${adjunto.id}`} className="flex items-center gap-3 rounded-md border border-border p-2.5">
                         <Icono className="size-5 shrink-0 text-gris-1" />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-foreground">{adjunto.nombre_original}</p>
@@ -36,9 +38,14 @@ function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos
                                 {formatearTamano(adjunto.tamano_bytes)} · {adjunto.usuario?.name ?? 'Sistema'} ·{' '}
                                 {new Date(adjunto.created_at).toLocaleDateString('es-CL')}
                             </p>
+                            {deTareaHija && (
+                                <p className="mt-0.5 flex items-center gap-1 text-xs text-verde-6">
+                                    <Link2 className="size-3" /> De la tarea "{(adjunto as AdjuntoDeTareaHija).tarea_hija_titulo}"
+                                </p>
+                            )}
                         </div>
                         <a
-                            href={route('tareas.adjuntos.descargar', [tareaId, adjunto.id])}
+                            href={route('tareas.adjuntos.descargar', [adjunto.tarea_id, adjunto.id])}
                             className="shrink-0 rounded-md p-1.5 text-gris-1 hover:bg-verde-1 hover:text-gris-2"
                             title="Descargar"
                         >
@@ -56,14 +63,21 @@ function ListaAdjuntos({ tareaId, adjuntos, vacio }: { tareaId: number; adjuntos
  * subir (D1). Quien sube elige explícitamente la categoría (Necesario para
  * la tarea / Evidencia) -- no se infiere de quién lo sube, porque la misma
  * persona puede necesitar subir ambos tipos.
+ *
+ * "Necesarios para la tarea" también incluye la evidencia subida en las
+ * tareas hijas (RF-21/22): si pediste ayuda externa creando una tarea
+ * dependiente, lo que esa persona suba aparece acá directo, sin tener que
+ * reenviarlo por fuera del sistema.
  */
 export function AdjuntosSection({
     tareaId,
     adjuntos,
+    adjuntosDeTareasHijas,
     puedeAdjuntar,
 }: {
     tareaId: number;
     adjuntos: AdjuntoTarea[];
+    adjuntosDeTareasHijas: AdjuntoDeTareaHija[];
     puedeAdjuntar: boolean;
 }) {
     const [categoria, setCategoria] = useState<CategoriaAdjunto>('evidencia');
@@ -90,7 +104,10 @@ export function AdjuntosSection({
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false, disabled: subiendo });
 
-    const necesarios = adjuntos.filter((a) => a.categoria === 'necesario');
+    const necesarios: (AdjuntoTarea | AdjuntoDeTareaHija)[] = [
+        ...adjuntos.filter((a) => a.categoria === 'necesario'),
+        ...adjuntosDeTareasHijas,
+    ];
     const evidencia = adjuntos.filter((a) => a.categoria === 'evidencia');
 
     return (
@@ -144,11 +161,11 @@ export function AdjuntosSection({
                     <h4 className="mb-2 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         Necesarios para la tarea
                     </h4>
-                    <ListaAdjuntos tareaId={tareaId} adjuntos={necesarios} vacio="Sin archivos de referencia todavía." />
+                    <ListaAdjuntos adjuntos={necesarios} vacio="Sin archivos de referencia todavía." />
                 </div>
                 <div>
                     <h4 className="mb-2 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">Evidencia</h4>
-                    <ListaAdjuntos tareaId={tareaId} adjuntos={evidencia} vacio="Todavía no hay evidencia subida." />
+                    <ListaAdjuntos adjuntos={evidencia} vacio="Todavía no hay evidencia subida." />
                 </div>
             </div>
         </div>

@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import type { ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
+import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import { Head } from '@inertiajs/react';
 import {
     Ban,
@@ -36,6 +36,7 @@ interface Props {
     rolUsuario: RolUsuarioTarea;
     usuarios: Persona[];
     checklistPersonal: ChecklistPersonalItem[];
+    adjuntosDeTareasHijas: AdjuntoDeTareaHija[];
     permisos: PermisosTarea;
 }
 
@@ -51,7 +52,7 @@ function calcularPlazo(fechaInicio: string | null, fechaCompromiso: string): str
     return `${dias} día${dias === 1 ? '' : 's'}`;
 }
 
-export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, permisos }: Props) {
+export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPersonal, adjuntosDeTareasHijas, permisos }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: tarea.titulo, href: `/tareas/${tarea.id}` },
@@ -100,7 +101,8 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                                         </p>
                                         <p className="mt-1.5 flex items-center gap-1.5 font-medium text-foreground">
                                             <Calendar className="size-4 shrink-0 text-gris-1" />
-                                            {formatearFecha(tarea.fecha_inicio)} — {formatearFecha(tarea.fecha_compromiso)}
+                                            {tarea.fecha_inicio ? formatearFecha(tarea.fecha_inicio) : 'Sin definir'} —{' '}
+                                            {formatearFecha(tarea.fecha_compromiso)}
                                         </p>
                                     </div>
                                     <div>
@@ -273,7 +275,12 @@ export default function TareaShow({ tarea, rolUsuario, usuarios, checklistPerson
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <AdjuntosSection tareaId={tarea.id} adjuntos={tarea.adjuntos} puedeAdjuntar={permisos.puedeAdjuntar} />
+                            <AdjuntosSection
+                                tareaId={tarea.id}
+                                adjuntos={tarea.adjuntos}
+                                adjuntosDeTareasHijas={adjuntosDeTareasHijas}
+                                puedeAdjuntar={permisos.puedeAdjuntar}
+                            />
                         </CardContent>
                     </Card>
                 </div>

@@ -210,4 +210,56 @@ class AdjuntoTareaTest extends TestCase
             ->get("/tareas/{$tareaB->id}/adjuntos/{$adjunto->id}/descargar")
             ->assertNotFound();
     }
+
+    public function test_la_evidencia_de_una_tarea_hija_aparece_en_la_tarea_padre(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsablePadre = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $responsableHija = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tareaPadre = Tarea::factory()->create([
+            "responsable_id" => $responsablePadre->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tareaHija = Tarea::factory()->hijaDe($tareaPadre)->create([
+            "responsable_id" => $responsableHija->id,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("resultado.pdf", 100, "application/pdf");
+        $this->actingAs($responsableHija)->post("/tareas/{$tareaHija->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "evidencia",
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $response = $this->actingAs($responsablePadre)->get("/tareas/{$tareaPadre->id}")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("adjuntosDeTareasHijas", 1)
+            ->where("adjuntosDeTareasHijas.0.nombre_original", "resultado.pdf")
+            ->where("adjuntosDeTareasHijas.0.tarea_id", $tareaHija->id)
+            ->where("adjuntosDeTareasHijas.0.tarea_hija_titulo", $tareaHija->titulo));
+    }
+
+    public function test_los_necesarios_de_una_tarea_hija_no_aparecen_en_la_tarea_padre(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsablePadre = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $responsableHija = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tareaPadre = Tarea::factory()->create([
+            "responsable_id" => $responsablePadre->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tareaHija = Tarea::factory()->hijaDe($tareaPadre)->create([
+            "responsable_id" => $responsableHija->id,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("plano.pdf", 100, "application/pdf");
+        $this->actingAs($responsableHija)->post("/tareas/{$tareaHija->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "necesario",
+        ]);
+
+        $response = $this->actingAs($responsablePadre)->get("/tareas/{$tareaPadre->id}")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page->has("adjuntosDeTareasHijas", 0));
+    }
 }

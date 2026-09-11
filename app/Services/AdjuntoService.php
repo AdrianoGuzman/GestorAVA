@@ -9,6 +9,7 @@ use App\Models\AdjuntoTarea;
 use App\Models\Tarea;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class AdjuntoService
@@ -55,5 +56,32 @@ class AdjuntoService
     public function descargar(AdjuntoTarea $adjunto): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         return Storage::disk("local")->download($adjunto->ruta, $adjunto->nombre_original);
+    }
+
+    /**
+     * Evidencia subida en las tareas hijas (RF-21/22, Oscar) de $tarea,
+     * para mostrarla junto a los adjuntos "necesarios" de $tarea sin
+     * duplicar el archivo ni tener que reenviarlo por fuera del sistema.
+     * Requiere permiso de RF-19 sobre la tarea hija? No -- quien ve la
+     * tarea padre tiene interes legitimo en ver que la desbloquea, la
+     * descarga sigue yendo contra la tarea hija real (ruta propia).
+     */
+    public function deTareasHijas(Tarea $tarea): Collection
+    {
+        return $tarea->tareasHijas()
+            ->with(["adjuntos" => fn ($query) => $query->where("categoria", CategoriaAdjunto::Evidencia)->with("usuario")])
+            ->get()
+            ->flatMap(fn (Tarea $hija) => $hija->adjuntos->map(fn (AdjuntoTarea $adjunto) => [
+                "id" => $adjunto->id,
+                "tarea_id" => $adjunto->tarea_id,
+                "nombre_original" => $adjunto->nombre_original,
+                "mime_type" => $adjunto->mime_type,
+                "tamano_bytes" => $adjunto->tamano_bytes,
+                "categoria" => $adjunto->categoria,
+                "created_at" => $adjunto->created_at,
+                "usuario" => $adjunto->usuario,
+                "tarea_hija_titulo" => $hija->titulo,
+            ]))
+            ->values();
     }
 }

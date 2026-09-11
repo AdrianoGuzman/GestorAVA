@@ -40,12 +40,18 @@ export type CategoriaAdjunto = 'necesario' | 'evidencia';
 
 export interface AdjuntoTarea {
     id: number;
+    tarea_id: number;
     nombre_original: string;
     mime_type: string;
     tamano_bytes: number;
     categoria: CategoriaAdjunto;
     created_at: string;
     usuario: UsuarioTarea | null;
+}
+
+/** Evidencia de una tarea hija (RF-21/22), mostrada en la tarea padre para no reenviar archivos por fuera del sistema. */
+export interface AdjuntoDeTareaHija extends AdjuntoTarea {
+    tarea_hija_titulo: string;
 }
 
 export interface ChecklistPersonalItem {

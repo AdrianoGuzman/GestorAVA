@@ -78,6 +78,7 @@ class TareaController extends Controller
                 ->where("usuario_id", $usuario->id)
                 ->orderBy("created_at")
                 ->get(),
+            "adjuntosDeTareasHijas" => $this->adjuntoService->deTareasHijas($tarea),
             "permisos" => [
                 "puedeReasignar" => $this->permisos->puedeReasignar($tarea, $usuario),
                 "puedeAgregarColaborador" => $this->permisos->puedeAgregarColaborador($tarea, $usuario),
