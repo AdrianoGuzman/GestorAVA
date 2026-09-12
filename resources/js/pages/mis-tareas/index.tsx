@@ -4,17 +4,23 @@ import type { Persona } from '@/components/tareas/persona-picker';
 import { TareaDetalleModal, useTareaDetalleModal } from '@/components/tareas/tarea-detalle-modal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
+import {
+    ATRASADA_BADGE_CLASSES,
+    calcularHorasAtrasoEntrega,
+    ENTREGADA_CON_ATRASO_BADGE_CLASSES,
+    ESTADO_TAREA_BADGE_CLASSES,
+    formatearDuracionAtraso,
+    ROL_USUARIO_LABELS,
+} from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, TareaResumen } from '@/types/tarea';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, Gauge, ListFilter, ListTodo, Plus, Search } from 'lucide-react';
+import { Calendar, CheckCircle2, Gauge, ListFilter, ListTodo, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -69,33 +75,45 @@ function actualizarFiltros(filtros: FiltrosMisTareas, cambios: Partial<FiltrosMi
 }
 
 function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: number) => void }) {
-    const mostrarVencimiento = tarea.esta_atrasada || esManana(tarea.fecha_compromiso);
+    const completada = tarea.estado === 'completada';
+    const entregadaConAtraso = completada && tarea.esta_atrasada;
+    const mostrarVencimiento = !completada && (tarea.esta_atrasada || esManana(tarea.fecha_compromiso));
 
     return (
         <button
             type="button"
             onClick={() => onAbrir(tarea.id)}
-            className="block w-full rounded-lg border border-border p-4 text-left transition-colors hover:border-verde-5 hover:bg-muted/30"
+            className={cn(
+                'block w-full rounded-lg border border-border p-4 text-left transition-colors hover:border-verde-5 hover:bg-muted/30',
+                completada && 'border-border/60 bg-muted/20',
+            )}
         >
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">{tarea.codigo}</p>
-                    <p className="truncate font-semibold text-foreground">{tarea.titulo}</p>
+                    <p className={cn('flex items-center gap-2 font-semibold', completada ? 'text-muted-foreground' : 'text-foreground')}>
+                        {completada && <CheckCircle2 className="size-5 shrink-0 text-verde-6" />}
+                        <span className="truncate">{tarea.titulo}</span>
+                    </p>
                 </div>
+                {entregadaConAtraso && (
+                    <AtrasadaBadge
+                        label={`${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
+                        className={ENTREGADA_CON_ATRASO_BADGE_CLASSES}
+                    />
+                )}
                 {mostrarVencimiento && <AtrasadaBadge className={tarea.esta_atrasada ? undefined : 'border-gris-1/30 bg-gris-1/10 text-gris-1'} />}
             </div>
 
             <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-                {tarea.unidad_organizacional && <p>Obra: {tarea.unidad_organizacional.nombre}</p>}
                 <p>
                     {tarea.responsable.name} · {ROL_USUARIO_LABELS[tarea.rol]}
                 </p>
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3">
                 <EstadoBadge estado={tarea.estado} />
-                <span className="text-sm font-medium text-verde-6">Ver tarea →</span>
             </div>
         </button>
     );
@@ -183,30 +201,64 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                             <ListFilter /> Varios filtros
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72 space-y-4" align="end">
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
-                            {ESTADOS.map((estado) => (
-                                <label key={estado.value} className="flex items-center gap-2 text-sm">
-                                    <Checkbox
-                                        checked={estadosSeleccionados.includes(estado.value)}
-                                        onCheckedChange={() => alternarEstado(estado.value)}
-                                    />
-                                    {estado.label}
-                                </label>
-                            ))}
+                    <PopoverContent className="w-80 space-y-5 p-4" align="end">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold text-foreground">Filtros</p>
+                            {filtrosActivos && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        actualizarFiltros(filtros, { estado: [], solo_atrasadas: false, unidad_organizacional_id: null })
+                                    }
+                                    className="text-xs font-medium text-verde-6 hover:underline"
+                                >
+                                    Limpiar filtros
+                                </button>
+                            )}
                         </div>
 
-                        <label className="flex items-center gap-2 text-sm">
-                            <Checkbox
-                                checked={!!filtros.solo_atrasadas}
-                                onCheckedChange={(checked) => actualizarFiltros(filtros, { solo_atrasadas: checked === true })}
-                            />
-                            Solo atrasadas
-                        </label>
-
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Obra</p>
+                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {ESTADOS.map((estado) => {
+                                    const activo = estadosSeleccionados.includes(estado.value);
+                                    return (
+                                        <button
+                                            key={estado.value}
+                                            type="button"
+                                            onClick={() => alternarEstado(estado.value)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                                                activo
+                                                    ? ESTADO_TAREA_BADGE_CLASSES[estado.value]
+                                                    : 'border-border text-muted-foreground hover:border-verde-3 hover:text-foreground',
+                                            )}
+                                        >
+                                            {estado.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-border pt-4">
+                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Vencimiento</p>
+                            <button
+                                type="button"
+                                onClick={() => actualizarFiltros(filtros, { solo_atrasadas: !filtros.solo_atrasadas })}
+                                className={cn(
+                                    'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                                    filtros.solo_atrasadas
+                                        ? ATRASADA_BADGE_CLASSES
+                                        : 'border-border text-muted-foreground hover:border-rojo-1/30 hover:text-rojo-1',
+                                )}
+                            >
+                                Solo atrasadas
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 border-t border-border pt-4">
+                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Unidad organizacional</p>
                             <Select
                                 value={filtros.unidad_organizacional_id ? String(filtros.unidad_organizacional_id) : 'todas'}
                                 onValueChange={(valor) =>
@@ -218,9 +270,9 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="todas">Todas</SelectItem>
-                                    {unidadesOrganizacionales.map((obra) => (
-                                        <SelectItem key={obra.id} value={String(obra.id)}>
-                                            {obra.nombre}
+                                    {unidadesOrganizacionales.map((unidad) => (
+                                        <SelectItem key={unidad.id} value={String(unidad.id)}>
+                                            {unidad.nombre}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

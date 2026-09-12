@@ -43,7 +43,7 @@ export function PersonaAvatar({
                     </Avatar>
                 </button>
             </PopoverTrigger>
-            <PopoverContent className="w-64" align="start">
+            <PopoverContent className="w-64 p-4" align="start">
                 <div className="flex items-center gap-3">
                     <Avatar className="size-12 border-2 border-verde-3">
                         <AvatarFallback className="text-base font-semibold bg-verde-2 text-gris-2">{iniciales(nombre)}</AvatarFallback>

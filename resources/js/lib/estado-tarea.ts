@@ -26,6 +26,45 @@ export const ESTADO_TAREA_BADGE_CLASSES: Record<EstadoTarea, string> = {
 
 export const ATRASADA_BADGE_CLASSES = 'border-rojo-1/30 bg-rojo-1/10 text-rojo-1';
 
+/**
+ * Version atenuada del badge de atraso: se usa cuando la tarea YA esta
+ * completada (se entrego tarde, pero ya esta resuelta) para que el check
+ * verde de completada siga siendo el protagonista de la tarjeta en vez de
+ * competir con el rojo de "Atrasada".
+ */
+export const ENTREGADA_CON_ATRASO_BADGE_CLASSES = 'border-gris-1/30 bg-gris-1/10 text-gris-1';
+
+/**
+ * Horas entre la medianoche de fecha_compromiso y el instante real en que se
+ * completo la tarea (aprox. via updated_at, estable porque no se puede
+ * editar una tarea ya completada). fecha_compromiso no tiene hora propia
+ * -- no hay una "hora limite" real -- asi que esto es una aproximacion
+ * cosmetica pensada solo para dar sensacion de magnitud del atraso, no un
+ * calculo contra un limite horario configurado.
+ */
+export function calcularHorasAtrasoEntrega(fechaCompromiso: string, completadaEn: string): number {
+    const compromiso = new Date(fechaCompromiso);
+    compromiso.setHours(0, 0, 0, 0);
+    const completada = new Date(completadaEn);
+
+    return Math.max(0, Math.floor((completada.getTime() - compromiso.getTime()) / (1000 * 60 * 60)));
+}
+
+export function formatearDuracionAtraso(horasTotales: number): string {
+    const dias = Math.floor(horasTotales / 24);
+    const horas = horasTotales % 24;
+    const partes: string[] = [];
+
+    if (dias > 0) {
+        partes.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+    }
+    if (horas > 0 || partes.length === 0) {
+        partes.push(`${horas} ${horas === 1 ? 'hora' : 'horas'}`);
+    }
+
+    return partes.join(' y ');
+}
+
 export const ROL_USUARIO_LABELS: Record<NonNullable<RolUsuarioTarea>, string> = {
     responsable: 'Responsable',
     colaborador: 'Colaborador',
