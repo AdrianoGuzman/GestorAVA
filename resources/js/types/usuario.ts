@@ -10,6 +10,27 @@ export const NIVEL_JERARQUICO_LABELS: Record<NivelJerarquico, string> = {
     asistente: 'Asistente',
 };
 
+/**
+ * Cargos de ejemplo acordes al rubro de AVA Montajes (obras/instalaciones
+ * electricas). Lista cerrada para RNF-08 -- si se necesita un cargo fuera
+ * de esta lista, agregarlo aca en vez de dejar el campo libre.
+ */
+export const CARGOS_AVA = [
+    'Gerente de Operaciones',
+    'Jefe de Obra',
+    'Supervisor de Obra',
+    'Ingeniero de Proyectos',
+    'Prevencionista de Riesgos',
+    'Administrativo de Obra',
+    'Bodeguero',
+    'Maestro Electricista',
+    'Electricista',
+    'Soldador',
+    'Ayudante de Montaje',
+] as const;
+
+export type CargoAva = (typeof CARGOS_AVA)[number];
+
 export interface UnidadOrganizacional {
     id: number;
     nombre: string;
