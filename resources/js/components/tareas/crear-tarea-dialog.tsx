@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { fechaMinimaCompromiso } from '@/lib/estado-tarea';
 import type { SharedData } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
 import { Plus, UserPlus, X } from 'lucide-react';
@@ -125,6 +126,7 @@ export function CrearTareaDialog({
                                 <Input
                                     id="fecha_compromiso"
                                     type="date"
+                                    min={fechaMinimaCompromiso()}
                                     value={data.fecha_compromiso}
                                     onChange={(e) => setData('fecha_compromiso', e.target.value)}
                                     required

@@ -178,10 +178,10 @@ function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas:
 
 /**
  * Toda la celda de un dia es clickeable. Si tiene tareas, abre el popover
- * con el detalle del dia. Si esta vacia, depende de la fecha: hoy o a
- * futuro abre directo el dialog de "Nueva tarea" con la fecha precargada
- * (no tiene sentido mostrar un popover vacio ahi); un dia pasado y vacio no
- * puede agendar nada nuevo (fecha_compromiso exige hoy o futuro), asi que
+ * con el detalle del dia. Si esta vacia y es estrictamente a futuro, abre
+ * directo el dialog de "Nueva tarea" con la fecha precargada (no tiene
+ * sentido mostrar un popover vacio ahi); un dia de hoy o pasado y vacio no
+ * puede agendar nada nuevo (fecha_compromiso exige a futuro, RF-04), asi que
  * ahi si muestra el popover informativo en vez de abrir un formulario que
  * el backend va a rechazar.
  */
@@ -193,6 +193,7 @@ function CeldaCalendario({
     onCrearEnFecha,
     className,
     children,
+    compacta = false,
 }: {
     dia: Date;
     tareas: TareaResumen[];
@@ -201,10 +202,14 @@ function CeldaCalendario({
     onCrearEnFecha: (dia: Date) => void;
     className?: string;
     children: React.ReactNode;
+    /** Año usa celdas muy chicas: sin espacio para el "+" que insinúa "crear tarea acá". */
+    compacta?: boolean;
 }) {
-    const esPasado = claveFecha(dia) < hoyClave;
+    // fecha_compromiso exige estrictamente a futuro (RF-04, after:today) --
+    // hoy tampoco es una fecha valida para agendar, igual que el pasado.
+    const puedeCrearAqui = claveFecha(dia) > hoyClave;
 
-    if (tareas.length === 0 && !esPasado) {
+    if (tareas.length === 0 && puedeCrearAqui) {
         return (
             <div
                 role="button"
@@ -216,9 +221,15 @@ function CeldaCalendario({
                         onCrearEnFecha(dia);
                     }
                 }}
-                className={cn('cursor-pointer text-left', className)}
+                className={cn(
+                    'group relative cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-verde-1/30',
+                    className,
+                )}
             >
                 {children}
+                {!compacta && (
+                    <Plus className="pointer-events-none absolute right-2 bottom-2 size-4 text-verde-6 opacity-0 transition-opacity group-hover:opacity-100" />
+                )}
             </div>
         );
     }
@@ -226,7 +237,11 @@ function CeldaCalendario({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <div role="button" tabIndex={0} className={cn('cursor-pointer text-left', className)}>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    className={cn('cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-muted/40', className)}
+                >
                     {children}
                 </div>
             </PopoverTrigger>
@@ -332,7 +347,7 @@ function VistaMes({
                                     <TareaBarra key={tarea.id} tarea={tarea} atenuada={!esDelMesActual} onAbrir={onAbrirTarea} />
                                 ))}
 
-                                {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
+                                {tareasOcultas > 0 && <p className="px-2 text-xs font-medium text-verde-6">+{tareasOcultas} más</p>}
                             </CeldaCalendario>
                         );
                     })}
@@ -376,9 +391,9 @@ function VistaSemana({
                             hoyClave={hoyClave}
                             onAbrirTarea={onAbrirTarea}
                             onCrearEnFecha={onCrearEnFecha}
-                            className="block w-full space-y-2"
+                            className="block min-h-32 w-full space-y-2 rounded-lg border border-border bg-muted/20 p-1.5"
                         >
-                            <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center justify-between px-0.5">
                                 <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                     {dia.toLocaleDateString('es-CL', { weekday: 'short' }).replace('.', '')}
                                 </p>
@@ -399,11 +414,11 @@ function VistaSemana({
                                 </div>
                             </div>
 
-                            <div className="min-h-24 space-y-1.5 rounded-lg border border-border bg-muted/20 p-1.5">
+                            <div className="space-y-1.5">
                                 {tareasVisibles.map((tarea) => (
                                     <TareaBarra key={tarea.id} tarea={tarea} atenuada={false} onAbrir={onAbrirTarea} />
                                 ))}
-                                {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
+                                {tareasOcultas > 0 && <p className="px-0.5 text-xs font-medium text-verde-6">+{tareasOcultas} más</p>}
                             </div>
                         </CeldaCalendario>
                     );
@@ -429,12 +444,12 @@ function VistaDia({
     const tareasDelDia = tareasPorDia.get(claveFecha(dia)) ?? [];
 
     if (tareasDelDia.length === 0) {
-        const esPasado = claveFecha(dia) < hoyClave;
+        const puedeCrearAqui = claveFecha(dia) > hoyClave;
 
         return (
             <div className="space-y-3 py-8 text-center">
                 <p className="text-sm text-muted-foreground">No hay tareas para este día.</p>
-                {!esPasado && (
+                {puedeCrearAqui && (
                     <Button variant="outline" size="sm" onClick={() => onCrearEnFecha(dia)}>
                         <Plus /> Nueva tarea
                     </Button>
@@ -491,7 +506,8 @@ function MiniMes({
                             hoyClave={hoyClave}
                             onAbrirTarea={onAbrirTarea}
                             onCrearEnFecha={onCrearEnFecha}
-                            className="flex w-full flex-col items-center gap-0.5 py-0.5"
+                            compacta
+                            className="flex w-full flex-col items-center gap-0.5 rounded border border-transparent py-0.5"
                         >
                             <span
                                 className={cn(

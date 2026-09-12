@@ -35,6 +35,21 @@ export const ATRASADA_BADGE_CLASSES = 'border-rojo-1/30 bg-rojo-1/10 text-rojo-1
 export const ENTREGADA_CON_ATRASO_BADGE_CLASSES = 'border-gris-1/30 bg-gris-1/10 text-gris-1';
 
 /**
+ * "YYYY-MM-DD" de mañana, en hora local -- fecha_compromiso debe ser
+ * estrictamente a futuro (RF-04/RF-18, `after:today`), asi que hoy ya no es
+ * una opcion valida. Se usa como `min` en los inputs de fecha de los
+ * dialogos de crear/duplicar tarea.
+ */
+export function fechaMinimaCompromiso(): string {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    const anio = manana.getFullYear();
+    const mes = String(manana.getMonth() + 1).padStart(2, '0');
+    const dia = String(manana.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+/**
  * Horas entre la medianoche de fecha_compromiso y el instante real en que se
  * completo la tarea (aprox. via updated_at, estable porque no se puede
  * editar una tarea ya completada). fecha_compromiso no tiene hora propia

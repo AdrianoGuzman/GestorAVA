@@ -22,7 +22,7 @@ class DuplicarTareaRequest extends FormRequest
             "titulo" => ["required", "string", "max:255"],
             "descripcion" => ["nullable", "string"],
             "fecha_inicio" => ["nullable", "date"],
-            "fecha_compromiso" => ["required", "date", "after_or_equal:today"],
+            "fecha_compromiso" => ["required", "date", "after:today"],
         ];
     }
 }

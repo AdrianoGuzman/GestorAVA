@@ -29,7 +29,7 @@ class CrearTareaRequest extends FormRequest
             "descripcion" => ["nullable", "string"],
             "responsable_id" => ["required", "integer", "exists:users,id"],
             "fecha_inicio" => ["nullable", "date"],
-            "fecha_compromiso" => ["required", "date", "after_or_equal:today"],
+            "fecha_compromiso" => ["required", "date", "after:today"],
             "colaboradores" => ["sometimes", "array"],
             "colaboradores.*" => ["integer", "exists:users,id"],
         ];

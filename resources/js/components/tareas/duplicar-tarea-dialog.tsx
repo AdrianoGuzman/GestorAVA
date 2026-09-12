@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { fechaMinimaCompromiso } from '@/lib/estado-tarea';
 import { useForm } from '@inertiajs/react';
 import { Copy } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -91,6 +92,7 @@ export function DuplicarTareaDialog({
                                 <Input
                                     id="fecha_compromiso"
                                     type="date"
+                                    min={fechaMinimaCompromiso()}
                                     value={data.fecha_compromiso}
                                     onChange={(e) => setData('fecha_compromiso', e.target.value)}
                                     required
