@@ -1,10 +1,9 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, ListTodo } from 'lucide-react';
+import { LayoutGrid, ListTodo } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -20,23 +19,19 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        url: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        url: 'https://laravel.com/docs/starter-kits',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+            {/* Trama corporativa (public/Trama_Corporativa.ai) como textura decorativa de
+                fondo, cubriendo el sidebar completo -- via mask-image en vez de <img>, para
+                que tome el color del sidebar (bg-sidebar-foreground) y se adapte solo entre
+                modo claro/oscuro. El resto del contenido va con z-10 para quedar por encima. */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-0 bg-sidebar-foreground/[0.06] [-webkit-mask-image:url(/trama-corporativa.png)] [-webkit-mask-position:center] [-webkit-mask-repeat:no-repeat] [-webkit-mask-size:cover] [mask-image:url(/trama-corporativa.png)] [mask-position:center] [mask-repeat:no-repeat] [mask-size:cover]"
+            />
+
+            <SidebarHeader className="relative z-10">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
@@ -48,12 +43,11 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="relative z-10 bg-transparent">
                 <NavMain items={mainNavItems} />
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+            <SidebarFooter className="relative z-10">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
