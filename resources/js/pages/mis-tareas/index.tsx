@@ -5,7 +5,7 @@ import { TareaDetalleModal, useTareaDetalleModal } from '@/components/tareas/tar
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     ATRASADA_BADGE_CLASSES,
@@ -20,7 +20,7 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, TareaResumen } from '@/types/tarea';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -136,12 +136,430 @@ function claseBarraTarea(tarea: TareaResumen): string {
 
 const ETIQUETAS_DIAS_SEMANA = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
-const MAX_TAREAS_VISIBLES_POR_DIA = 3;
+const MAX_TAREAS_VISIBLES_MES = 3;
+const MAX_TAREAS_VISIBLES_SEMANA = 6;
 
-function TabCalendario({ tareas, onAbrirTarea }: { tareas: TareaResumen[]; onAbrirTarea: (id: number) => void }) {
-    const [mesActual, setMesActual] = useState(() => primerDiaDelMes(new Date()));
+type VistaCalendario = 'dia' | 'semana' | 'mes' | 'anio';
 
-    const dias = useMemo(() => generarGrillaMes(mesActual), [mesActual]);
+const VISTAS_CALENDARIO: { value: VistaCalendario; label: string }[] = [
+    { value: 'dia', label: 'Día' },
+    { value: 'semana', label: 'Semana' },
+    { value: 'mes', label: 'Mes' },
+    { value: 'anio', label: 'Año' },
+];
+
+function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas: TareaResumen[]; onAbrirTarea: (id: number) => void }) {
+    return (
+        <>
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        {dia.toLocaleDateString('es-CL', { weekday: 'short' }).replace('.', '')}
+                    </p>
+                    <p className="text-3xl font-bold text-foreground">{dia.getDate()}</p>
+                </div>
+                <PopoverClose className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                    <X className="size-4" />
+                </PopoverClose>
+            </div>
+
+            {tareas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay tareas registradas este día.</p>
+            ) : (
+                <div className="space-y-1.5">
+                    {tareas.map((tarea) => (
+                        <TareaBarra key={tarea.id} tarea={tarea} atenuada={false} onAbrir={onAbrirTarea} />
+                    ))}
+                </div>
+            )}
+        </>
+    );
+}
+
+/**
+ * Toda la celda de un dia es clickeable. Si tiene tareas, abre el popover
+ * con el detalle del dia. Si esta vacia, depende de la fecha: hoy o a
+ * futuro abre directo el dialog de "Nueva tarea" con la fecha precargada
+ * (no tiene sentido mostrar un popover vacio ahi); un dia pasado y vacio no
+ * puede agendar nada nuevo (fecha_compromiso exige hoy o futuro), asi que
+ * ahi si muestra el popover informativo en vez de abrir un formulario que
+ * el backend va a rechazar.
+ */
+function CeldaCalendario({
+    dia,
+    tareas,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+    className,
+    children,
+}: {
+    dia: Date;
+    tareas: TareaResumen[];
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+    className?: string;
+    children: React.ReactNode;
+}) {
+    const esPasado = claveFecha(dia) < hoyClave;
+
+    if (tareas.length === 0 && !esPasado) {
+        return (
+            <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onCrearEnFecha(dia)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onCrearEnFecha(dia);
+                    }
+                }}
+                className={cn('cursor-pointer text-left', className)}
+            >
+                {children}
+            </div>
+        );
+    }
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <div role="button" tabIndex={0} className={cn('cursor-pointer text-left', className)}>
+                    {children}
+                </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 space-y-3 p-4" align="start">
+                <DiaPopoverContenido dia={dia} tareas={tareas} onAbrirTarea={onAbrirTarea} />
+            </PopoverContent>
+        </Popover>
+    );
+}
+
+function TareaBarra({
+    tarea,
+    atenuada,
+    onAbrir,
+}: {
+    tarea: TareaResumen;
+    atenuada: boolean;
+    onAbrir: (id: number) => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                onAbrir(tarea.id);
+            }}
+            className={cn(
+                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
+                atenuada && 'opacity-60',
+                claseBarraTarea(tarea),
+            )}
+        >
+            {tarea.titulo}
+        </button>
+    );
+}
+
+function VistaMes({
+    mesAncla,
+    tareasPorDia,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    mesAncla: Date;
+    tareasPorDia: Map<string, TareaResumen[]>;
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    const dias = useMemo(() => generarGrillaMes(mesAncla), [mesAncla]);
+
+    return (
+        <div className="overflow-x-auto">
+            <div className="min-w-[840px]">
+                <div className="grid grid-cols-7 gap-2 px-1 pb-1">
+                    {ETIQUETAS_DIAS_SEMANA.map((etiqueta) => (
+                        <p key={etiqueta} className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                            {etiqueta}
+                        </p>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                    {dias.map((dia) => {
+                        const clave = claveFecha(dia);
+                        const esHoy = clave === hoyClave;
+                        const esDelMesActual = dia.getMonth() === mesAncla.getMonth();
+                        const tareasDelDia = tareasPorDia.get(clave) ?? [];
+                        const tareasVisibles = tareasDelDia.slice(0, MAX_TAREAS_VISIBLES_MES);
+                        const tareasOcultas = tareasDelDia.length - tareasVisibles.length;
+
+                        return (
+                            <CeldaCalendario
+                                key={clave}
+                                dia={dia}
+                                tareas={tareasDelDia}
+                                hoyClave={hoyClave}
+                                onAbrirTarea={onAbrirTarea}
+                                onCrearEnFecha={onCrearEnFecha}
+                                className={cn(
+                                    'block min-h-24 w-full space-y-1.5 rounded-lg border p-1.5',
+                                    esDelMesActual ? 'border-border bg-muted/20' : 'border-border/50 bg-muted/5',
+                                )}
+                            >
+                                <div className="flex items-center gap-1">
+                                    <span
+                                        className={cn(
+                                            'flex size-6 items-center justify-center rounded-full text-sm font-semibold',
+                                            esHoy ? 'bg-verde-5 text-gris-2' : esDelMesActual ? 'text-foreground' : 'text-muted-foreground',
+                                        )}
+                                    >
+                                        {dia.getDate()}
+                                    </span>
+                                    {!esDelMesActual && (
+                                        <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                            {dia.toLocaleDateString('es-CL', { month: 'short' }).replace('.', '')}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {tareasVisibles.map((tarea) => (
+                                    <TareaBarra key={tarea.id} tarea={tarea} atenuada={!esDelMesActual} onAbrir={onAbrirTarea} />
+                                ))}
+
+                                {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
+                            </CeldaCalendario>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VistaSemana({
+    lunes,
+    tareasPorDia,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    lunes: Date;
+    tareasPorDia: Map<string, TareaResumen[]>;
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i)), [lunes]);
+
+    return (
+        <div className="overflow-x-auto">
+            <div className="grid min-w-[840px] grid-cols-7 gap-2">
+                {dias.map((dia) => {
+                    const clave = claveFecha(dia);
+                    const esHoy = clave === hoyClave;
+                    const esPrimerDiaDelMes = dia.getDate() === 1;
+                    const tareasDelDia = tareasPorDia.get(clave) ?? [];
+                    const tareasVisibles = tareasDelDia.slice(0, MAX_TAREAS_VISIBLES_SEMANA);
+                    const tareasOcultas = tareasDelDia.length - tareasVisibles.length;
+
+                    return (
+                        <CeldaCalendario
+                            key={clave}
+                            dia={dia}
+                            tareas={tareasDelDia}
+                            hoyClave={hoyClave}
+                            onAbrirTarea={onAbrirTarea}
+                            onCrearEnFecha={onCrearEnFecha}
+                            className="block w-full space-y-2"
+                        >
+                            <div className="flex items-center justify-between px-1">
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                    {dia.toLocaleDateString('es-CL', { weekday: 'short' }).replace('.', '')}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                    <span
+                                        className={cn(
+                                            'flex size-6 items-center justify-center rounded-full text-sm font-semibold',
+                                            esHoy ? 'bg-verde-5 text-gris-2' : 'text-foreground',
+                                        )}
+                                    >
+                                        {dia.getDate()}
+                                    </span>
+                                    {esPrimerDiaDelMes && (
+                                        <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                            {dia.toLocaleDateString('es-CL', { month: 'short' }).replace('.', '')}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="min-h-24 space-y-1.5 rounded-lg border border-border bg-muted/20 p-1.5">
+                                {tareasVisibles.map((tarea) => (
+                                    <TareaBarra key={tarea.id} tarea={tarea} atenuada={false} onAbrir={onAbrirTarea} />
+                                ))}
+                                {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
+                            </div>
+                        </CeldaCalendario>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function VistaDia({
+    dia,
+    tareasPorDia,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    dia: Date;
+    tareasPorDia: Map<string, TareaResumen[]>;
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    const tareasDelDia = tareasPorDia.get(claveFecha(dia)) ?? [];
+
+    if (tareasDelDia.length === 0) {
+        const esPasado = claveFecha(dia) < hoyClave;
+
+        return (
+            <div className="space-y-3 py-8 text-center">
+                <p className="text-sm text-muted-foreground">No hay tareas para este día.</p>
+                {!esPasado && (
+                    <Button variant="outline" size="sm" onClick={() => onCrearEnFecha(dia)}>
+                        <Plus /> Nueva tarea
+                    </Button>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {tareasDelDia.map((tarea) => (
+                <TareaCard key={tarea.id} tarea={tarea} onAbrir={onAbrirTarea} />
+            ))}
+        </div>
+    );
+}
+
+function MiniMes({
+    mes,
+    tareasPorDia,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    mes: Date;
+    tareasPorDia: Map<string, TareaResumen[]>;
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    const dias = useMemo(() => generarGrillaMes(mes), [mes]);
+
+    return (
+        <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">{capitalizar(mes.toLocaleDateString('es-CL', { month: 'long' }))}</p>
+            <div className="grid grid-cols-7 gap-y-1">
+                {ETIQUETAS_DIAS_SEMANA.map((etiqueta) => (
+                    <p key={etiqueta} className="text-center text-[10px] font-medium text-muted-foreground">
+                        {etiqueta[0]}
+                    </p>
+                ))}
+                {dias.map((dia) => {
+                    const clave = claveFecha(dia);
+                    const esDelMesActual = dia.getMonth() === mes.getMonth();
+                    const esHoy = clave === hoyClave;
+                    const tareasDelDia = esDelMesActual ? (tareasPorDia.get(clave) ?? []) : [];
+                    const tieneTareas = tareasDelDia.length > 0;
+
+                    return (
+                        <CeldaCalendario
+                            key={clave}
+                            dia={dia}
+                            tareas={tareasDelDia}
+                            hoyClave={hoyClave}
+                            onAbrirTarea={onAbrirTarea}
+                            onCrearEnFecha={onCrearEnFecha}
+                            className="flex w-full flex-col items-center gap-0.5 py-0.5"
+                        >
+                            <span
+                                className={cn(
+                                    'flex size-5 items-center justify-center rounded-full text-[11px]',
+                                    esHoy ? 'bg-verde-5 font-semibold text-gris-2' : esDelMesActual ? 'text-foreground' : 'text-muted-foreground/50',
+                                )}
+                            >
+                                {dia.getDate()}
+                            </span>
+                            <span className={cn('size-1 rounded-full', tieneTareas ? 'bg-verde-6' : 'bg-transparent')} />
+                        </CeldaCalendario>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function VistaAnio({
+    anio,
+    tareasPorDia,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    anio: number;
+    tareasPorDia: Map<string, TareaResumen[]>;
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    const meses = useMemo(() => Array.from({ length: 12 }, (_, i) => new Date(anio, i, 1)), [anio]);
+
+    return (
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            {meses.map((mes) => (
+                <MiniMes
+                    key={mes.getMonth()}
+                    mes={mes}
+                    tareasPorDia={tareasPorDia}
+                    hoyClave={hoyClave}
+                    onAbrirTarea={onAbrirTarea}
+                    onCrearEnFecha={onCrearEnFecha}
+                />
+            ))}
+        </div>
+    );
+}
+
+function etiquetaSemana(lunes: Date): string {
+    const domingo = sumarDias(lunes, 6);
+    const mismoMes = lunes.getMonth() === domingo.getMonth();
+
+    if (mismoMes) {
+        return `${lunes.getDate()}–${domingo.getDate()} de ${capitalizar(domingo.toLocaleDateString('es-CL', { month: 'long' }))} ${domingo.getFullYear()}`;
+    }
+
+    const inicio = capitalizar(lunes.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })).replace('.', '');
+    const fin = capitalizar(domingo.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })).replace('.', '');
+    return `${inicio} – ${fin} ${domingo.getFullYear()}`;
+}
+
+function TabCalendario({ tareas, usuarios, onAbrirTarea }: { tareas: TareaResumen[]; usuarios: Persona[]; onAbrirTarea: (id: number) => void }) {
+    const [cursor, setCursor] = useState(() => new Date());
+    const [vista, setVista] = useState<VistaCalendario>('mes');
+    const [direccion, setDireccion] = useState<-1 | 0 | 1>(0);
+    const [fechaNuevaTarea, setFechaNuevaTarea] = useState<Date | null>(null);
+
     const hoyClave = claveFecha(new Date());
 
     const tareasPorDia = useMemo(() => {
@@ -155,98 +573,129 @@ function TabCalendario({ tareas, onAbrirTarea }: { tareas: TareaResumen[]; onAbr
         return mapa;
     }, [tareas]);
 
-    const etiquetaMes = capitalizar(mesActual.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }));
+    const irAnterior = () => {
+        setDireccion(-1);
+        setCursor((actual) => {
+            if (vista === 'dia') return sumarDias(actual, -1);
+            if (vista === 'semana') return sumarDias(actual, -7);
+            if (vista === 'anio') return new Date(actual.getFullYear() - 1, actual.getMonth(), 1);
+            return new Date(actual.getFullYear(), actual.getMonth() - 1, 1);
+        });
+    };
+
+    const irSiguiente = () => {
+        setDireccion(1);
+        setCursor((actual) => {
+            if (vista === 'dia') return sumarDias(actual, 1);
+            if (vista === 'semana') return sumarDias(actual, 7);
+            if (vista === 'anio') return new Date(actual.getFullYear() + 1, actual.getMonth(), 1);
+            return new Date(actual.getFullYear(), actual.getMonth() + 1, 1);
+        });
+    };
+
+    const irHoy = () => {
+        setDireccion(0);
+        setCursor(new Date());
+    };
+
+    const cambiarVista = (nuevaVista: VistaCalendario) => {
+        setDireccion(0);
+        setVista(nuevaVista);
+    };
+
+    const onCrearEnFecha = (dia: Date) => setFechaNuevaTarea(dia);
+
+    const etiqueta = useMemo(() => {
+        if (vista === 'dia') {
+            return capitalizar(cursor.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+        }
+        if (vista === 'semana') {
+            return etiquetaSemana(obtenerLunes(cursor));
+        }
+        if (vista === 'anio') {
+            return String(cursor.getFullYear());
+        }
+        return capitalizar(cursor.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }));
+    }, [cursor, vista]);
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-1">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setMesActual((actual) => new Date(actual.getFullYear(), actual.getMonth() - 1, 1))}
-                    >
-                        <ChevronLeft />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setMesActual(primerDiaDelMes(new Date()))}>
+                    <Button variant="outline" size="sm" onClick={irHoy}>
                         Hoy
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setMesActual((actual) => new Date(actual.getFullYear(), actual.getMonth() + 1, 1))}
-                    >
+                    <Button variant="outline" size="icon" onClick={irAnterior}>
+                        <ChevronLeft />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={irSiguiente}>
                         <ChevronRight />
                     </Button>
+                    <p className="ml-2 text-sm font-semibold text-foreground">{etiqueta}</p>
                 </div>
-                <p className="text-sm font-semibold text-foreground">{etiquetaMes}</p>
-            </div>
 
-            <div className="overflow-x-auto">
-                <div className="min-w-[840px]">
-                    <div className="grid grid-cols-7 gap-2 px-1 pb-1">
-                        {ETIQUETAS_DIAS_SEMANA.map((etiqueta) => (
-                            <p key={etiqueta} className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                {etiqueta}
-                            </p>
+                <Select value={vista} onValueChange={(valor) => cambiarVista(valor as VistaCalendario)}>
+                    <SelectTrigger className="w-28">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {VISTAS_CALENDARIO.map((v) => (
+                            <SelectItem key={v.value} value={v.value}>
+                                {v.label}
+                            </SelectItem>
                         ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-2">
-                        {dias.map((dia) => {
-                            const clave = claveFecha(dia);
-                            const esHoy = clave === hoyClave;
-                            const esDelMesActual = dia.getMonth() === mesActual.getMonth();
-                            const tareasDelDia = tareasPorDia.get(clave) ?? [];
-                            const tareasVisibles = tareasDelDia.slice(0, MAX_TAREAS_VISIBLES_POR_DIA);
-                            const tareasOcultas = tareasDelDia.length - tareasVisibles.length;
-
-                            return (
-                                <div
-                                    key={clave}
-                                    className={cn(
-                                        'min-h-24 space-y-1.5 rounded-lg border p-1.5',
-                                        esDelMesActual ? 'border-border bg-muted/20' : 'border-border/50 bg-muted/5',
-                                    )}
-                                >
-                                    <div className="flex items-center gap-1">
-                                        <span
-                                            className={cn(
-                                                'flex size-6 items-center justify-center rounded-full text-sm font-semibold',
-                                                esHoy ? 'bg-verde-5 text-gris-2' : esDelMesActual ? 'text-foreground' : 'text-muted-foreground',
-                                            )}
-                                        >
-                                            {dia.getDate()}
-                                        </span>
-                                        {!esDelMesActual && (
-                                            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                                                {dia.toLocaleDateString('es-CL', { month: 'short' }).replace('.', '')}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {tareasVisibles.map((tarea) => (
-                                        <button
-                                            key={tarea.id}
-                                            type="button"
-                                            onClick={() => onAbrirTarea(tarea.id)}
-                                            className={cn(
-                                                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
-                                                !esDelMesActual && 'opacity-60',
-                                                claseBarraTarea(tarea),
-                                            )}
-                                        >
-                                            {tarea.titulo}
-                                        </button>
-                                    ))}
-
-                                    {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                    </SelectContent>
+                </Select>
             </div>
+
+            <div
+                key={`${vista}-${claveFecha(cursor)}`}
+                className={cn(
+                    'animate-in fade-in-0 duration-300',
+                    direccion === 1 && 'slide-in-from-right-4',
+                    direccion === -1 && 'slide-in-from-left-4',
+                )}
+            >
+                {vista === 'mes' && (
+                    <VistaMes
+                        mesAncla={primerDiaDelMes(cursor)}
+                        tareasPorDia={tareasPorDia}
+                        hoyClave={hoyClave}
+                        onAbrirTarea={onAbrirTarea}
+                        onCrearEnFecha={onCrearEnFecha}
+                    />
+                )}
+                {vista === 'semana' && (
+                    <VistaSemana
+                        lunes={obtenerLunes(cursor)}
+                        tareasPorDia={tareasPorDia}
+                        hoyClave={hoyClave}
+                        onAbrirTarea={onAbrirTarea}
+                        onCrearEnFecha={onCrearEnFecha}
+                    />
+                )}
+                {vista === 'dia' && (
+                    <VistaDia dia={cursor} tareasPorDia={tareasPorDia} hoyClave={hoyClave} onAbrirTarea={onAbrirTarea} onCrearEnFecha={onCrearEnFecha} />
+                )}
+                {vista === 'anio' && (
+                    <VistaAnio
+                        anio={cursor.getFullYear()}
+                        tareasPorDia={tareasPorDia}
+                        hoyClave={hoyClave}
+                        onAbrirTarea={onAbrirTarea}
+                        onCrearEnFecha={onCrearEnFecha}
+                    />
+                )}
+            </div>
+
+            <CrearTareaDialog
+                personas={usuarios}
+                open={fechaNuevaTarea !== null}
+                onOpenChange={(open) => {
+                    if (!open) setFechaNuevaTarea(null);
+                }}
+                fechaCompromisoInicial={fechaNuevaTarea ? claveFecha(fechaNuevaTarea) : undefined}
+            />
         </div>
     );
 }
@@ -529,7 +978,7 @@ export default function MisTareasIndex(props: Props) {
 
                 {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
 
-                {tab === 'calendario' && <TabCalendario tareas={props.tareas} onAbrirTarea={modal.abrir} />}
+                {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
 
                 {tab === 'metricas' && (
                     <Card>
