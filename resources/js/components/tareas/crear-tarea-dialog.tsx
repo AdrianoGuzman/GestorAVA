@@ -1,7 +1,7 @@
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -86,9 +86,16 @@ export function CrearTareaDialog({
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent>
+        <>
+            <NonModalOverlay open={open} onClose={() => setOpen(false)} />
+
+            {/* modal={false}: adentro se abre un Popover (PersonaPicker) para elegir
+                responsable/colaboradores -- con el modal atrapando el foco, ese
+                Popover queda visible pero inerte (no se puede elegir a nadie). Ver
+                el mismo patron en tarea-detalle-modal.tsx. */}
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+                {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+                <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
                         <DialogTitle>Nueva tarea</DialogTitle>
@@ -104,7 +111,12 @@ export function CrearTareaDialog({
 
                         <div className="grid gap-2">
                             <Label htmlFor="descripcion">Descripción</Label>
-                            <Textarea id="descripcion" value={data.descripcion} onChange={(e) => setData('descripcion', e.target.value)} />
+                            <Textarea
+                                id="descripcion"
+                                value={data.descripcion}
+                                onChange={(e) => setData('descripcion', e.target.value)}
+                                className="max-h-40 overflow-y-auto"
+                            />
                             {errors.descripcion && <p className="text-sm text-rojo-1">{errors.descripcion}</p>}
                         </div>
 
@@ -127,6 +139,7 @@ export function CrearTareaDialog({
                                     type="date"
                                     value={data.fecha_compromiso}
                                     onChange={(e) => setData('fecha_compromiso', e.target.value)}
+                                    min={data.fecha_inicio || undefined}
                                     required
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
@@ -139,6 +152,7 @@ export function CrearTareaDialog({
                                 personas={personas}
                                 seleccionadosIds={responsable ? [responsable.id] : []}
                                 cerrarAlSeleccionar
+                                side="top"
                                 onSelect={(persona) => {
                                     setResponsable(persona);
                                     setData('responsable_id', String(persona.id));
@@ -146,7 +160,7 @@ export function CrearTareaDialog({
                                 trigger={
                                     <button
                                         type="button"
-                                        className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-verde-1"
+                                        className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-verde-1 hover:text-gris-2"
                                     >
                                         {responsable ? (
                                             <>
@@ -193,6 +207,8 @@ export function CrearTareaDialog({
                                 personas={personas}
                                 seleccionadosIds={colaboradores.map((p) => p.id)}
                                 onSelect={alternarColaborador}
+                                cerrarAlSeleccionar
+                                side="top"
                                 trigger={
                                     <Button type="button" variant="outline" size="sm" className="w-fit">
                                         <UserPlus /> Agregar persona
@@ -209,6 +225,7 @@ export function CrearTareaDialog({
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+            </Dialog>
+        </>
     );
 }

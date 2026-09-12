@@ -7,6 +7,8 @@ export interface Auth {
     puedeAdministrarEstructura: boolean;
     /** RF-15/RF-17: contador de la campana de notificaciones. */
     notificacionesNoLeidas: number;
+    /** Baja de usuarios: solo Directorio, ver NivelJerarquico::puedeEliminarUsuarios(). */
+    puedeEliminarUsuarios: boolean;
 }
 
 export interface BreadcrumbItem {

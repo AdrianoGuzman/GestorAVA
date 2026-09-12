@@ -29,7 +29,17 @@ class CrearTareaRequest extends FormRequest
             "descripcion" => ["nullable", "string"],
             "responsable_id" => ["required", "integer", "exists:users,id"],
             "fecha_inicio" => ["nullable", "date"],
-            "fecha_compromiso" => ["required", "date", "after_or_equal:today"],
+            "fecha_compromiso" => [
+                "required",
+                "date",
+                "after_or_equal:today",
+                function ($attribute, $value, $fail) {
+                    $inicio = $this->input("fecha_inicio");
+                    if ($inicio && $value < $inicio) {
+                        $fail("La fecha de término no puede ser anterior a la fecha de inicio.");
+                    }
+                },
+            ],
             "colaboradores" => ["sometimes", "array"],
             "colaboradores.*" => ["integer", "exists:users,id"],
         ];

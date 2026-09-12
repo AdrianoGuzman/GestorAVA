@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { formatearRut } from '@/lib/rut';
 
 interface RegisterForm {
     [key: string]: string;
@@ -134,8 +135,9 @@ export default function Register() {
                             type="text"
                             required
                             tabIndex={6}
+                            maxLength={10}
                             value={data.rut}
-                            onChange={(e) => setData("rut", e.target.value)}
+                            onChange={(e) => setData("rut", formatearRut(e.target.value))}
                             disabled={processing}
                             placeholder="12345678-9"
                         />

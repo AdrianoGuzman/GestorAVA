@@ -756,7 +756,9 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
 function ResumenContadores({ contadores }: { contadores: Props['contadores'] }) {
     return (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border bg-muted/30 px-5 py-4">
-            <span className="text-lg font-bold text-foreground">{contadores.total} tareas en total</span>
+            <span className="text-lg font-bold text-foreground">
+                {contadores.total} {contadores.total === 1 ? 'tarea' : 'tareas'} en total
+            </span>
             {contadores.atrasadas > 0 && (
                 <span className="flex items-center gap-2 text-sm font-medium text-rojo-1">
                     <span className="size-2.5 rounded-full bg-rojo-1" /> {contadores.atrasadas} atrasadas

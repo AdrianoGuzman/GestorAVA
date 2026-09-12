@@ -36,7 +36,7 @@ class RegisteredUserController extends Controller
             "apellido_1" => "required|string|max:255",
             "apellido_2" => "required|string|max:255",
             "cargo" => "required|string|max:255",
-            "rut" => "required|string|max:255|unique:".User::class,
+            "rut" => ["required", "string", "regex:/^\d{1,8}-[\dkK]$/", "unique:".User::class],
             "email" => "required|string|lowercase|email|max:255|unique:".User::class,
             "password" => ["required", "confirmed", Rules\Password::defaults()],
         ]);

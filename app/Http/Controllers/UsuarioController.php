@@ -13,10 +13,11 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * RNF-08: administracion minima de la estructura organizacional -- alta de
- * usuarios y edicion de su nivel jerarquico/unidad. Solo Directorio y
- * Gerencia pueden acceder — NivelJerarquico::puedeAdministrarEstructura().
- * Baja de usuarios y gestion completa de la estructura quedan para Fase 2.
+ * RNF-08: administracion minima de la estructura organizacional -- alta y
+ * edicion de nivel jerarquico/unidad (Directorio y Gerencia, ver
+ * NivelJerarquico::puedeAdministrarEstructura()), y baja de usuarios (mas
+ * sensible, solo Directorio, ver puedeEliminarUsuarios()).
+ * Gestion completa de la estructura organizacional (unidades) queda para Fase 2.
  */
 class UsuarioController extends Controller
 {
@@ -48,5 +49,14 @@ class UsuarioController extends Controller
         $usuario = $this->usuarioService->actualizarNivelYUnidad($usuario, $request->validated(), $request->user());
 
         return back()->with("success", "Usuario \"{$usuario->name}\" actualizado correctamente.");
+    }
+
+    public function destroy(Request $request, User $usuario): RedirectResponse
+    {
+        $nombre = $usuario->name;
+
+        $this->usuarioService->eliminar($usuario, $request->user());
+
+        return back()->with("success", "Usuario \"{$nombre}\" eliminado correctamente.");
     }
 }
