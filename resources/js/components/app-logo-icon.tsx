@@ -1,13 +1,12 @@
 import { SVGAttributes } from 'react';
 
+/** Isotipo "AVA" (Logotipo-isotipo-04, public/Logotipo-isotipo-04.svgz) -- fill hereda el color del contenedor via currentColor, para que se adapte igual que el resto del sidebar entre modo claro/oscuro. */
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
-        <svg {...props} viewBox="0 0 40 42" xmlns="http://www.w3.org/2000/svg">
-            <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M17.2 5.63325L8.6 0.855469L0 5.63325V32.1434L16.2 41.1434L32.4 32.1434V23.699L40 19.4767V9.85547L31.4 5.07769L22.8 9.85547V18.2999L17.2 21.411V5.63325ZM38 18.2999L32.4 21.411V15.2545L38 12.1434V18.2999ZM36.9409 10.4439L31.4 13.5221L25.8591 10.4439L31.4 7.36561L36.9409 10.4439ZM24.8 18.2999V12.1434L30.4 15.2545V21.411L24.8 18.2999ZM23.8 20.0323L29.3409 23.1105L16.2 30.411L10.6591 27.3328L23.8 20.0323ZM7.6 27.9212L15.2 32.1434V38.2999L2 30.9666V7.92116L7.6 11.0323V27.9212ZM8.6 9.29991L3.05913 6.22165L8.6 3.14339L14.1409 6.22165L8.6 9.29991ZM30.4 24.8101L17.2 32.1434V38.2999L30.4 30.9666V24.8101ZM9.6 11.0323L15.2 7.92117V22.5221L9.6 25.6333V11.0323Z"
-            />
+        <svg {...props} viewBox="185 400 710 275" xmlns="http://www.w3.org/2000/svg">
+            <polygon fill="currentColor" points="236.13,656.15 361.21,423.85 486.31,656.15 432.69,656.15 361.21,523.4 289.73,656.15" />
+            <polygon fill="currentColor" points="664.93,423.85 539.85,656.15 414.76,423.85 468.37,423.85 539.85,556.6 611.33,423.85" />
+            <polygon fill="currentColor" points="593.69,656.15 718.77,423.85 843.87,656.15 790.25,656.15 718.77,523.4 647.3,656.15" />
         </svg>
     );
 }
