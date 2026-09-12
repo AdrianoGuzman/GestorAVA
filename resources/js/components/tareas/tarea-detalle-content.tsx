@@ -3,6 +3,7 @@ import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborado
 import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
+import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
@@ -222,6 +223,15 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                                 <UserX /> No puedo ser parte
                                             </Button>
                                         }
+                                    />
+                                )}
+                                {permisos.puedeDuplicar && (
+                                    <DuplicarTareaDialog
+                                        tareaId={tarea.id}
+                                        titulo={tarea.titulo}
+                                        descripcion={tarea.descripcion}
+                                        fechaInicio={tarea.fecha_inicio}
+                                        fechaCompromiso={tarea.fecha_compromiso}
                                     />
                                 )}
                             </div>

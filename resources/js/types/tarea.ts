@@ -139,4 +139,5 @@ export interface PermisosTarea {
     puedeUsarChecklistPersonal: boolean;
     puedeUsarChecklist: boolean;
     puedeAsignarDuenoChecklist: boolean;
+    puedeDuplicar: boolean;
 }
