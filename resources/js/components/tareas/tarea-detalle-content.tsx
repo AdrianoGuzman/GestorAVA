@@ -12,7 +12,8 @@ import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
+import { calcularHorasAtrasoEntrega, ENTREGADA_CON_ATRASO_BADGE_CLASSES, formatearDuracionAtraso, ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
+import { cn } from '@/lib/utils';
 import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import {
     Ban,
@@ -106,7 +107,13 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
                                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                         <EstadoBadge estado={tarea.estado} className="px-3 py-1 text-sm" />
-                                        {tarea.esta_atrasada && <AtrasadaBadge className="px-3 py-1 text-sm" />}
+                                        {tarea.esta_atrasada && tarea.estado === 'completada' && (
+                                            <AtrasadaBadge
+                                                label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
+                                                className={cn(ENTREGADA_CON_ATRASO_BADGE_CLASSES, 'px-3 py-1 text-sm')}
+                                            />
+                                        )}
+                                        {tarea.esta_atrasada && tarea.estado !== 'completada' && <AtrasadaBadge className="px-3 py-1 text-sm" />}
                                     </div>
                                 </div>
                                 <div>
