@@ -9,17 +9,18 @@ use Tests\TestCase;
 
 /**
  * RF-03: redireccion post-login segun rol y menu por nivel jerarquico.
- * El destino tras el login es el mismo para todos los niveles (dashboard
- * -- no hay paneles separados por nivel en el Sprint 1, eso es RF-20/Fase
- * 2). Lo que cambia por nivel es el conjunto de opciones de menu
- * disponible una vez adentro (D2.1), expuesto al frontend via el prop
- * compartido auth.puedeAdministrarEstructura (ver HandleInertiaRequests).
+ * El destino tras el login es el mismo para todos los niveles ("Mis
+ * tareas", RF-09 -- no hay paneles separados por nivel en el Sprint 1,
+ * eso es RF-20/Fase 2). Lo que cambia por nivel es el conjunto de
+ * opciones de menu disponible una vez adentro (D2.1), expuesto al
+ * frontend via el prop compartido auth.puedeAdministrarEstructura (ver
+ * HandleInertiaRequests).
  */
 class RedireccionPostLoginTest extends TestCase
 {
     use RefreshesDualSchemaDatabase;
 
-    public function test_todos_los_niveles_son_redirigidos_al_dashboard_tras_el_login(): void
+    public function test_todos_los_niveles_son_redirigidos_a_mis_tareas_tras_el_login(): void
     {
         foreach (NivelJerarquico::cases() as $nivel) {
             $usuario = User::factory()->conNivel($nivel)->create();
@@ -27,7 +28,7 @@ class RedireccionPostLoginTest extends TestCase
             $this->post('/login', [
                 'email' => $usuario->email,
                 'password' => 'password',
-            ])->assertRedirect(route('dashboard', absolute: false));
+            ])->assertRedirect(route('mis-tareas.index', absolute: false));
 
             $this->post('/logout');
         }
@@ -38,10 +39,10 @@ class RedireccionPostLoginTest extends TestCase
         $directorio = User::factory()->conNivel(NivelJerarquico::Directorio)->create();
         $gerencia = User::factory()->conNivel(NivelJerarquico::Gerencia)->create();
 
-        $this->actingAs($directorio)->get('/dashboard')
+        $this->actingAs($directorio)->get('/mis-tareas')
             ->assertInertia(fn ($page) => $page->where('auth.puedeAdministrarEstructura', true));
 
-        $this->actingAs($gerencia)->get('/dashboard')
+        $this->actingAs($gerencia)->get('/mis-tareas')
             ->assertInertia(fn ($page) => $page->where('auth.puedeAdministrarEstructura', true));
     }
 
@@ -50,10 +51,10 @@ class RedireccionPostLoginTest extends TestCase
         $jefeArea = User::factory()->conNivel(NivelJerarquico::JefeArea)->create();
         $asistente = User::factory()->conNivel(NivelJerarquico::Asistente)->create();
 
-        $this->actingAs($jefeArea)->get('/dashboard')
+        $this->actingAs($jefeArea)->get('/mis-tareas')
             ->assertInertia(fn ($page) => $page->where('auth.puedeAdministrarEstructura', false));
 
-        $this->actingAs($asistente)->get('/dashboard')
+        $this->actingAs($asistente)->get('/mis-tareas')
             ->assertInertia(fn ($page) => $page->where('auth.puedeAdministrarEstructura', false));
     }
 }

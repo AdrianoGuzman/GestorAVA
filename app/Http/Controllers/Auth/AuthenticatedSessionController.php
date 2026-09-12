@@ -28,11 +28,11 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      *
      * RF-03: el destino tras autenticar es el mismo para todos los niveles
-     * ("dashboard" -- no hay paneles separados por nivel en el Sprint 1,
-     * eso es RF-20/Fase 2). "Mis tareas" (RF-09) todavia no tiene vista
-     * propia, solo un endpoint JSON (ver MisTareasController), asi que no
-     * puede ser el destino todavia. Lo que si difiere por nivel es el menu
-     * disponible una vez adentro (ver HandleInertiaRequests y AppSidebar).
+     * -- "Mis tareas" (RF-09), ya con vista propia (ver nota de Franco en
+     * ContextoProgramacion.md, 11-09-2026). No hay paneles separados por
+     * nivel en el Sprint 1, eso es RF-20/Fase 2. Lo que si difiere por
+     * nivel es el menu disponible una vez adentro (ver HandleInertiaRequests
+     * y AppSidebar).
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -40,7 +40,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('mis-tareas.index', absolute: false));
     }
 
     /**
