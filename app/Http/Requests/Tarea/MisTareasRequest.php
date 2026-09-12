@@ -16,6 +16,21 @@ class MisTareasRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Inertia serializa un booleano JS como el string literal "true"/"false"
+     * en la query string -- la regla "boolean" de Laravel no acepta esas
+     * palabras (solo '0'/'1'/0/1/true/false), asi que sin esto la peticion
+     * fallaba validacion en silencio y el filtro nunca se aplicaba.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has("solo_atrasadas")) {
+            $this->merge([
+                "solo_atrasadas" => filter_var($this->input("solo_atrasadas"), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
