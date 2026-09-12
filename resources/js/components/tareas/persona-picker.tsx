@@ -34,12 +34,15 @@ export function PersonaPicker({
     seleccionadosIds,
     onSelect,
     cerrarAlSeleccionar = false,
+    side = 'bottom',
 }: {
     trigger: React.ReactNode;
     personas: Persona[];
     seleccionadosIds: number[];
     onSelect: (persona: Persona) => void;
     cerrarAlSeleccionar?: boolean;
+    /** 'top' para pickers cerca del final de un dialog, para que no se desborden hacia afuera. */
+    side?: 'top' | 'bottom';
 }) {
     const [open, setOpen] = useState(false);
     const [busqueda, setBusqueda] = useState('');
@@ -58,7 +61,7 @@ export function PersonaPicker({
             }}
         >
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-            <PopoverContent className="w-72 p-0" align="start">
+            <PopoverContent className="w-72 p-0" align="start" side={side}>
                 <div className="border-b border-border p-2">
                     <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar persona..." autoFocus />
                 </div>

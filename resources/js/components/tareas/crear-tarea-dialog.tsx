@@ -1,7 +1,7 @@
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,9 +57,16 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent>
+        <>
+            <NonModalOverlay open={open} onClose={() => setOpen(false)} />
+
+            {/* modal={false}: adentro se abre un Popover (PersonaPicker) para elegir
+                responsable/colaboradores -- con el modal atrapando el foco, ese
+                Popover queda visible pero inerte (no se puede elegir a nadie). Ver
+                el mismo patron en tarea-detalle-modal.tsx. */}
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+                <DialogTrigger asChild>{trigger}</DialogTrigger>
+                <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
                         <DialogTitle>Nueva tarea</DialogTitle>
@@ -111,6 +118,7 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
                                 personas={personas}
                                 seleccionadosIds={responsable ? [responsable.id] : []}
                                 cerrarAlSeleccionar
+                                side="top"
                                 onSelect={(persona) => {
                                     setResponsable(persona);
                                     setData('responsable_id', String(persona.id));
@@ -181,6 +189,7 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+            </Dialog>
+        </>
     );
 }
