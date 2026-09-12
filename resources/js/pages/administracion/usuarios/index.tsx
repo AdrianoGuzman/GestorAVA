@@ -1,10 +1,11 @@
 import { CrearUsuarioDialog } from '@/components/administracion/crear-usuario-dialog';
 import { EditarUsuarioDialog } from '@/components/administracion/editar-usuario-dialog';
+import { EliminarUsuarioDialog } from '@/components/administracion/eliminar-usuario-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, SharedData } from '@/types';
 import { NIVEL_JERARQUICO_LABELS, type UnidadOrganizacional, type UsuarioAdmin } from '@/types/usuario';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
 interface Props {
     usuarios: UsuarioAdmin[];
@@ -14,6 +15,8 @@ interface Props {
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Administración', href: '/administracion/usuarios' }];
 
 export default function UsuariosIndex({ usuarios, unidades }: Props) {
+    const { auth } = usePage<SharedData>().props;
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Administración de usuarios" />
@@ -48,7 +51,12 @@ export default function UsuariosIndex({ usuarios, unidades }: Props) {
                                             </td>
                                             <td className="py-2 pr-4">{usuario.unidad_organizacional?.nombre ?? '—'}</td>
                                             <td className="py-2 pr-4">
-                                                <EditarUsuarioDialog usuario={usuario} unidades={unidades} />
+                                                <div className="flex gap-2">
+                                                    <EditarUsuarioDialog usuario={usuario} unidades={unidades} />
+                                                    {auth.puedeEliminarUsuarios && usuario.id !== auth.user.id && (
+                                                        <EliminarUsuarioDialog usuario={usuario} />
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

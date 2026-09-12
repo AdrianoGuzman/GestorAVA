@@ -5,6 +5,8 @@ export interface Auth {
     user: User;
     /** RF-03 D2.1: distintos niveles jerarquicos ven distintas opciones de menu. */
     puedeAdministrarEstructura: boolean;
+    /** Baja de usuarios: solo Directorio, ver NivelJerarquico::puedeEliminarUsuarios(). */
+    puedeEliminarUsuarios: boolean;
 }
 
 export interface BreadcrumbItem {

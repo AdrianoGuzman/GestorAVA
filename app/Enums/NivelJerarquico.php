@@ -65,4 +65,14 @@ enum NivelJerarquico: string
             self::JefeArea, self::Asistente => false,
         };
     }
+
+    /**
+     * Baja de usuarios: mas sensible que el resto de la administracion
+     * (alta/edicion), reservada solo a Directorio a diferencia de
+     * puedeAdministrarEstructura() que tambien incluye Gerencia.
+     */
+    public function puedeEliminarUsuarios(): bool
+    {
+        return $this === self::Directorio;
+    }
 }

@@ -22,6 +22,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('administracion/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
     Route::post('administracion/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
     Route::patch('administracion/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
+    Route::delete('administracion/usuarios/{usuario}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
 
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
     Route::get('tareas/{tarea}', [TareaController::class, 'show'])->name('tareas.show');
