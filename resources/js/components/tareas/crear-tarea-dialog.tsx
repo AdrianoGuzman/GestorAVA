@@ -82,7 +82,12 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
 
                         <div className="grid gap-2">
                             <Label htmlFor="descripcion">Descripción</Label>
-                            <Textarea id="descripcion" value={data.descripcion} onChange={(e) => setData('descripcion', e.target.value)} />
+                            <Textarea
+                                id="descripcion"
+                                value={data.descripcion}
+                                onChange={(e) => setData('descripcion', e.target.value)}
+                                className="max-h-40 overflow-y-auto"
+                            />
                             {errors.descripcion && <p className="text-sm text-rojo-1">{errors.descripcion}</p>}
                         </div>
 
