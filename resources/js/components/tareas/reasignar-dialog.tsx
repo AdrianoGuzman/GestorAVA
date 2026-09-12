@@ -68,7 +68,7 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
                                     trigger={
                                         <button
                                             type="button"
-                                            className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-verde-1"
+                                            className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-verde-1 hover:text-gris-2"
                                         >
                                             {nuevoResponsable ? (
                                                 <>

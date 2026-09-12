@@ -75,7 +75,7 @@ export function PersonaPicker({
                                     if (cerrarAlSeleccionar) setOpen(false);
                                 }}
                                 className={cn(
-                                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-verde-1',
+                                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-verde-1 hover:text-gris-2',
                                     seleccionada && 'bg-verde-2',
                                 )}
                             >
