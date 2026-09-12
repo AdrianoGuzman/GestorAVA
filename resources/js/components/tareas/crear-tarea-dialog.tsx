@@ -98,6 +98,7 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
                                     type="date"
                                     value={data.fecha_compromiso}
                                     onChange={(e) => setData('fecha_compromiso', e.target.value)}
+                                    min={data.fecha_inicio || undefined}
                                     required
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
