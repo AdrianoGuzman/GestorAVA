@@ -17,7 +17,10 @@ export const ESTADO_TAREA_LABELS: Record<EstadoTarea, string> = {
 export const ESTADO_TAREA_BADGE_CLASSES: Record<EstadoTarea, string> = {
     pendiente: 'border-gris-1 bg-white text-gris-2',
     en_progreso: 'border-verde-3 bg-verde-2 text-gris-2',
-    completada: 'border-gris-2 bg-gris-2 text-white',
+    // completada=gris-2 se vuelve invisible en modo oscuro porque el fondo
+    // de las tarjetas (.dark --card en app.css) es exactamente el mismo
+    // color -- se aclara solo en modo oscuro, sin tocar el modo claro.
+    completada: 'border-gris-2 bg-gris-2 text-white dark:border-gris-1 dark:bg-gris-1/25',
     cancelada: 'border-gris-1/30 bg-gris-1/10 text-gris-1',
 };
 

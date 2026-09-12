@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadoTarea;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,10 @@ class Tarea extends Model {
 
     protected $connection = "usuarios";
     protected $table = "tareas";
+
+    protected $appends = [
+        "codigo",
+    ];
 
     protected $fillable = [
         "titulo",
@@ -76,5 +81,30 @@ class Tarea extends Model {
 
     public function adjuntos(): HasMany {
         return $this->hasMany(AdjuntoTarea::class, "tarea_id");
+    }
+
+    /**
+     * Codigo secuencial global de la tarea (ej. TAR-0001), derivado
+     * directamente del id: nunca se repite, no requiere columna ni
+     * generacion aparte, y ordenar/buscar por codigo es tan simple como
+     * ordenar/buscar por id.
+     */
+    protected function codigo(): Attribute {
+        return Attribute::make(
+            get: fn () => sprintf("TAR-%04d", $this->id),
+        );
+    }
+
+    /**
+     * Interpreta un texto de busqueda como codigo de tarea (ej. "TAR-0001",
+     * "tar-1", o el numero solo) y devuelve el id correspondiente, o null si
+     * no calza con el formato.
+     */
+    public static function idDesdeCodigo(string $texto): ?int {
+        if (preg_match("/^(?:TAR-)?0*(\d+)$/i", trim($texto), $coincidencias) === 1) {
+            return (int) $coincidencias[1];
+        }
+
+        return null;
     }
 }

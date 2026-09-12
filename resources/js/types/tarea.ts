@@ -94,6 +94,38 @@ export interface TareaDetalle {
 /** Rol del usuario que consulta respecto de esta tarea (RF-24 D4), coherente con las secciones de RF-09. */
 export type RolUsuarioTarea = 'responsable' | 'colaborador' | 'delegado' | 'creador' | null;
 
+/** Fila de tarea dentro de "Mis tareas" (RF-09) — no es el detalle completo, solo lo necesario para listar. */
+export interface TareaResumen {
+    id: number;
+    codigo: string;
+    titulo: string;
+    estado: EstadoTarea;
+    esta_atrasada: boolean;
+    fecha_compromiso: string;
+    responsable: UsuarioTarea;
+    unidad_organizacional: { id: number; nombre: string } | null;
+    rol: NonNullable<RolUsuarioTarea>;
+}
+
+export interface ContadoresMisTareas {
+    total: number;
+    atrasadas: number;
+    en_progreso: number;
+    pendientes: number;
+    completadas: number;
+}
+
+/** Filtro rapido por rol (RF-09): distinto del rol real de cada tarea, es el valor que viaja en la URL. */
+export type FiltroRolMisTareas = 'responsable' | 'colaborador' | 'delegadas_por_mi' | 'creadas_por_mi';
+
+export interface FiltrosMisTareas {
+    busqueda?: string | null;
+    estado?: EstadoTarea[];
+    solo_atrasadas?: boolean;
+    unidad_organizacional_id?: number | null;
+    filtro_rol?: FiltroRolMisTareas;
+}
+
 export interface PermisosTarea {
     puedeReasignar: boolean;
     puedeAgregarColaborador: boolean;

@@ -1,6 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/utils';
 
@@ -19,13 +20,28 @@ const DialogOverlay = React.forwardRef<
     <DialogPrimitive.Overlay
         ref={ref}
         className={cn(
-            'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed inset-0 z-50 bg-black/50 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             className,
         )}
         {...props}
     />
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+/**
+ * Radix no renderiza `<DialogOverlay>` cuando el Dialog es `modal={false}`
+ * (mira el contexto y devuelve null directamente) -- necesario cuando el
+ * diálogo contiene un Popover/PersonaPicker que puede quedar anidado dentro
+ * de otro Dialog (ver tarea-detalle-modal.tsx), porque ahi el scroll-lock/
+ * focus-trap de un Dialog modal de por medio deja el Popover visible pero
+ * inerte. Los Dialog con `modal={false}` pierden el fondo difuminado junto
+ * con eso, asi que hay que pintarlo a mano con este componente.
+ */
+function NonModalOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+    if (!open) return null;
+
+    return createPortal(<div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-md" onClick={onClose} />, document.body);
+}
 
 const DialogContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
@@ -75,4 +91,16 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => <DialogPrimitive.Description ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />);
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
-export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };
+export {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+    DialogTrigger,
+    NonModalOverlay,
+};

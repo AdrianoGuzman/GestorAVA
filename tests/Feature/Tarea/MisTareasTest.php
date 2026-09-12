@@ -20,19 +20,18 @@ class MisTareasTest extends TestCase
         return User::factory()->conNivel($nivel, $unidad)->create();
     }
 
-    public function test_sin_tareas_relacionadas_todas_las_secciones_quedan_vacias(): void
+    public function test_sin_tareas_relacionadas_la_lista_queda_vacia(): void
     {
         $usuario = $this->usuario(NivelJerarquico::Asistente);
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        foreach (["responsable", "colaborador", "delegadas_por_mi", "creadas_por_mi"] as $seccion) {
-            $response->assertJsonPath("{$seccion}.contadores.total", 0);
-            $response->assertJsonCount(0, "{$seccion}.tareas");
-        }
+        $response->assertInertia(fn ($page) => $page
+            ->where("contadores.total", 0)
+            ->has("tareas", 0));
     }
 
-    public function test_una_tarea_donde_es_responsable_aparece_en_esa_seccion(): void
+    public function test_una_tarea_donde_es_responsable_aparece_con_ese_rol(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -44,13 +43,14 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 1);
-        $response->assertJsonPath("responsable.contadores.en_progreso", 1);
-        $response->assertJsonPath("responsable.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "colaborador.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id)
+            ->where("tareas.0.rol", "responsable")
+            ->where("contadores.en_progreso", 1));
     }
 
-    public function test_una_tarea_donde_es_colaborador_aparece_en_esa_seccion(): void
+    public function test_una_tarea_donde_es_colaborador_aparece_con_ese_rol(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -63,11 +63,13 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("colaborador.contadores.total", 1);
-        $response->assertJsonPath("colaborador.tareas.0.id", $tarea->id);
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id)
+            ->where("tareas.0.rol", "colaborador"));
     }
 
-    public function test_una_tarea_que_reasigno_aparece_en_delegadas_por_mi_aunque_ya_no_participe(): void
+    public function test_una_tarea_que_reasigno_aparece_como_delegada_aunque_ya_no_participe(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::JefeArea, $obra);
@@ -84,14 +86,13 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("delegadas_por_mi.contadores.total", 1);
-        $response->assertJsonPath("delegadas_por_mi.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "responsable.tareas");
-        $response->assertJsonCount(0, "colaborador.tareas");
-        $response->assertJsonCount(0, "creadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id)
+            ->where("tareas.0.rol", "delegado"));
     }
 
-    public function test_creada_y_asignada_a_otro_sin_reasignacion_aparece_solo_en_creadas_por_mi(): void
+    public function test_creada_y_asignada_a_otro_sin_reasignacion_aparece_como_creador(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $creador = $this->usuario(NivelJerarquico::JefeArea, $obra);
@@ -104,16 +105,17 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($creador)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("creadas_por_mi.contadores.total", 1);
-        $response->assertJsonPath("creadas_por_mi.tareas.0.id", $tarea->id);
-        $response->assertJsonCount(0, "delegadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id)
+            ->where("tareas.0.rol", "creador"));
     }
 
-    public function test_creada_y_responsable_no_se_duplica_en_creadas_por_mi(): void
+    public function test_creada_y_responsable_no_se_duplica(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
-        $tarea = Tarea::factory()->create([
+        Tarea::factory()->create([
             "creador_id" => $usuario->id,
             "responsable_id" => $usuario->id,
             "unidad_organizacional_id" => $obra->id,
@@ -121,11 +123,12 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 1);
-        $response->assertJsonCount(0, "creadas_por_mi.tareas");
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.rol", "responsable"));
     }
 
-    public function test_contadores_agregados_por_seccion(): void
+    public function test_contadores_agregados(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -148,27 +151,34 @@ class MisTareasTest extends TestCase
 
         $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
 
-        $response->assertJsonPath("responsable.contadores.total", 3);
-        $response->assertJsonPath("responsable.contadores.atrasadas", 1);
-        $response->assertJsonPath("responsable.contadores.en_progreso", 1);
-        $response->assertJsonPath("responsable.contadores.completadas", 1);
+        $response->assertInertia(fn ($page) => $page
+            ->where("contadores.total", 3)
+            ->where("contadores.atrasadas", 1)
+            ->where("contadores.en_progreso", 1)
+            ->where("contadores.pendientes", 1)
+            ->where("contadores.completadas", 1));
     }
 
-    public function test_filtro_rol_devuelve_solo_esa_seccion(): void
+    public function test_filtro_rol_devuelve_solo_ese_rol(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $otro = $this->usuario(NivelJerarquico::Asistente, $obra);
         Tarea::factory()->create([
             "responsable_id" => $usuario->id,
             "unidad_organizacional_id" => $obra->id,
         ]);
+        $tareaColaborador = Tarea::factory()->create([
+            "responsable_id" => $otro->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tareaColaborador->colaboradores()->attach($usuario->id);
 
-        $response = $this->actingAs($usuario)->get("/mis-tareas?filtro_rol=responsable")->assertOk();
+        $response = $this->actingAs($usuario)->get("/mis-tareas?filtro_rol=colaborador")->assertOk();
 
-        $response->assertJsonStructure(["responsable"]);
-        $response->assertJsonMissingPath("colaborador");
-        $response->assertJsonMissingPath("delegadas_por_mi");
-        $response->assertJsonMissingPath("creadas_por_mi");
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.rol", "colaborador"));
     }
 
     public function test_filtro_rol_invalido_es_rechazado(): void
@@ -177,5 +187,108 @@ class MisTareasTest extends TestCase
 
         $this->actingAs($usuario)->get("/mis-tareas?filtro_rol=inexistente")
             ->assertSessionHasErrors("filtro_rol");
+    }
+
+    public function test_busqueda_por_nombre_filtra_la_lista(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "titulo" => "Revisar tablero electrico",
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "titulo" => "Coordinar visita a terreno",
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?busqueda=tablero")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id));
+    }
+
+    public function test_busqueda_por_codigo_encuentra_la_tarea(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?busqueda={$tarea->codigo}")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id));
+    }
+
+    public function test_filtro_estado_filtra_la_lista(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $pendiente = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Pendiente,
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?estado[]=pendiente")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $pendiente->id));
+    }
+
+    public function test_filtro_solo_atrasadas(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $atrasada = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "esta_atrasada" => true,
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "esta_atrasada" => false,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?solo_atrasadas=1")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $atrasada->id));
+    }
+
+    public function test_filtro_unidad_organizacional(): void
+    {
+        $obraA = UnidadOrganizacional::factory()->create();
+        $obraB = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obraA);
+        $tareaA = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obraA->id,
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obraB->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?unidad_organizacional_id={$obraA->id}")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tareaA->id));
     }
 }

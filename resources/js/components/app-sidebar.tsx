@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Settings } from 'lucide-react';
+import { BookOpen, Folder, ListTodo, Settings } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const footerNavItems: NavItem[] = [
@@ -27,14 +27,11 @@ const footerNavItems: NavItem[] = [
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
 
-    // "Mis tareas" (RF-09) todavia no tiene vista propia -- solo un
-    // endpoint JSON (ver MisTareasController) -- asi que no se linkea
-    // desde aca todavia. Dashboard queda como item base para todos.
     const mainNavItems: NavItem[] = [
         {
-            title: 'Dashboard',
-            url: route('dashboard'),
-            icon: LayoutGrid,
+            title: 'Mis tareas',
+            url: route('mis-tareas.index'),
+            icon: ListTodo,
         },
         ...(auth.puedeAdministrarEstructura
             ? [
@@ -53,7 +50,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={route('dashboard')} prefetch>
+                            <Link href={route('mis-tareas.index')} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

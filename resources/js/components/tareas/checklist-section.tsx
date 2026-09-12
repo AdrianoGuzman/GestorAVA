@@ -116,7 +116,9 @@ export function ChecklistSection({
                                 <span className={cn('flex-1 text-sm text-foreground', item.completado && 'text-muted-foreground line-through')}>
                                     {item.texto}
                                 </span>
-                                {item.dueno && <PersonaAvatar nombre={item.dueno.name} className="size-6" />}
+                                {item.dueno && (
+                                    <PersonaAvatar nombre={item.dueno.name} email={item.dueno.email} rol="Dueño del ítem" className="size-6" />
+                                )}
                                 {puedeUsar && (
                                     <button
                                         type="button"
