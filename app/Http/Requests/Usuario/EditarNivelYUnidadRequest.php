@@ -24,7 +24,11 @@ class EditarNivelYUnidadRequest extends FormRequest
     {
         return [
             "nivel_jerarquico" => ["required", new Enum(NivelJerarquico::class)],
-            "unidad_organizacional_id" => ["required", "integer", "exists:unidades_organizacionales,id"],
+            // Prefijo "usuarios." explicito: "exists" resuelve la tabla
+            // contra config('database.default'), no contra la conexion del
+            // modelo -- si el .env de quien corre esto tiene DB_CONNECTION
+            // distinto de "usuarios", sin el prefijo no encuentra la tabla.
+            "unidad_organizacional_id" => ["required", "integer", "exists:usuarios.unidades_organizacionales,id"],
         ];
     }
 }
