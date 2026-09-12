@@ -97,29 +97,33 @@ export type RolUsuarioTarea = 'responsable' | 'colaborador' | 'delegado' | 'crea
 /** Fila de tarea dentro de "Mis tareas" (RF-09) — no es el detalle completo, solo lo necesario para listar. */
 export interface TareaResumen {
     id: number;
+    codigo: string;
     titulo: string;
     estado: EstadoTarea;
     esta_atrasada: boolean;
     fecha_compromiso: string;
     responsable: UsuarioTarea;
-}
-
-export interface SeccionMisTareas {
+    unidad_organizacional: { id: number; nombre: string } | null;
     rol: NonNullable<RolUsuarioTarea>;
-    contadores: {
-        total: number;
-        atrasadas: number;
-        en_progreso: number;
-        completadas: number;
-    };
-    tareas: TareaResumen[];
 }
 
-export interface SeccionesMisTareas {
-    responsable?: SeccionMisTareas;
-    colaborador?: SeccionMisTareas;
-    delegadas_por_mi?: SeccionMisTareas;
-    creadas_por_mi?: SeccionMisTareas;
+export interface ContadoresMisTareas {
+    total: number;
+    atrasadas: number;
+    en_progreso: number;
+    pendientes: number;
+    completadas: number;
+}
+
+/** Filtro rapido por rol (RF-09): distinto del rol real de cada tarea, es el valor que viaja en la URL. */
+export type FiltroRolMisTareas = 'responsable' | 'colaborador' | 'delegadas_por_mi' | 'creadas_por_mi';
+
+export interface FiltrosMisTareas {
+    busqueda?: string | null;
+    estado?: EstadoTarea[];
+    solo_atrasadas?: boolean;
+    unidad_organizacional_id?: number | null;
+    filtro_rol?: FiltroRolMisTareas;
 }
 
 export interface PermisosTarea {
