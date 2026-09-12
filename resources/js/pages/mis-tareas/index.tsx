@@ -20,8 +20,8 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, TareaResumen } from '@/types/tarea';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, CheckCircle2, Gauge, ListFilter, ListTodo, Plus, Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
     tareas: TareaResumen[];
@@ -64,6 +64,191 @@ function esManana(fecha: string): boolean {
 
 function formatearFecha(fecha: string): string {
     return new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase();
+}
+
+/**
+ * Clave "YYYY-MM-DD" en hora local, tanto para las columnas del calendario
+ * (armadas con aritmetica de fechas local) como para fecha_compromiso
+ * (recortando el string en vez de parsearlo como Date) -- evita el corrimiento
+ * de un dia que da `new Date(fechaCompromiso)` en zonas horarias negativas
+ * (UTC-3/4) al comparar contra "hoy" en el navegador.
+ */
+function claveFecha(fecha: Date): string {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function claveFechaCompromiso(fechaCompromiso: string): string {
+    return fechaCompromiso.slice(0, 10);
+}
+
+function obtenerLunes(fecha: Date): Date {
+    const lunes = new Date(fecha);
+    const diasDesdeLunes = (lunes.getDay() + 6) % 7;
+    lunes.setDate(lunes.getDate() - diasDesdeLunes);
+    lunes.setHours(0, 0, 0, 0);
+    return lunes;
+}
+
+function sumarDias(fecha: Date, dias: number): Date {
+    const resultado = new Date(fecha);
+    resultado.setDate(resultado.getDate() + dias);
+    return resultado;
+}
+
+function primerDiaDelMes(fecha: Date): Date {
+    return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+}
+
+/**
+ * Grilla del mes en semanas completas: incluye los dias de fin del mes
+ * anterior y de inicio del mes siguiente que hacen falta para completar la
+ * primera y ultima semana (siempre Lun-Dom), para que el calendario nunca
+ * corte una semana a la mitad.
+ */
+function generarGrillaMes(primerDiaMes: Date): Date[] {
+    const inicio = obtenerLunes(primerDiaMes);
+    const ultimoDiaMes = new Date(primerDiaMes.getFullYear(), primerDiaMes.getMonth() + 1, 0);
+    const fin = sumarDias(obtenerLunes(ultimoDiaMes), 6);
+
+    const dias: Date[] = [];
+    for (let cursor = inicio; cursor <= fin; cursor = sumarDias(cursor, 1)) {
+        dias.push(cursor);
+    }
+    return dias;
+}
+
+function capitalizar(texto: string): string {
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function claseBarraTarea(tarea: TareaResumen): string {
+    if (tarea.estado === 'completada') {
+        return ESTADO_TAREA_BADGE_CLASSES.completada;
+    }
+    if (tarea.esta_atrasada) {
+        return ATRASADA_BADGE_CLASSES;
+    }
+    return ESTADO_TAREA_BADGE_CLASSES[tarea.estado];
+}
+
+const ETIQUETAS_DIAS_SEMANA = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+
+const MAX_TAREAS_VISIBLES_POR_DIA = 3;
+
+function TabCalendario({ tareas, onAbrirTarea }: { tareas: TareaResumen[]; onAbrirTarea: (id: number) => void }) {
+    const [mesActual, setMesActual] = useState(() => primerDiaDelMes(new Date()));
+
+    const dias = useMemo(() => generarGrillaMes(mesActual), [mesActual]);
+    const hoyClave = claveFecha(new Date());
+
+    const tareasPorDia = useMemo(() => {
+        const mapa = new Map<string, TareaResumen[]>();
+        for (const tarea of tareas) {
+            const clave = claveFechaCompromiso(tarea.fecha_compromiso);
+            const lista = mapa.get(clave) ?? [];
+            lista.push(tarea);
+            mapa.set(clave, lista);
+        }
+        return mapa;
+    }, [tareas]);
+
+    const etiquetaMes = capitalizar(mesActual.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }));
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setMesActual((actual) => new Date(actual.getFullYear(), actual.getMonth() - 1, 1))}
+                    >
+                        <ChevronLeft />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setMesActual(primerDiaDelMes(new Date()))}>
+                        Hoy
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setMesActual((actual) => new Date(actual.getFullYear(), actual.getMonth() + 1, 1))}
+                    >
+                        <ChevronRight />
+                    </Button>
+                </div>
+                <p className="text-sm font-semibold text-foreground">{etiquetaMes}</p>
+            </div>
+
+            <div className="overflow-x-auto">
+                <div className="min-w-[840px]">
+                    <div className="grid grid-cols-7 gap-2 px-1 pb-1">
+                        {ETIQUETAS_DIAS_SEMANA.map((etiqueta) => (
+                            <p key={etiqueta} className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                {etiqueta}
+                            </p>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-2">
+                        {dias.map((dia) => {
+                            const clave = claveFecha(dia);
+                            const esHoy = clave === hoyClave;
+                            const esDelMesActual = dia.getMonth() === mesActual.getMonth();
+                            const tareasDelDia = tareasPorDia.get(clave) ?? [];
+                            const tareasVisibles = tareasDelDia.slice(0, MAX_TAREAS_VISIBLES_POR_DIA);
+                            const tareasOcultas = tareasDelDia.length - tareasVisibles.length;
+
+                            return (
+                                <div
+                                    key={clave}
+                                    className={cn(
+                                        'min-h-24 space-y-1.5 rounded-lg border p-1.5',
+                                        esDelMesActual ? 'border-border bg-muted/20' : 'border-border/50 bg-muted/5',
+                                    )}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        <span
+                                            className={cn(
+                                                'flex size-6 items-center justify-center rounded-full text-sm font-semibold',
+                                                esHoy ? 'bg-verde-5 text-gris-2' : esDelMesActual ? 'text-foreground' : 'text-muted-foreground',
+                                            )}
+                                        >
+                                            {dia.getDate()}
+                                        </span>
+                                        {!esDelMesActual && (
+                                            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                                {dia.toLocaleDateString('es-CL', { month: 'short' }).replace('.', '')}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {tareasVisibles.map((tarea) => (
+                                        <button
+                                            key={tarea.id}
+                                            type="button"
+                                            onClick={() => onAbrirTarea(tarea.id)}
+                                            className={cn(
+                                                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
+                                                !esDelMesActual && 'opacity-60',
+                                                claseBarraTarea(tarea),
+                                            )}
+                                        >
+                                            {tarea.titulo}
+                                        </button>
+                                    ))}
+
+                                    {tareasOcultas > 0 && <p className="px-2 text-xs text-muted-foreground">+{tareasOcultas} más</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function actualizarFiltros(filtros: FiltrosMisTareas, cambios: Partial<FiltrosMisTareas>) {
@@ -344,10 +529,12 @@ export default function MisTareasIndex(props: Props) {
 
                 {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
 
-                {tab !== 'lista' && (
+                {tab === 'calendario' && <TabCalendario tareas={props.tareas} onAbrirTarea={modal.abrir} />}
+
+                {tab === 'metricas' && (
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">{TABS.find((t) => t.value === tab)?.label}</CardTitle>
+                            <CardTitle className="text-base">Panel de métricas</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-muted-foreground">Próximamente.</p>
