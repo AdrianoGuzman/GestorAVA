@@ -147,13 +147,15 @@ class PermisosService
     }
 
     /**
-     * Decision de Franco (11-09-2026): solo el creador de la tarea asigna
-     * el dueño de un item del checklist -- no hay autoasignacion por parte
-     * de un colaborador, para evitar confusion en la interfaz.
+     * Decision de Franco (12-09-2026): el responsable o el creador de la
+     * tarea asignan el dueño de un item del checklist -- no hay
+     * autoasignacion por parte de un colaborador, para evitar confusion en
+     * la interfaz.
      */
     public function puedeAsignarDuenoChecklist(Tarea $tarea, User $solicitante): bool
     {
-        return $solicitante->id === $tarea->creador_id;
+        return $solicitante->id === $tarea->responsable_id
+            || $solicitante->id === $tarea->creador_id;
     }
 
     /**

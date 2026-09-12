@@ -251,6 +251,30 @@ class ChecklistTest extends TestCase
         $this->assertSame($colaborador->id, $item->dueno_id);
     }
 
+    public function test_el_responsable_puede_asignar_dueno_aunque_no_sea_el_creador(): void
+    {
+        $creador = User::factory()->create();
+        $responsable = User::factory()->create();
+        $colaborador = User::factory()->create();
+
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $creador->id,
+            "responsable_id" => $responsable->id,
+        ]);
+
+        $tarea->colaboradores()->attach($colaborador->id);
+
+        $this->actingAs($responsable)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar documentación",
+                "dueno_id" => $colaborador->id,
+            ])
+            ->assertSessionHas("success");
+
+        $item = ChecklistItem::firstOrFail();
+        $this->assertSame($colaborador->id, $item->dueno_id);
+    }
+
     public function test_solo_el_dueno_asignado_puede_marcar_su_item(): void
     {
         $responsable = User::factory()->create();

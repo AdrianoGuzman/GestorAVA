@@ -153,10 +153,12 @@ placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependenc
 (RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
 mover ni renombrar la tarjeta en sí.
 
-**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026), distintas de la spec original:**
-- **Solo el creador de la tarea asigna el dueño de un ítem** — no hay autoasignación por parte
-  de un colaborador, para evitar confusión en la interfaz. Es una restricción más estricta
-  que el D1.4 de la spec original ("autoasignación permitida"); prevalece esta decisión.
+**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026, ajustada 12-09-2026), distintas de la spec original:**
+- **El responsable o el creador de la tarea asignan el dueño de un ítem** — no hay
+  autoasignación por parte de un colaborador, para evitar confusión en la interfaz. Es una
+  restricción más estricta que el D1.4 de la spec original ("autoasignación permitida");
+  prevalece esta decisión. (Ajuste 12-09-2026: originalmente solo el creador podía hacerlo;
+  se amplió al responsable porque es quien más de cerca sigue el trabajo día a día.)
 - **La sección de Checklist solo se muestra si la tarea tiene colaboradores.** Si el
   responsable es el único involucrado (sin colaboradores), esa tarjeta no debe aparecer —
   en ese caso el responsable usa un "checklist personal" propio (ver abajo, no es RF-23).

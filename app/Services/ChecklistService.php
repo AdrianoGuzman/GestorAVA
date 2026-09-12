@@ -31,7 +31,7 @@ class ChecklistService
 
         if ($dueno !== null && ! $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el creador de la tarea puede asignar el dueño de un ítem del checklist."
+                "Solo el responsable o el creador de la tarea puede asignar el dueño de un ítem del checklist."
             );
         }
 
@@ -77,7 +77,7 @@ class ChecklistService
 
         if ($cambiaDueno && ! $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el creador de la tarea puede asignar el dueño de un ítem del checklist."
+                "Solo el responsable o el creador de la tarea puede asignar el dueño de un ítem del checklist."
             );
         }
 
