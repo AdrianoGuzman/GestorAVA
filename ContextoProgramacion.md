@@ -39,12 +39,20 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
 - **Ya implementado (backend + frontend)**: RF-04 (crear tarea), RF-05 (reasignar responsable,
-  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend), RF-10 (transición
-  automática), RF-11 (completar), RF-12 (retroceso), RF-13 (reportar problema, rediseñado --
-  ya no cambia el estado de la tarea, ver `ReporteProblemaService.php`), RF-19 (adjuntar evidencia),
+  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, **backend + frontend, ver nota
+  para Elian abajo**), RF-10 (transición automática), RF-11 (completar), RF-12 (retroceso),
+  RF-13 (reportar problema, rediseñado -- ya no cambia el estado de la tarea, ver
+  `ReporteProblemaService.php`), RF-19 (adjuntar evidencia),
   RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
+
+**Nota para Elian (11-09-2026): RF-09 "Mis tareas" ya tiene vista propia, dejó de ser un
+endpoint JSON.** `GET /mis-tareas` (`route('mis-tareas.index')`) ahora renderiza
+`resources/js/pages/mis-tareas/index.tsx` (listado con búsqueda, filtros, filtro rápido por
+rol y botón de "Nueva tarea"). El bloqueo que tenías anotado en
+`AuthenticatedSessionController.php` ya no aplica -- podés cambiar el destino post-login de
+`route('dashboard')` a `route('mis-tareas.index')` cuando quieras.
 
 ## Guards de completado (importante para Oscar y Jeremy)
 
