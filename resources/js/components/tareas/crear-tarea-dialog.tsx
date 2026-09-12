@@ -10,26 +10,55 @@ import { useForm, usePage } from '@inertiajs/react';
 import { Plus, UserPlus, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
 
-/** RF-04: crear una tarea nueva. El creador queda como responsable salvo que elija a otra persona. */
-export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNode; personas: Persona[] }) {
+/**
+ * RF-04: crear una tarea nueva. El creador queda como responsable salvo que
+ * elija a otra persona.
+ *
+ * `open`/`onOpenChange` son opcionales: sin ellos el dialog maneja su propio
+ * estado a partir del `trigger` (uso normal, ej. boton "Nueva tarea"). Se
+ * pasan cuando algo externo necesita abrirlo sin un trigger propio -- ej. el
+ * calendario, que lo abre al hacer clic en un dia sin tareas, precargando
+ * `fechaCompromisoInicial` con esa fecha.
+ */
+export function CrearTareaDialog({
+    trigger,
+    personas,
+    fechaCompromisoInicial,
+    open: openControlado,
+    onOpenChange,
+}: {
+    trigger?: React.ReactNode;
+    personas: Persona[];
+    fechaCompromisoInicial?: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) {
     const { auth } = usePage<SharedData>().props;
-    const [open, setOpen] = useState(false);
+    const [openInterno, setOpenInterno] = useState(false);
+    const open = openControlado ?? openInterno;
+    const setOpen = onOpenChange ?? setOpenInterno;
     const [responsable, setResponsable] = useState<Persona | null>(null);
     const [colaboradores, setColaboradores] = useState<Persona[]>([]);
     const { data, setData, post, processing, errors, reset } = useForm({
         titulo: '',
         descripcion: '',
         fecha_inicio: '',
-        fecha_compromiso: '',
+        fecha_compromiso: fechaCompromisoInicial ?? '',
         responsable_id: '',
         colaboradores: [] as number[],
     });
 
     useEffect(() => {
-        if (open && !responsable) {
+        if (!open) return;
+
+        if (!responsable) {
             const yoMismo = personas.find((p) => p.id === auth.user.id) ?? { id: auth.user.id, name: auth.user.name, email: auth.user.email };
             setResponsable(yoMismo);
             setData('responsable_id', String(yoMismo.id));
+        }
+
+        if (fechaCompromisoInicial) {
+            setData('fecha_compromiso', fechaCompromisoInicial);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -58,7 +87,7 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
