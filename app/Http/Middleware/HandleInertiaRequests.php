@@ -47,6 +47,10 @@ class HandleInertiaRequests extends Middleware
                 // RF-03 D2.1: distintos niveles ven distintas opciones de menu.
                 // Se calcula aca (Enum) para no duplicar la regla en el frontend.
                 'puedeAdministrarEstructura' => $request->user()?->nivel_jerarquico?->puedeAdministrarEstructura() ?? false,
+                // RF-15/RF-17: contador de la campana, disponible en cualquier
+                // pagina sin pedirlo aparte -- el detalle de la lista se pide
+                // solo al abrir la campana (ver NotificacionController).
+                'notificacionesNoLeidas' => $request->user()?->notificacionesRecibidas()->where('leida', false)->count() ?? 0,
             ],
         ]);
     }

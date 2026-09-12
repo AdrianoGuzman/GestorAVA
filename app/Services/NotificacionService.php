@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Enums\TipoNotificacion;
+use App\Models\Notificacion;
 use App\Models\Tarea;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use App\Notifications\NoParticipacionReportadaNotification;
 use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
@@ -120,5 +122,31 @@ class NotificacionService
         ]);
 
         $destinatario->notify(new TareaProximaAVencerNotification($tarea));
+    }
+
+    /**
+     * RF-15/D1: campana de notificaciones -- ultimas recibidas por el
+     * usuario, para mostrar en la plataforma sin que tenga que consultarlas
+     * entrando tarea por tarea.
+     */
+    public function recientesDe(User $usuario, int $limite = 15): Collection
+    {
+        return $usuario->notificacionesRecibidas()
+            ->with("tarea:id,titulo")
+            ->latest("created_at")
+            ->limit($limite)
+            ->get();
+    }
+
+    public function marcarLeida(Notificacion $notificacion, User $usuario): void
+    {
+        abort_unless($notificacion->usuario_id === $usuario->id, 403);
+
+        $notificacion->update(["leida" => true]);
+    }
+
+    public function marcarTodasLeidas(User $usuario): void
+    {
+        $usuario->notificacionesRecibidas()->where("leida", false)->update(["leida" => true]);
     }
 }

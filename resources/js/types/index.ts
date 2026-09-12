@@ -5,6 +5,8 @@ export interface Auth {
     user: User;
     /** RF-03 D2.1: distintos niveles jerarquicos ven distintas opciones de menu. */
     puedeAdministrarEstructura: boolean;
+    /** RF-15/RF-17: contador de la campana de notificaciones. */
+    notificacionesNoLeidas: number;
 }
 
 export interface BreadcrumbItem {

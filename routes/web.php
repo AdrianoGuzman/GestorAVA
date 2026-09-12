@@ -3,6 +3,7 @@
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistPersonalController;
 use App\Http\Controllers\MisTareasController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\TareaController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,10 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('mis-tareas', [MisTareasController::class, 'index'])->name('mis-tareas.index');
+
+    Route::get('notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
+    Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas'])->name('notificaciones.leer-todas');
+    Route::post('notificaciones/{notificacion}/leer', [NotificacionController::class, 'marcarLeida'])->name('notificaciones.leer');
 
     Route::get('administracion/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
     Route::post('administracion/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
