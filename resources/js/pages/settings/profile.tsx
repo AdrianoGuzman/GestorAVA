@@ -23,7 +23,10 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const { auth } = usePage<SharedData>().props;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
-        name: auth.user.name,
+        nombre_1: auth.user.nombre_1,
+        nombre_2: auth.user.nombre_2,
+        apellido_1: auth.user.apellido_1,
+        apellido_2: auth.user.apellido_2,
         email: auth.user.email,
     });
 
@@ -42,20 +45,58 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     <HeadingSmall title="Profile information" description="Update your name and email address" />
 
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Name</Label>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="nombre_1">Primer nombre</Label>
+                                <Input
+                                    id="nombre_1"
+                                    className="mt-1 block w-full"
+                                    value={data.nombre_1}
+                                    onChange={(e) => setData('nombre_1', e.target.value)}
+                                    required
+                                    autoComplete="given-name"
+                                />
+                                <InputError className="mt-2" message={errors.nombre_1} />
+                            </div>
 
-                            <Input
-                                id="name"
-                                className="mt-1 block w-full"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                required
-                                autoComplete="name"
-                                placeholder="Full name"
-                            />
+                            <div className="grid gap-2">
+                                <Label htmlFor="nombre_2">Segundo nombre</Label>
+                                <Input
+                                    id="nombre_2"
+                                    className="mt-1 block w-full"
+                                    value={data.nombre_2}
+                                    onChange={(e) => setData('nombre_2', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.nombre_2} />
+                            </div>
+                        </div>
 
-                            <InputError className="mt-2" message={errors.name} />
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="apellido_1">Primer apellido</Label>
+                                <Input
+                                    id="apellido_1"
+                                    className="mt-1 block w-full"
+                                    value={data.apellido_1}
+                                    onChange={(e) => setData('apellido_1', e.target.value)}
+                                    required
+                                    autoComplete="family-name"
+                                />
+                                <InputError className="mt-2" message={errors.apellido_1} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="apellido_2">Segundo apellido</Label>
+                                <Input
+                                    id="apellido_2"
+                                    className="mt-1 block w-full"
+                                    value={data.apellido_2}
+                                    onChange={(e) => setData('apellido_2', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.apellido_2} />
+                            </div>
                         </div>
 
                         <div className="grid gap-2">
