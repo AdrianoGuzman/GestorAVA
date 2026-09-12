@@ -19,7 +19,8 @@ export type TipoEvento =
     | 'checklist_item_editado'
     | 'checklist_item_eliminado'
     | 'adjunto_agregado'
-    | 'tarea_atrasada';
+    | 'tarea_atrasada'
+    | 'tarea_editada';
 
 export interface UsuarioTarea {
     id: number;
@@ -139,4 +140,5 @@ export interface PermisosTarea {
     puedeUsarChecklistPersonal: boolean;
     puedeUsarChecklist: boolean;
     puedeAsignarDuenoChecklist: boolean;
+    puedeEditar: boolean;
 }

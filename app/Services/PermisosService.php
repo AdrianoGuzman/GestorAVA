@@ -82,6 +82,17 @@ class PermisosService
     }
 
     /**
+     * Editar titulo/descripcion/fechas: el responsable actual o quien creo
+     * la tarea -- mismo criterio de cercania/autoridad que completar o
+     * cancelar, no se extiende a colaboradores.
+     */
+    public function puedeEditar(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id
+            || $solicitante->id === $tarea->creador_id;
+    }
+
+    /**
      * RF-12 D1: el responsable o un colaborador de la tarea puede
      * retrocederla de En progreso a Pendiente.
      */

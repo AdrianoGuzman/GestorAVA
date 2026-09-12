@@ -3,6 +3,7 @@ import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborado
 import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
+import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
@@ -64,7 +65,23 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                 <Card className="overflow-hidden border-t-4 border-t-verde-5">
                     <CardHeader>
                         <div className="flex flex-wrap items-start justify-between gap-4">
-                            <CardTitle>{tarea.titulo}</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <CardTitle>{tarea.titulo}</CardTitle>
+                                {permisos.puedeEditar && (
+                                    <EditarTareaDialog
+                                        tareaId={tarea.id}
+                                        titulo={tarea.titulo}
+                                        descripcion={tarea.descripcion}
+                                        fechaInicio={tarea.fecha_inicio}
+                                        fechaCompromiso={tarea.fecha_compromiso}
+                                        trigger={
+                                            <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
+                                                <Pencil className="size-4" />
+                                            </button>
+                                        }
+                                    />
+                                )}
+                            </div>
                             {rolUsuario && (
                                 <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
                                     Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}

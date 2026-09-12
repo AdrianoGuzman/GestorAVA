@@ -23,4 +23,5 @@ enum TipoEvento: string
     case AdjuntoAgregado = 'adjunto_agregado';
     case NoParticipacionReportada = 'no_participacion_reportada';
     case TareaAtrasada = 'tarea_atrasada';
+    case TareaEditada = 'tarea_editada';
 }
