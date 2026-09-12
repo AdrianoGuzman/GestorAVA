@@ -178,6 +178,8 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
                                 personas={personas}
                                 seleccionadosIds={colaboradores.map((p) => p.id)}
                                 onSelect={alternarColaborador}
+                                cerrarAlSeleccionar
+                                side="top"
                                 trigger={
                                     <Button type="button" variant="outline" size="sm" className="w-fit">
                                         <UserPlus /> Agregar persona
