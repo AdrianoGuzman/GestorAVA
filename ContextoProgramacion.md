@@ -101,6 +101,17 @@ columna nueva `recordatorio_vencimiento_enviado` para no repetirse (a diferencia
 `esta_atrasada`, que se mantiene mientras la condición sea verdadera, este es un flag que una
 vez en `true` no vuelve a `false`). Evento nuevo en el historial: `TipoEvento::TareaProximaAVencer`.
 
+**Campana de notificaciones, por Elian (12-09-2026): las notificaciones in-app ya se veían en
+ningún lado.** Las `Notificacion` que crea `NotificacionService` (delegación, retroceso, atraso,
+próximo vencimiento, etc.) se guardaban en la tabla pero no había ninguna pantalla que las
+mostrara. Ahora hay una campana en el header de toda la app (`AppSidebarHeader` →
+`CampanaNotificaciones`) con contador (`auth.notificacionesNoLeidas`, compartido en cada
+página), lista de las últimas 15, marcar una o todas como leídas, y click para ir a la tarea.
+Esto es automático para **cualquier** notificación ya existente o futura creada vía
+`NotificacionService` -- si agregás un tipo nuevo (ej. para dependencias, RF-21/22), solo hace
+falta sumarle un ícono en `ICONOS` (`campana-notificaciones.tsx`) y un caso en
+`TipoNotificacion`/`resources/js/types/notificacion.ts`; no hay que tocar la campana en sí.
+
 **"Editar tarea" (12-09-2026):** no existía forma de corregir título/descripción/fechas después
 de creada -- la única opción era cancelar y crear de nuevo. Ahora `PATCH /tareas/{tarea}`
 (`TareaService::actualizar()`) lo permite; solo responsable o creador, bloqueado si la tarea
