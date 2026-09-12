@@ -5,6 +5,25 @@ que ayude a programar este proyecto. Está para que los 4 integrantes trabajen e
 paralelo sin pisarse ni duplicar lógica. Si algo de acá quedó desactualizado,
 corregirlo en vez de ignorarlo.
 
+**Ojo:** este archivo es el único lugar donde las IAs de los 4 integrantes se pueden
+"leer" entre sí. Un compañero se puede enterar de algo por WhatsApp o en el standup,
+pero su IA no tiene memoria de esa conversación ni de nada que no esté escrito acá --
+si algo importante para otro módulo queda solo dicho de palabra, para efectos
+prácticos esa IA no se entera nunca.
+
+## Cuándo actualizar este documento
+
+- **Al mergear tu rama → Dev**: si lo que hiciste le importa a otro módulo (algo que
+  estaban esperando para seguir, una decisión de diseño que los afecta, un bug
+  compartido, un patrón pensado para que reutilicen), agregalo acá. Ajustes visuales,
+  refactors internos o bugs sin impacto afuera del propio módulo no hace falta
+  anotarlos -- para eso ya está el historial de git.
+- **Al mergear Dev → tu rama** (cuando te traés lo de los demás): el rol se invierte,
+  es más leer y reconciliar que escribir. Revisar (1) si algo que tenías anotado acá
+  como "pendiente" o "bloqueado por X" ya se resolvió con lo que trajiste, y (2) si
+  algo de lo que trajiste vuelve obsoleta o contradice una nota existente -- en ese
+  caso, corregirla en el momento, no dejarla como está.
+
 ## Módulos y quién es dueño de cada uno (Sprint 1)
 
 - **Elian** — Auth/roles (RF-01 a RF-03).
