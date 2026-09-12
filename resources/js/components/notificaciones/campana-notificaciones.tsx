@@ -131,7 +131,7 @@ export function CampanaNotificaciones() {
                                     type="button"
                                     onClick={() => irATarea(notificacion)}
                                     className={`flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left text-sm transition-colors last:border-0 hover:bg-accent ${
-                                        notificacion.leida ? '' : 'bg-verde-1'
+                                        notificacion.leida ? '' : 'bg-verde-5/10'
                                     }`}
                                 >
                                     <Icon className={`mt-0.5 size-4 shrink-0 ${className}`} />
