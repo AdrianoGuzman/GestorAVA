@@ -118,20 +118,20 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>
-                                <p className="mt-2 text-sm text-neutral-800">
+                                <p className="mt-2 text-sm text-foreground">
                                     Tu correo electrónico no está verificado.
                                     <Link
                                         href={route('verification.send')}
                                         method="post"
                                         as="button"
-                                        className="rounded-md text-sm text-neutral-600 underline hover:text-neutral-900 focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+                                        className="rounded-md text-sm text-muted-foreground underline hover:text-foreground focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
                                     >
                                         Haz clic aquí para reenviar el correo de verificación.
                                     </Link>
                                 </p>
 
                                 {status === 'verification-link-sent' && (
-                                    <div className="mt-2 text-sm font-medium text-green-600">
+                                    <div className="mt-2 text-sm font-medium text-verde-6">
                                         Se envió un nuevo enlace de verificación a tu correo electrónico.
                                     </div>
                                 )}
@@ -148,7 +148,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 leave="transition ease-in-out"
                                 leaveTo="opacity-0"
                             >
-                                <p className="text-sm text-neutral-600">Guardado</p>
+                                <p className="text-sm text-muted-foreground">Guardado</p>
                             </Transition>
                         </div>
                     </form>
