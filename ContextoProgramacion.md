@@ -61,10 +61,20 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, **backend + frontend, ver nota
   para Elian abajo**), RF-10 (transición automática), RF-11 (completar), RF-12 (retroceso),
   RF-13 (reportar problema, rediseñado -- ya no cambia el estado de la tarea, ver
-  `ReporteProblemaService.php`), RF-19 (adjuntar evidencia),
-  RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
+  `ReporteProblemaService.php`), RF-14 (detección automática de atraso, ver nota abajo),
+  RF-19 (adjuntar evidencia), RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`),
+  RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
+
+**RF-14 (11-09-2026): `esta_atrasada` ahora se marca sola.** Antes solo se seteaba a mano en
+tests/factories -- una tarea nunca se marcaba atrasada en la app real aunque se pasara la
+fecha de compromiso. Ahora `app/Console/Commands/MarcarTareasAtrasadas.php` (via
+`DeteccionAtrasoService`) corre cada hora (`routes/console.php`, ya lo levanta el
+`worker-schedule` del docker compose, no hace falta tocar infraestructura) y marca como
+atrasadas las tareas Pendiente/EnProgreso cuya `fecha_compromiso` ya pasó por completo (al
+día siguiente, no el mismo día). Queda un evento nuevo en el historial,
+`TipoEvento::TareaAtrasada` -- si tenés algo que filtra o cuenta tipos de evento, agregalo ahí.
 
 **Nota para Elian (11-09-2026): RF-09 "Mis tareas" ya tiene vista propia, dejó de ser un
 endpoint JSON.** `GET /mis-tareas` (`route('mis-tareas.index')`) ahora renderiza

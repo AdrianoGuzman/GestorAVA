@@ -18,7 +18,8 @@ export type TipoEvento =
     | 'checklist_item_desmarcado'
     | 'checklist_item_editado'
     | 'checklist_item_eliminado'
-    | 'adjunto_agregado';
+    | 'adjunto_agregado'
+    | 'tarea_atrasada';
 
 export interface UsuarioTarea {
     id: number;

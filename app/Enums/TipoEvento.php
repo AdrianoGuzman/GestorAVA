@@ -22,4 +22,5 @@ enum TipoEvento: string
     case ChecklistItemEliminado = 'checklist_item_eliminado';
     case AdjuntoAgregado = 'adjunto_agregado';
     case NoParticipacionReportada = 'no_participacion_reportada';
+    case TareaAtrasada = 'tarea_atrasada';
 }
