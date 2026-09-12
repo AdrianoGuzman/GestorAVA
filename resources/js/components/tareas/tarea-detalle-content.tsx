@@ -4,6 +4,7 @@ import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
+import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
@@ -12,7 +13,8 @@ import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
+import { calcularHorasAtrasoEntrega, ENTREGADA_CON_ATRASO_BADGE_CLASSES, formatearDuracionAtraso, ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
+import { cn } from '@/lib/utils';
 import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
 import {
     Ban,
@@ -65,7 +67,23 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                 <Card className="overflow-hidden border-t-4 border-t-verde-5">
                     <CardHeader>
                         <div className="flex flex-wrap items-start justify-between gap-4">
-                            <CardTitle>{tarea.titulo}</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <CardTitle>{tarea.titulo}</CardTitle>
+                                {permisos.puedeEditar && (
+                                    <EditarTareaDialog
+                                        tareaId={tarea.id}
+                                        titulo={tarea.titulo}
+                                        descripcion={tarea.descripcion}
+                                        fechaInicio={tarea.fecha_inicio}
+                                        fechaCompromiso={tarea.fecha_compromiso}
+                                        trigger={
+                                            <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
+                                                <Pencil className="size-4" />
+                                            </button>
+                                        }
+                                    />
+                                )}
+                            </div>
                             {rolUsuario && (
                                 <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
                                     Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}
@@ -90,7 +108,13 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
                                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                         <EstadoBadge estado={tarea.estado} className="px-3 py-1 text-sm" />
-                                        {tarea.esta_atrasada && <AtrasadaBadge className="px-3 py-1 text-sm" />}
+                                        {tarea.esta_atrasada && tarea.estado === 'completada' && (
+                                            <AtrasadaBadge
+                                                label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
+                                                className={cn(ENTREGADA_CON_ATRASO_BADGE_CLASSES, 'px-3 py-1 text-sm')}
+                                            />
+                                        )}
+                                        {tarea.esta_atrasada && tarea.estado !== 'completada' && <AtrasadaBadge className="px-3 py-1 text-sm" />}
                                     </div>
                                 </div>
                                 <div>

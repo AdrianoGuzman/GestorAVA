@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CategoriaAdjunto;
+use App\Http\Requests\Tarea\ActualizarTareaRequest;
 use App\Http\Requests\Tarea\AdjuntarArchivoRequest;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
@@ -95,11 +96,19 @@ class TareaController extends Controller
                 "puedeUsarChecklistPersonal" => $this->permisos->puedeUsarChecklistPersonal($tarea, $usuario),
                 "puedeUsarChecklist" => $this->permisos->puedeUsarChecklist($tarea, $usuario),
                 "puedeAsignarDuenoChecklist" => $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario),
+                "puedeEditar" => $this->permisos->puedeEditar($tarea, $usuario),
                 // RF-18: duplicar no tiene restriccion de rol en la spec, cualquiera
                 // con acceso al detalle puede hacerlo.
                 "puedeDuplicar" => true,
             ],
         ]);
+    }
+
+    public function actualizar(ActualizarTareaRequest $request, Tarea $tarea): RedirectResponse
+    {
+        $this->tareaService->actualizar($tarea, $request->validated(), $request->user());
+
+        return back()->with("success", "Tarea actualizada correctamente.");
     }
 
     public function agregarAdjunto(AdjuntarArchivoRequest $request, Tarea $tarea): RedirectResponse

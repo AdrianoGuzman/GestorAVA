@@ -13,3 +13,9 @@ Artisan::command('inspire', function () {
 // compose ya corre "php artisan schedule:work" -- no hace falta tocar
 // infraestructura, esto empieza a correr solo.
 Schedule::command('tareas:marcar-atrasadas')->hourly()->withoutOverlapping();
+
+// RF-15: aviso de una sola vez cuando a una tarea activa le quedan 2 dias
+// para su fecha de compromiso (recordatorio_vencimiento_enviado evita que
+// se repita). Corre una vez al dia por la manana, no hace falta cada hora
+// porque el aviso no cambia durante el dia.
+Schedule::command('tareas:notificar-proximas-vencer')->dailyAt('08:00')->withoutOverlapping();

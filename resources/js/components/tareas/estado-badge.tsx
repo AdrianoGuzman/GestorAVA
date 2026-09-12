@@ -14,10 +14,10 @@ export function EstadoBadge({ estado, className }: { estado: EstadoTarea; classN
     );
 }
 
-export function AtrasadaBadge({ className }: { className?: string }) {
+export function AtrasadaBadge({ label = 'Atrasada', className }: { label?: string; className?: string }) {
     return (
         <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', ATRASADA_BADGE_CLASSES, className)}>
-            Atrasada
+            {label}
         </span>
     );
 }

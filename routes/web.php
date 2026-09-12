@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store');
     Route::get('tareas/{tarea}', [TareaController::class, 'show'])->name('tareas.show');
+    Route::patch('tareas/{tarea}', [TareaController::class, 'actualizar'])->name('tareas.actualizar');
     Route::patch('tareas/{tarea}/reasignar', [TareaController::class, 'reasignar'])->name('tareas.reasignar');
     Route::post('tareas/{tarea}/colaboradores', [TareaController::class, 'agregarColaborador'])->name('tareas.colaboradores.store');
     Route::patch('tareas/{tarea}/completar', [TareaController::class, 'completar'])->name('tareas.completar');

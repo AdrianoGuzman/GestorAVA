@@ -8,7 +8,9 @@ use App\Models\User;
 use App\Notifications\NoParticipacionReportadaNotification;
 use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaAtrasadaNotification;
 use App\Notifications\TareaCanceladaNotification;
+use App\Notifications\TareaProximaAVencerNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
@@ -88,5 +90,35 @@ class NotificacionService
         ]);
 
         $colaborador->notify(new TareaCanceladaNotification($tarea, $motivo));
+    }
+
+    /**
+     * RF-14: avisa al responsable o a un colaborador que la tarea paso su
+     * fecha de compromiso y quedo marcada como atrasada.
+     */
+    public function notificarAtraso(User $destinatario, Tarea $tarea): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Atraso,
+            "mensaje" => "La tarea \"{$tarea->titulo}\" quedó marcada como atrasada.",
+        ]);
+
+        $destinatario->notify(new TareaAtrasadaNotification($tarea));
+    }
+
+    /**
+     * RF-15: avisa al responsable o a un colaborador que a la tarea le
+     * quedan pocos dias para su fecha de compromiso.
+     */
+    public function notificarProximoVencimiento(User $destinatario, Tarea $tarea): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::ProximoVencimiento,
+            "mensaje" => "La tarea \"{$tarea->titulo}\" está por vencer.",
+        ]);
+
+        $destinatario->notify(new TareaProximaAVencerNotification($tarea));
     }
 }

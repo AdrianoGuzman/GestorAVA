@@ -20,6 +20,8 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     checklist_item_eliminado: 'Eliminó un ítem del checklist',
     adjunto_agregado: 'Adjuntó un archivo',
     tarea_atrasada: 'Se marcó como atrasada automáticamente',
+    tarea_editada: 'Editó la tarea',
+    tarea_proxima_a_vencer: 'Se avisó que la tarea está por vencer',
 };
 
 /** RF-24 D5 / RF-16: historial cronológico completo de eventos de la tarea. */

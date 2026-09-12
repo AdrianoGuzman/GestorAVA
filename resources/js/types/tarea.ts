@@ -19,7 +19,9 @@ export type TipoEvento =
     | 'checklist_item_editado'
     | 'checklist_item_eliminado'
     | 'adjunto_agregado'
-    | 'tarea_atrasada';
+    | 'tarea_atrasada'
+    | 'tarea_editada'
+    | 'tarea_proxima_a_vencer';
 
 export interface UsuarioTarea {
     id: number;
@@ -84,6 +86,7 @@ export interface TareaDetalle {
     fecha_cancelacion: string | null;
     motivo_cancelacion: string | null;
     created_at: string;
+    updated_at: string;
     responsable: UsuarioTarea;
     creador: UsuarioTarea;
     colaboradores: UsuarioTarea[];
@@ -103,6 +106,7 @@ export interface TareaResumen {
     estado: EstadoTarea;
     esta_atrasada: boolean;
     fecha_compromiso: string;
+    updated_at: string;
     responsable: UsuarioTarea;
     unidad_organizacional: { id: number; nombre: string } | null;
     rol: NonNullable<RolUsuarioTarea>;
@@ -139,5 +143,6 @@ export interface PermisosTarea {
     puedeUsarChecklistPersonal: boolean;
     puedeUsarChecklist: boolean;
     puedeAsignarDuenoChecklist: boolean;
+    puedeEditar: boolean;
     puedeDuplicar: boolean;
 }

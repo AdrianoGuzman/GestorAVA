@@ -10,4 +10,6 @@ enum TipoNotificacion: string
     case NoParticipacionReportada = 'no_participacion_reportada';
     case Cancelacion = 'cancelacion';
     case DependenciaCreada = 'dependencia_creada';
+    case Atraso = 'atraso';
+    case ProximoVencimiento = 'proximo_vencimiento';
 }

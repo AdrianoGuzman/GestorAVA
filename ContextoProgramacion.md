@@ -57,13 +57,16 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `NotificacionService::notificarAsignacion()` — crea notificación in-app + dispara mail.
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
-- **Ya implementado (backend + frontend)**: RF-04 (crear tarea), RF-05 (reasignar responsable,
-  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend + frontend), RF-10
-  (transición automática), RF-11 (completar), RF-12 (retroceso),
+- **Ya implementado (backend + frontend)**: RF-04 (crear tarea; también `TareaService::actualizar()`
+  para editar título/descripción/fechas después de creada, sin tocar responsable/colaboradores --
+  solo responsable o creador, bloqueado en tareas completadas/canceladas), RF-05 (reasignar
+  responsable, incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend + frontend),
+  RF-10 (transición automática), RF-11 (completar), RF-12 (retroceso),
   RF-13 (reportar problema, rediseñado -- ya no cambia el estado de la tarea, ver
-  `ReporteProblemaService.php`), RF-14 (detección automática de atraso, ver nota abajo),
-  RF-19 (adjuntar evidencia), RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`),
-  RF-25 (cancelación).
+  `ReporteProblemaService.php`), RF-14 (detección automática de atraso + notificación al
+  responsable/colaboradores, ver nota abajo), RF-15 (recordatorio de vencimiento próximo,
+  ver nota abajo), RF-19 (adjuntar evidencia),
+  RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
 - **Ya implementado por Elian (11/12-09-2026): RF-01, RF-02, RF-03 y RNF-08 completos.**
@@ -85,6 +88,24 @@ fecha de compromiso. Ahora `app/Console/Commands/MarcarTareasAtrasadas.php` (via
 atrasadas las tareas Pendiente/EnProgreso cuya `fecha_compromiso` ya pasó por completo (al
 día siguiente, no el mismo día). Queda un evento nuevo en el historial,
 `TipoEvento::TareaAtrasada` -- si tenés algo que filtra o cuenta tipos de evento, agregalo ahí.
+Desde el 12-09-2026 también notifica (in-app + mail) al responsable y a cada colaborador --
+antes la marca quedaba muda, nadie se enteraba sin entrar a mirar la tarea.
+
+**RF-15 (12-09-2026): recordatorio de vencimiento próximo, ya activo.** Existía la clase
+`TareaProximaAVencerNotification` desde el commit `547b5f2` (8-09-2026) pero nunca se llamaba
+desde ningún lado. Ahora `app/Console/Commands/NotificarTareasProximasAVencer.php` (via
+`RecordatorioVencimientoService`) corre una vez al día a las 08:00 y avisa (in-app + mail) al
+responsable y a los colaboradores cuando a una tarea Pendiente/EnProgreso le quedan
+**exactamente 2 días** para su `fecha_compromiso`. Es un aviso de una sola vez -- usa la
+columna nueva `recordatorio_vencimiento_enviado` para no repetirse (a diferencia de
+`esta_atrasada`, que se mantiene mientras la condición sea verdadera, este es un flag que una
+vez en `true` no vuelve a `false`). Evento nuevo en el historial: `TipoEvento::TareaProximaAVencer`.
+
+**"Editar tarea" (12-09-2026):** no existía forma de corregir título/descripción/fechas después
+de creada -- la única opción era cancelar y crear de nuevo. Ahora `PATCH /tareas/{tarea}`
+(`TareaService::actualizar()`) lo permite; solo responsable o creador, bloqueado si la tarea
+está completada/cancelada. Si la fecha corregida ya no está vencida, `esta_atrasada` se limpia
+sola. No toca responsable/colaboradores, eso sigue con su propio flujo (RF-05/RF-06).
 
 **Dos bugs de fondo que encontró Elian al probar en un entorno real (no solo `composer test`),
 relevantes para cualquiera que arme su propio `.env` local:**
@@ -132,10 +153,12 @@ placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependenc
 (RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
 mover ni renombrar la tarjeta en sí.
 
-**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026), distintas de la spec original:**
-- **Solo el creador de la tarea asigna el dueño de un ítem** — no hay autoasignación por parte
-  de un colaborador, para evitar confusión en la interfaz. Es una restricción más estricta
-  que el D1.4 de la spec original ("autoasignación permitida"); prevalece esta decisión.
+**Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026, ajustada 12-09-2026), distintas de la spec original:**
+- **El responsable o el creador de la tarea asignan el dueño de un ítem** — no hay
+  autoasignación por parte de un colaborador, para evitar confusión en la interfaz. Es una
+  restricción más estricta que el D1.4 de la spec original ("autoasignación permitida");
+  prevalece esta decisión. (Ajuste 12-09-2026: originalmente solo el creador podía hacerlo;
+  se amplió al responsable porque es quien más de cerca sigue el trabajo día a día.)
 - **La sección de Checklist solo se muestra si la tarea tiene colaboradores.** Si el
   responsable es el único involucrado (sin colaboradores), esa tarjeta no debe aparecer —
   en ese caso el responsable usa un "checklist personal" propio (ver abajo, no es RF-23).
