@@ -4,6 +4,7 @@ namespace App\Http\Requests\Usuario;
 
 use App\Enums\NivelJerarquico;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
@@ -20,6 +21,24 @@ use Illuminate\Validation\Rules\Enum;
  */
 class CrearUsuarioRequest extends FormRequest
 {
+    /**
+     * Lista cerrada de cargos de ejemplo del rubro de AVA Montajes.
+     * Mantener sincronizada con CARGOS_AVA en resources/js/types/usuario.ts.
+     */
+    private const CARGOS_AVA = [
+        "Gerente de Operaciones",
+        "Jefe de Obra",
+        "Supervisor de Obra",
+        "Ingeniero de Proyectos",
+        "Prevencionista de Riesgos",
+        "Administrativo de Obra",
+        "Bodeguero",
+        "Maestro Electricista",
+        "Electricista",
+        "Soldador",
+        "Ayudante de Montaje",
+    ];
+
     public function authorize(): bool
     {
         return true;
@@ -32,8 +51,8 @@ class CrearUsuarioRequest extends FormRequest
             "nombre_2" => ["required", "string", "max:255"],
             "apellido_1" => ["required", "string", "max:255"],
             "apellido_2" => ["required", "string", "max:255"],
-            "cargo" => ["required", "string", "max:255"],
-            "rut" => ["required", "string", "max:20", "unique:usuarios.users,rut"],
+            "cargo" => ["required", "string", Rule::in(self::CARGOS_AVA)],
+            "rut" => ["required", "string", "regex:/^\d{1,8}-[\dkK]$/", "unique:usuarios.users,rut"],
             "email" => ["required", "string", "email", "max:255", "unique:usuarios.users,email"],
             "password" => ["required", "string", "min:8"],
             "nivel_jerarquico" => ["required", new Enum(NivelJerarquico::class)],

@@ -239,7 +239,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                         tareaId={tarea.id}
                                         routeName="tareas.no-participar"
                                         title="No puedo ser parte de esto"
-                                        description="Avisá que no podés o no querés seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si sos el responsable, el responsable si sos colaborador)."
+                                        description="Avisa que no puedes o no quieres seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si eres el responsable, el responsable si eres colaborador)."
                                         submitLabel="Enviar aviso"
                                         submitIcon={UserX}
                                         trigger={

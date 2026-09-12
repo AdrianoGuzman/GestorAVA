@@ -77,6 +77,7 @@ export function AgregarColaboradorDialog({ trigger, tareaId, personas }: { trigg
                                 personas={personas}
                                 seleccionadosIds={seleccionadas.map((p) => p.id)}
                                 onSelect={alternar}
+                                cerrarAlSeleccionar
                                 trigger={
                                     <Button type="button" variant="outline" size="sm" className="w-fit">
                                         <UserPlus /> Agregar persona

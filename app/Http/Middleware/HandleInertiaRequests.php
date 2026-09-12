@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                 // pagina sin pedirlo aparte -- el detalle de la lista se pide
                 // solo al abrir la campana (ver NotificacionController).
                 'notificacionesNoLeidas' => $request->user()?->notificacionesRecibidas()->where('leida', false)->count() ?? 0,
+                'puedeEliminarUsuarios' => $request->user()?->nivel_jerarquico?->puedeEliminarUsuarios() ?? false,
             ],
         ]);
     }

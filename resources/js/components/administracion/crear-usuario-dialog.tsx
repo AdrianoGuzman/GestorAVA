@@ -3,23 +3,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NIVEL_JERARQUICO_LABELS, type NivelJerarquico, type UnidadOrganizacional } from '@/types/usuario';
+import { formatearRut } from '@/lib/rut';
+import { CARGOS_AVA, NIVEL_JERARQUICO_LABELS, type CargoAva, type NivelJerarquico, type UnidadOrganizacional } from '@/types/usuario';
 import { useForm } from '@inertiajs/react';
 import { UserPlus } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 
-/**
- * RNF-08: alta minima de usuario (nivel + unidad), para no tener que tocar
- * la BD a mano. Sin edicion ni baja -- eso queda para la administracion
- * completa de Fase 2.
- */
+/** RNF-08: alta minima de usuario (nombre, credenciales, cargo, nivel y unidad). */
 export function CrearUsuarioDialog({ unidades }: { unidades: UnidadOrganizacional[] }) {
+    const [open, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
         nombre_1: '',
         nombre_2: '',
         apellido_1: '',
         apellido_2: '',
-        cargo: '',
+        cargo: '' as CargoAva | '',
         rut: '',
         email: '',
         password: '',
@@ -32,12 +30,15 @@ export function CrearUsuarioDialog({ unidades }: { unidades: UnidadOrganizaciona
 
         post(route('usuarios.store'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setOpen(false);
+            },
         });
     };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button>
                     <UserPlus /> Nuevo usuario
@@ -80,12 +81,30 @@ export function CrearUsuarioDialog({ unidades }: { unidades: UnidadOrganizaciona
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="rut">RUT</Label>
-                                <Input id="rut" value={data.rut} onChange={(e) => setData('rut', e.target.value)} required />
+                                <Input
+                                    id="rut"
+                                    value={data.rut}
+                                    onChange={(e) => setData('rut', formatearRut(e.target.value))}
+                                    placeholder="12345678-9"
+                                    maxLength={10}
+                                    required
+                                />
                                 {errors.rut && <p className="text-sm text-rojo-1">{errors.rut}</p>}
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="cargo">Cargo</Label>
-                                <Input id="cargo" value={data.cargo} onChange={(e) => setData('cargo', e.target.value)} required />
+                                <Label>Cargo</Label>
+                                <Select value={data.cargo} onValueChange={(value) => setData('cargo', value as CargoAva)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Elegir cargo..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CARGOS_AVA.map((cargo) => (
+                                            <SelectItem key={cargo} value={cargo}>
+                                                {cargo}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 {errors.cargo && <p className="text-sm text-rojo-1">{errors.cargo}</p>}
                             </div>
                         </div>
