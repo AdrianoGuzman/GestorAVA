@@ -5,6 +5,9 @@ namespace Tests\Feature\Tarea;
 use App\Enums\EstadoTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
+use App\Models\User;
+use App\Notifications\TareaAtrasadaNotification;
+use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\RefreshesDualSchemaDatabase;
 use Tests\TestCase;
 
@@ -91,6 +94,26 @@ class DeteccionAtrasoTest extends TestCase
         $this->artisan("tareas:marcar-atrasadas");
 
         $this->assertFalse($tarea->fresh()->esta_atrasada);
+    }
+
+    public function test_notifica_al_responsable_y_a_los_colaboradores(): void
+    {
+        Notification::fake();
+
+        $responsable = User::factory()->create();
+        $colaborador = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "estado" => EstadoTarea::EnProgreso,
+            "esta_atrasada" => false,
+            "fecha_compromiso" => now()->subDay(),
+        ]);
+        $tarea->colaboradores()->attach($colaborador->id);
+
+        $this->artisan("tareas:marcar-atrasadas");
+
+        Notification::assertSentTo($responsable, TareaAtrasadaNotification::class);
+        Notification::assertSentTo($colaborador, TareaAtrasadaNotification::class);
     }
 
     public function test_no_duplica_el_historial_si_corre_dos_veces(): void

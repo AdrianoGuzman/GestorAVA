@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\NoParticipacionReportadaNotification;
 use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
+use App\Notifications\TareaAtrasadaNotification;
 use App\Notifications\TareaCanceladaNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
@@ -88,5 +89,20 @@ class NotificacionService
         ]);
 
         $colaborador->notify(new TareaCanceladaNotification($tarea, $motivo));
+    }
+
+    /**
+     * RF-14: avisa al responsable o a un colaborador que la tarea paso su
+     * fecha de compromiso y quedo marcada como atrasada.
+     */
+    public function notificarAtraso(User $destinatario, Tarea $tarea): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::Atraso,
+            "mensaje" => "La tarea \"{$tarea->titulo}\" quedó marcada como atrasada.",
+        ]);
+
+        $destinatario->notify(new TareaAtrasadaNotification($tarea));
     }
 }
