@@ -11,4 +11,5 @@ enum TipoNotificacion: string
     case Cancelacion = 'cancelacion';
     case DependenciaCreada = 'dependencia_creada';
     case Atraso = 'atraso';
+    case ProximoVencimiento = 'proximo_vencimiento';
 }

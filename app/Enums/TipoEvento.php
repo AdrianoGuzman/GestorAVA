@@ -24,4 +24,5 @@ enum TipoEvento: string
     case NoParticipacionReportada = 'no_participacion_reportada';
     case TareaAtrasada = 'tarea_atrasada';
     case TareaEditada = 'tarea_editada';
+    case TareaProximaAVencer = 'tarea_proxima_a_vencer';
 }

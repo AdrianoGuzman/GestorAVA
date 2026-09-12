@@ -20,7 +20,8 @@ export type TipoEvento =
     | 'checklist_item_eliminado'
     | 'adjunto_agregado'
     | 'tarea_atrasada'
-    | 'tarea_editada';
+    | 'tarea_editada'
+    | 'tarea_proxima_a_vencer';
 
 export interface UsuarioTarea {
     id: number;

@@ -64,7 +64,8 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   RF-10 (transición automática), RF-11 (completar), RF-12 (retroceso),
   RF-13 (reportar problema, rediseñado -- ya no cambia el estado de la tarea, ver
   `ReporteProblemaService.php`), RF-14 (detección automática de atraso + notificación al
-  responsable/colaboradores, ver nota abajo), RF-19 (adjuntar evidencia),
+  responsable/colaboradores, ver nota abajo), RF-15 (recordatorio de vencimiento próximo,
+  ver nota abajo), RF-19 (adjuntar evidencia),
   RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`), RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
@@ -89,6 +90,16 @@ día siguiente, no el mismo día). Queda un evento nuevo en el historial,
 `TipoEvento::TareaAtrasada` -- si tenés algo que filtra o cuenta tipos de evento, agregalo ahí.
 Desde el 12-09-2026 también notifica (in-app + mail) al responsable y a cada colaborador --
 antes la marca quedaba muda, nadie se enteraba sin entrar a mirar la tarea.
+
+**RF-15 (12-09-2026): recordatorio de vencimiento próximo, ya activo.** Existía la clase
+`TareaProximaAVencerNotification` desde el commit `547b5f2` (8-09-2026) pero nunca se llamaba
+desde ningún lado. Ahora `app/Console/Commands/NotificarTareasProximasAVencer.php` (via
+`RecordatorioVencimientoService`) corre una vez al día a las 08:00 y avisa (in-app + mail) al
+responsable y a los colaboradores cuando a una tarea Pendiente/EnProgreso le quedan
+**exactamente 2 días** para su `fecha_compromiso`. Es un aviso de una sola vez -- usa la
+columna nueva `recordatorio_vencimiento_enviado` para no repetirse (a diferencia de
+`esta_atrasada`, que se mantiene mientras la condición sea verdadera, este es un flag que una
+vez en `true` no vuelve a `false`). Evento nuevo en el historial: `TipoEvento::TareaProximaAVencer`.
 
 **"Editar tarea" (12-09-2026):** no existía forma de corregir título/descripción/fechas después
 de creada -- la única opción era cancelar y crear de nuevo. Ahora `PATCH /tareas/{tarea}`

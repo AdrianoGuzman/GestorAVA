@@ -30,6 +30,7 @@ class Tarea extends Model {
         "fecha_compromiso",
         "estado",
         "esta_atrasada",
+        "recordatorio_vencimiento_enviado",
         "tarea_padre_id",
         "motivo_cancelacion",
         "fecha_cancelacion",
@@ -38,6 +39,7 @@ class Tarea extends Model {
     protected $casts = [
         "estado" => EstadoTarea::class,
         "esta_atrasada" => "boolean",
+        "recordatorio_vencimiento_enviado" => "boolean",
         "fecha_inicio" => "date",
         "fecha_compromiso" => "date",
         "fecha_cancelacion" => "datetime",

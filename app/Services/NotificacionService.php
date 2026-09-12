@@ -10,6 +10,7 @@ use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
 use App\Notifications\TareaAtrasadaNotification;
 use App\Notifications\TareaCanceladaNotification;
+use App\Notifications\TareaProximaAVencerNotification;
 use App\Notifications\TareaRetrocedidaNotification;
 
 class NotificacionService
@@ -104,5 +105,20 @@ class NotificacionService
         ]);
 
         $destinatario->notify(new TareaAtrasadaNotification($tarea));
+    }
+
+    /**
+     * RF-15: avisa al responsable o a un colaborador que a la tarea le
+     * quedan pocos dias para su fecha de compromiso.
+     */
+    public function notificarProximoVencimiento(User $destinatario, Tarea $tarea): void
+    {
+        $destinatario->notificacionesRecibidas()->create([
+            "tarea_id" => $tarea->id,
+            "tipo" => TipoNotificacion::ProximoVencimiento,
+            "mensaje" => "La tarea \"{$tarea->titulo}\" está por vencer.",
+        ]);
+
+        $destinatario->notify(new TareaProximaAVencerNotification($tarea));
     }
 }
