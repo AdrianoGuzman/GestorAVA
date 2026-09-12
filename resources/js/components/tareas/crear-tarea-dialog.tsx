@@ -63,7 +63,7 @@ export function CrearTareaDialog({ trigger, personas }: { trigger: React.ReactNo
                 <form onSubmit={submit}>
                     <DialogHeader>
                         <DialogTitle>Nueva tarea</DialogTitle>
-                        <DialogDescription>Por defecto quedás como responsable, salvo que elijas a otra persona.</DialogDescription>
+                        <DialogDescription>Por defecto quedas como responsable, salvo que elijas a otra persona.</DialogDescription>
                     </DialogHeader>
 
                     <div className="grid gap-4 py-4">

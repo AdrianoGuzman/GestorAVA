@@ -118,7 +118,7 @@ export function CampanaNotificaciones() {
                     )}
 
                     {!cargando && notificaciones?.length === 0 && (
-                        <p className="py-10 text-center text-sm text-muted-foreground">No tenés notificaciones.</p>
+                        <p className="py-10 text-center text-sm text-muted-foreground">No tienes notificaciones.</p>
                     )}
 
                     {!cargando &&
