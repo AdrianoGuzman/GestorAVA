@@ -1,7 +1,10 @@
 import { LucideIcon } from 'lucide-react';
+import type { NivelJerarquico } from './usuario';
 
 export interface Auth {
     user: User;
+    /** RF-03 D2.1: distintos niveles jerarquicos ven distintas opciones de menu. */
+    puedeAdministrarEstructura: boolean;
 }
 
 export interface BreadcrumbItem {
@@ -31,10 +34,17 @@ export interface SharedData {
 export interface User {
     id: number;
     name: string;
+    nombre_1: string;
+    nombre_2: string;
+    apellido_1: string;
+    apellido_2: string;
     email: string;
+    cargo: string;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    nivel_jerarquico: NivelJerarquico | null;
+    unidad_organizacional_id: number | null;
     [key: string]: unknown; // This allows for additional properties...
 }

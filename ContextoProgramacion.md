@@ -58,14 +58,24 @@ servicios compartidos), avisar en el grupo — ahí es donde salen los conflicto
   - `PermisosService` — quién puede reasignar, autorizar excepciones, o agregar colaboradores
     sobre una tarea.
 - **Ya implementado (backend + frontend)**: RF-04 (crear tarea), RF-05 (reasignar responsable,
-  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, **backend + frontend, ver nota
-  para Elian abajo**), RF-10 (transición automática), RF-11 (completar), RF-12 (retroceso),
+  incl. RN-12), RF-06 (agregar colaborador), RF-09 (Mis tareas, backend + frontend), RF-10
+  (transición automática), RF-11 (completar), RF-12 (retroceso),
   RF-13 (reportar problema, rediseñado -- ya no cambia el estado de la tarea, ver
   `ReporteProblemaService.php`), RF-14 (detección automática de atraso, ver nota abajo),
   RF-19 (adjuntar evidencia), RF-24 (vista de detalle, `resources/js/pages/tareas/show.tsx`),
   RF-25 (cancelación).
   Ver `app/Services/TareaService.php`, `ReasignacionService.php`, `ColaboradorService.php`,
   `FinalizacionService.php` como referencia de cómo está armado el patrón Controller→Service.
+- **Ya implementado por Elian (11/12-09-2026): RF-01, RF-02, RF-03 y RNF-08 completos.**
+  Login (ya venía del scaffold de Breeze, generic error message verificado con test), niveles
+  jerárquicos + unidad organizacional con seed de prueba (`UnidadOrganizacionalSeeder`,
+  `UsuarioSeeder` -- un usuario de prueba por nivel: `gerencia@ava.cl`, `jefearea@ava.cl`,
+  `asistente@ava.cl`, todos password `password`; `admin@ava.cl` queda como Directorio),
+  redirección post-login a `mis-tareas.index` para los 4 niveles (gracias a que Franco liberó
+  el bloqueo de RF-09, ver commit `7a4a12d`), menú diferenciado por nivel (`Administración`
+  visible solo para Directorio/Gerencia vía `auth.puedeAdministrarEstructura`, compartido desde
+  `HandleInertiaRequests` para no duplicar la regla en el frontend), y pantalla mínima de
+  administración de usuarios (`/administracion/usuarios`, crear + editar nivel/unidad).
 
 **RF-14 (11-09-2026): `esta_atrasada` ahora se marca sola.** Antes solo se seteaba a mano en
 tests/factories -- una tarea nunca se marcaba atrasada en la app real aunque se pasara la
@@ -76,12 +86,29 @@ atrasadas las tareas Pendiente/EnProgreso cuya `fecha_compromiso` ya pasó por c
 día siguiente, no el mismo día). Queda un evento nuevo en el historial,
 `TipoEvento::TareaAtrasada` -- si tenés algo que filtra o cuenta tipos de evento, agregalo ahí.
 
-**Nota para Elian (11-09-2026): RF-09 "Mis tareas" ya tiene vista propia, dejó de ser un
-endpoint JSON.** `GET /mis-tareas` (`route('mis-tareas.index')`) ahora renderiza
-`resources/js/pages/mis-tareas/index.tsx` (listado con búsqueda, filtros, filtro rápido por
-rol y botón de "Nueva tarea"). El bloqueo que tenías anotado en
-`AuthenticatedSessionController.php` ya no aplica -- podés cambiar el destino post-login de
-`route('dashboard')` a `route('mis-tareas.index')` cuando quieras.
+**Dos bugs de fondo que encontró Elian al probar en un entorno real (no solo `composer test`),
+relevantes para cualquiera que arme su propio `.env` local:**
+1. **`DB_CONNECTION` en `.env` debe ser `usuarios`, no `pgsql`.** `.env.example` y
+   `.env.testing` ya lo tienen bien, pero un `.env` local mal copiado con `DB_CONNECTION=pgsql`
+   hace que **cualquier** regla de validación `exists:`/`unique:` con nombre de tabla pelado
+   (sin prefijo de conexión) busque la tabla en el schema `public` en vez de `usuarios` y tire
+   `relation ... does not exist` -- silenciosamente, porque las queries de los *modelos*
+   Eloquent sí usan la conexión correcta (`protected $connection = "usuarios"`) y no fallan, así
+   que solo se nota al ejercitar una validación real. Si a alguien más le pasa esto: revisar
+   `DB_CONNECTION` en su `.env` local antes de sospechar del código.
+2. **`storage/logs` y `bootstrap/cache` necesitan permisos abiertos** en el contenedor Docker de
+   cada uno (PHP-FPM corre como `www-data`, pero `composer`/`artisan` corren como `root` al
+   armar la imagen, así que cualquier archivo nuevo queda `root:root` y `www-data` no puede
+   escribirlo). Si a alguien le aparece un 500/504 sin nada en `storage/logs/laravel.log`, correr
+   `chmod -R 777 storage bootstrap/cache` dentro del contenedor.
+
+**Fix de Elian (12-09-2026) sobre `ProfileUpdateRequest`/`settings/profile.tsx`:** el "bug
+conocido" de cambio de nombre en el perfil (documentado en `docs/contexto-diseno-ia.md`) era
+que el formulario editaba un campo `name` que no es una columna real (es el accessor
+`getNameAttribute()`), así que guardar no hacía nada. Ahora edita `nombre_1`/`nombre_2`/
+`apellido_1`/`apellido_2` directamente, igual que el registro (que ya estaba bien). El
+`RegistrationTest`/`ProfileUpdateTest` desactualizados (todavía usaban el `name` viejo de
+Breeze) también quedaron al día.
 
 ## Guards de completado (importante para Oscar y Jeremy)
 

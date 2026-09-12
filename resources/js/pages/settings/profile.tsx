@@ -14,7 +14,7 @@ import SettingsLayout from '@/layouts/settings/layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Profile settings',
+        title: 'Configuración de perfil',
         href: '/settings/profile',
     },
 ];
@@ -23,7 +23,10 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const { auth } = usePage<SharedData>().props;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
-        name: auth.user.name,
+        nombre_1: auth.user.nombre_1,
+        nombre_2: auth.user.nombre_2,
+        apellido_1: auth.user.apellido_1,
+        apellido_2: auth.user.apellido_2,
         email: auth.user.email,
     });
 
@@ -35,31 +38,69 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Head title="Configuración de perfil" />
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <HeadingSmall title="Información de perfil" description="Actualiza tu nombre y correo electrónico" />
 
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Name</Label>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="nombre_1">Primer nombre</Label>
+                                <Input
+                                    id="nombre_1"
+                                    className="mt-1 block w-full"
+                                    value={data.nombre_1}
+                                    onChange={(e) => setData('nombre_1', e.target.value)}
+                                    required
+                                    autoComplete="given-name"
+                                />
+                                <InputError className="mt-2" message={errors.nombre_1} />
+                            </div>
 
-                            <Input
-                                id="name"
-                                className="mt-1 block w-full"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                required
-                                autoComplete="name"
-                                placeholder="Full name"
-                            />
+                            <div className="grid gap-2">
+                                <Label htmlFor="nombre_2">Segundo nombre</Label>
+                                <Input
+                                    id="nombre_2"
+                                    className="mt-1 block w-full"
+                                    value={data.nombre_2}
+                                    onChange={(e) => setData('nombre_2', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.nombre_2} />
+                            </div>
+                        </div>
 
-                            <InputError className="mt-2" message={errors.name} />
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="apellido_1">Primer apellido</Label>
+                                <Input
+                                    id="apellido_1"
+                                    className="mt-1 block w-full"
+                                    value={data.apellido_1}
+                                    onChange={(e) => setData('apellido_1', e.target.value)}
+                                    required
+                                    autoComplete="family-name"
+                                />
+                                <InputError className="mt-2" message={errors.apellido_1} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="apellido_2">Segundo apellido</Label>
+                                <Input
+                                    id="apellido_2"
+                                    className="mt-1 block w-full"
+                                    value={data.apellido_2}
+                                    onChange={(e) => setData('apellido_2', e.target.value)}
+                                    required
+                                />
+                                <InputError className="mt-2" message={errors.apellido_2} />
+                            </div>
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email address</Label>
+                            <Label htmlFor="email">Correo electrónico</Label>
 
                             <Input
                                 id="email"
@@ -69,7 +110,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
                                 autoComplete="username"
-                                placeholder="Email address"
+                                placeholder="Correo electrónico"
                             />
 
                             <InputError className="mt-2" message={errors.email} />
@@ -78,27 +119,27 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>
                                 <p className="mt-2 text-sm text-neutral-800">
-                                    Your email address is unverified.
+                                    Tu correo electrónico no está verificado.
                                     <Link
                                         href={route('verification.send')}
                                         method="post"
                                         as="button"
                                         className="rounded-md text-sm text-neutral-600 underline hover:text-neutral-900 focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
                                     >
-                                        Click here to re-send the verification email.
+                                        Haz clic aquí para reenviar el correo de verificación.
                                     </Link>
                                 </p>
 
                                 {status === 'verification-link-sent' && (
                                     <div className="mt-2 text-sm font-medium text-green-600">
-                                        A new verification link has been sent to your email address.
+                                        Se envió un nuevo enlace de verificación a tu correo electrónico.
                                     </div>
                                 )}
                             </div>
                         )}
 
                         <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Save</Button>
+                            <Button disabled={processing}>Guardar</Button>
 
                             <Transition
                                 show={recentlySuccessful}
@@ -107,7 +148,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 leave="transition ease-in-out"
                                 leaveTo="opacity-0"
                             >
-                                <p className="text-sm text-neutral-600">Saved</p>
+                                <p className="text-sm text-neutral-600">Guardado</p>
                             </Transition>
                         </div>
                     </form>

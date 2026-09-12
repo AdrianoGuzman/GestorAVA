@@ -37,4 +37,32 @@ enum NivelJerarquico: string
     {
         return $this->rango() > $otro->rango();
     }
+
+    /**
+     * Nombre neutro para mostrar en la UI (RN-01): son los niveles de la
+     * jerarquia organizacional, no el cargo literal de la persona (ese es
+     * el campo "cargo" del usuario, un dato aparte).
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Directorio => 'Directorio',
+            self::Gerencia => 'Gerencia',
+            self::JefeArea => 'Jefe de área/obra',
+            self::Asistente => 'Asistente',
+        };
+    }
+
+    /**
+     * RNF-08: solo Directorio y Gerencia administran la estructura
+     * organizacional (alta de usuarios, nivel y unidad). El resto de la UI
+     * de administracion queda para Fase 2.
+     */
+    public function puedeAdministrarEstructura(): bool
+    {
+        return match ($this) {
+            self::Directorio, self::Gerencia => true,
+            self::JefeArea, self::Asistente => false,
+        };
+    }
 }

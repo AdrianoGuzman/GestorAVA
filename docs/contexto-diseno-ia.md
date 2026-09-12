@@ -155,7 +155,7 @@ corregirlo), y cuando se cancela una tarea (les llega a los colaboradores).
 - **Dependencias entre tareas** (tarea padre/hija, bloquea completar el padre
   si hay hijas pendientes) — también con placeholder reservado.
 - **Autenticación/roles** (login, registro, cambio de nombre en el perfil —
-  este último tiene un bug conocido, no relacionado con diseño).
+  el bug conocido del cambio de nombre ya lo arregló Elian el 12-09-2026).
 
 ## Convenciones a respetar si se propone algo nuevo
 

@@ -28,7 +28,10 @@ class ProfileUpdateTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->patch('/settings/profile', [
-                'name' => 'Test User',
+                'nombre_1' => 'Testa',
+                'nombre_2' => 'Middle',
+                'apellido_1' => 'Userson',
+                'apellido_2' => 'Example',
                 'email' => 'test@example.com',
             ]);
 
@@ -38,7 +41,7 @@ class ProfileUpdateTest extends TestCase
 
         $user->refresh();
 
-        $this->assertSame('Test User', $user->name);
+        $this->assertSame('Testa Middle Userson Example', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
     }
@@ -50,7 +53,10 @@ class ProfileUpdateTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->patch('/settings/profile', [
-                'name' => 'Test User',
+                'nombre_1' => $user->nombre_1,
+                'nombre_2' => $user->nombre_2,
+                'apellido_1' => $user->apellido_1,
+                'apellido_2' => $user->apellido_2,
                 'email' => $user->email,
             ]);
 

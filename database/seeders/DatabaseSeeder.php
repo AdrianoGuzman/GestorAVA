@@ -25,5 +25,10 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@ava.cl',
             'password' => bcrypt('password'),
         ]);
+
+        $this->call([
+            UnidadOrganizacionalSeeder::class,
+            UsuarioSeeder::class,
+        ]);
     }
 }

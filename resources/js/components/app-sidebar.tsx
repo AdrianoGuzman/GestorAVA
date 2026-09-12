@@ -1,25 +1,35 @@
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { LayoutGrid, ListTodo } from 'lucide-react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { ListTodo, Settings } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        url: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Mis tareas',
-        url: '/mis-tareas',
-        icon: ListTodo,
-    },
-];
-
+/**
+ * RF-03 D2.1: el conjunto de opciones de menu depende del nivel jerarquico
+ * de quien inicio sesion (calculado en el backend, ver HandleInertiaRequests).
+ */
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Mis tareas',
+            url: route('mis-tareas.index'),
+            icon: ListTodo,
+        },
+        ...(auth.puedeAdministrarEstructura
+            ? [
+                  {
+                      title: 'Administración',
+                      url: route('usuarios.index'),
+                      icon: Settings,
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             {/* Trama corporativa (public/Trama_Corporativa.ai) como textura decorativa de
@@ -35,7 +45,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href={route('mis-tareas.index')} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
