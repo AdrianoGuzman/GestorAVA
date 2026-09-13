@@ -189,3 +189,36 @@
         @apply bg-background text-foreground;
     }
 }
+
+/*
+  Scrollbar delgada y redondeada en toda la app (Firefox + Chromium), en vez
+  de la barra ancha por defecto del sistema. Usa gris-1 (--muted-foreground),
+  no verde -- el manual reserva el verde como detalle en botones/estados
+  activos, no como color de superficie/UI de sistema.
+*/
+@layer base {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in srgb, var(--muted-foreground) 60%, transparent) transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background-color: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+        border-radius: 9999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
+    }
+}
