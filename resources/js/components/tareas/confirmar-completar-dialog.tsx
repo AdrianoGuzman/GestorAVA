@@ -1,19 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useForm } from '@inertiajs/react';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { CircleCheckBig } from 'lucide-react';
 import { useState } from 'react';
 
 /** RF-11: marcar completada no pide motivo, solo confirmacion. */
 export function ConfirmarCompletarDialog({ trigger, tareaId }: { trigger: React.ReactNode; tareaId: number }) {
     const [open, setOpen] = useState(false);
-    const { patch, processing } = useForm();
+    const { enviar, processing } = useAccionTarea();
 
     const confirmar = () => {
-        patch(route('tareas.completar', tareaId), {
-            preserveScroll: true,
-            onSuccess: () => setOpen(false),
-        });
+        enviar('patch', route('tareas.completar', tareaId), {}, { onSuccess: () => setOpen(false) });
     };
 
     return (

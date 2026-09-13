@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { NonModalOverlay } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useForm } from '@inertiajs/react';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { UserPlus, X } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
@@ -14,11 +14,7 @@ import { FormEventHandler, useState } from 'react';
 export function AgregarColaboradorDialog({ trigger, tareaId, personas }: { trigger: React.ReactNode; tareaId: number; personas: Persona[] }) {
     const [open, setOpen] = useState(false);
     const [seleccionadas, setSeleccionadas] = useState<Persona[]>([]);
-    const { post, transform, processing, errors, reset } = useForm({});
-
-    transform(() => ({
-        colaboradores: seleccionadas.map((persona) => persona.id),
-    }));
+    const { enviar, processing, errors } = useAccionTarea();
 
     const alternar = (persona: Persona) => {
         setSeleccionadas((actual) => (actual.some((p) => p.id === persona.id) ? actual.filter((p) => p.id !== persona.id) : [...actual, persona]));
@@ -27,14 +23,17 @@ export function AgregarColaboradorDialog({ trigger, tareaId, personas }: { trigg
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('tareas.colaboradores.store', tareaId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setOpen(false);
-                setSeleccionadas([]);
-                reset();
+        enviar(
+            'post',
+            route('tareas.colaboradores.store', tareaId),
+            { colaboradores: seleccionadas.map((persona) => persona.id) },
+            {
+                onSuccess: () => {
+                    setOpen(false);
+                    setSeleccionadas([]);
+                },
             },
-        });
+        );
     };
 
     return (
@@ -89,9 +88,7 @@ export function AgregarColaboradorDialog({ trigger, tareaId, personas }: { trigg
                                 }
                             />
 
-                            {(errors as Record<string, string>).colaboradores && (
-                                <p className="text-sm text-rojo-1">{(errors as Record<string, string>).colaboradores}</p>
-                            )}
+                            {errors.colaboradores && <p className="text-sm text-rojo-1">{errors.colaboradores}</p>}
                         </div>
 
                         <SheetFooter>

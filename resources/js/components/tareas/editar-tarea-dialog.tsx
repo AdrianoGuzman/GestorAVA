@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { PrioridadTarea } from '@/types/tarea';
 import { useForm } from '@inertiajs/react';
@@ -33,19 +34,19 @@ export function EditarTareaDialog({
     prioridad: PrioridadTarea;
 }) {
     const [open, setOpen] = useState(false);
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, reset } = useForm({
         titulo,
         descripcion: descripcion ?? '',
         fecha_inicio: fechaInicio ? fechaInicio.slice(0, 10) : '',
         fecha_compromiso: fechaCompromiso.slice(0, 10),
         prioridad,
     });
+    const { enviar, processing, errors } = useAccionTarea();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('tareas.actualizar', tareaId), {
-            preserveScroll: true,
+        enviar('patch', route('tareas.actualizar', tareaId), data, {
             onSuccess: () => setOpen(false),
             onError: () => reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso', 'prioridad'),
         });

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from '@inertiajs/react';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { LucideIcon } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
@@ -42,18 +42,23 @@ export function MotivoDialog({
     const [openInterno, setOpenInterno] = useState(false);
     const open = openControlado ?? openInterno;
     const setOpen = onOpenChange ?? setOpenInterno;
-    const { data, setData, patch, processing, errors, reset } = useForm({ motivo: '' });
+    const [motivo, setMotivo] = useState('');
+    const { enviar, processing, errors } = useAccionTarea();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route(routeName, tareaId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setOpen(false);
-                reset();
+        enviar(
+            'patch',
+            route(routeName, tareaId),
+            { motivo },
+            {
+                onSuccess: () => {
+                    setOpen(false);
+                    setMotivo('');
+                },
             },
-        });
+        );
     };
 
     return (
@@ -68,13 +73,7 @@ export function MotivoDialog({
 
                     <div className="grid gap-2 py-4">
                         <Label htmlFor="motivo">Motivo</Label>
-                        <Textarea
-                            id="motivo"
-                            value={data.motivo}
-                            onChange={(e) => setData('motivo', e.target.value)}
-                            required
-                            autoFocus
-                        />
+                        <Textarea id="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} required autoFocus />
                         {errors.motivo && <p className="text-sm text-rojo-1">{errors.motivo}</p>}
                     </div>
 

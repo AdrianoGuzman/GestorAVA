@@ -1,4 +1,5 @@
 import { TareaDetalleContent, type TareaDetalleContentProps } from '@/components/tareas/tarea-detalle-content';
+import { TareaModalContext } from '@/components/tareas/tarea-modal-context';
 import { Dialog, DialogContent, DialogTitle, NonModalOverlay } from '@/components/ui/dialog';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -40,7 +41,7 @@ export function useTareaDetalleModal() {
     const cargar = (id: number, mostrarSpinner: boolean) => {
         if (mostrarSpinner) setCargando(true);
 
-        axios
+        return axios
             .get(`/tareas/${id}`, {
                 headers: {
                     'X-Inertia': true,
@@ -69,6 +70,11 @@ export function useTareaDetalleModal() {
         setDatos(null);
     };
 
+    // Red de seguridad para cualquier accion que todavia no pase por
+    // useAccionTarea (ver ese hook y TareaModalContext) y por lo tanto siga
+    // usando el router de Inertia tal cual -- sigue funcionando igual que
+    // antes, solo un poco mas lento. Las acciones ya migradas refrescan
+    // directo via el contexto, sin depender de este listener global.
     useEffect(() => {
         if (tareaId === null) return;
 
@@ -76,7 +82,12 @@ export function useTareaDetalleModal() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tareaId]);
 
-    return { tareaId, datos, cargando, abrir, cerrar };
+    const refrescar = () => {
+        if (tareaId !== null) return cargar(tareaId, false);
+        return Promise.resolve();
+    };
+
+    return { tareaId, datos, cargando, abrir, cerrar, refrescar };
 }
 
 export function TareaDetalleModal({
@@ -84,11 +95,13 @@ export function TareaDetalleModal({
     datos,
     cargando,
     onClose,
+    refrescar,
 }: {
     tareaId: number | null;
     datos: TareaDetalleContentProps | null;
     cargando: boolean;
     onClose: () => void;
+    refrescar: () => Promise<unknown>;
 }) {
     return (
         <>
@@ -108,7 +121,9 @@ export function TareaDetalleModal({
                             <Loader2 className="size-5 animate-spin" /> Cargando tarea...
                         </div>
                     ) : (
-                        <TareaDetalleContent {...datos} />
+                        <TareaModalContext.Provider value={{ refrescar }}>
+                            <TareaDetalleContent {...datos} />
+                        </TareaModalContext.Provider>
                     )}
                 </DialogContent>
             </Dialog>

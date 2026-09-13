@@ -6,6 +6,7 @@ import { NonModalOverlay } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { useForm } from '@inertiajs/react';
 import { UserCog } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -17,18 +18,18 @@ import { FormEventHandler, useState } from 'react';
 export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React.ReactNode; tareaId: number; personas: Persona[] }) {
     const [open, setOpen] = useState(false);
     const [nuevoResponsable, setNuevoResponsable] = useState<Persona | null>(null);
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, reset } = useForm({
         nuevo_responsable_id: '',
         mantener_como_colaborador: false as boolean,
         es_excepcion: false as boolean,
         motivo_excepcion: '',
     });
+    const { enviar, processing, errors } = useAccionTarea();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('tareas.reasignar', tareaId), {
-            preserveScroll: true,
+        enviar('patch', route('tareas.reasignar', tareaId), data, {
             onSuccess: () => {
                 setOpen(false);
                 setNuevoResponsable(null);
