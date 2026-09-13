@@ -232,6 +232,14 @@ ese archivo aparece automáticamente en "Necesarios para la tarea" de la tarea p
 Ahora que `DependenciaService::crearTareaHija()` (RF-21) setea `tarea_padre_id` al crear la
 hija, esto ya se ejercita en la práctica sin que nadie tuviera que tocar nada de adjuntos.
 
+**Decisión explícita: cancelar (RF-25) NO se bloquea por tareas hijas pendientes.**
+`DependenciasPendientesGuard` solo se consulta al completar (RF-11/RF-22, `guards_completar`);
+`CancelacionService` no consulta ningún guard. Es intencional, no un olvido: ni la spec de
+RF-22 ni la de RF-25 piden bloquear la cancelación, así que agregarlo sería alcance no
+solicitado. Si el equipo decide que sí debería bloquearse, es un cambio chico (agregar la
+misma consulta a `tareasHijas()` en `CancelacionService::cancelar()`), pero no se hizo sin que
+alguien lo pida explícitamente.
+
 **Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
 ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
 importar si hay colaboradores. Ver `ChecklistPersonalService.php`.
