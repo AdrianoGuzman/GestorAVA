@@ -4,6 +4,7 @@ namespace Tests\Feature\Tarea;
 
 use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\User;
@@ -129,6 +130,46 @@ class CrearTareaTest extends TestCase
             "fecha_compromiso" => now()->addDays(5)->toDateString(),
             "responsable_id" => $responsableSinUnidad->id,
         ])->assertSessionHasErrors("responsable_id");
+
+        $this->assertSame(0, Tarea::count());
+    }
+
+    public function test_asigna_prioridad_media_por_defecto_si_no_se_especifica(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea sin prioridad explicita",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertRedirect();
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertSame(PrioridadTarea::Media, $tarea->prioridad);
+    }
+
+    public function test_permite_elegir_la_prioridad_al_crear(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea urgente",
+            "fecha_compromiso" => now()->addDays(2)->toDateString(),
+            "prioridad" => "alta",
+        ])->assertRedirect();
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertSame(PrioridadTarea::Alta, $tarea->prioridad);
+    }
+
+    public function test_rechaza_una_prioridad_invalida(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea con prioridad invalida",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "prioridad" => "urgentisima",
+        ])->assertSessionHasErrors("prioridad");
 
         $this->assertSame(0, Tarea::count());
     }

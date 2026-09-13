@@ -20,9 +20,10 @@ class MisTareasService
      * asignación inicial al crear (RF-04 D2) -- ese caso ya lo cubre
      * "Creadas por mí".
      *
-     * $filtros acepta: busqueda (string), estado (string[]), solo_atrasadas
-     * (bool), unidad_organizacional_id (int), filtro_rol (string, limita el
-     * resultado a un solo rol -- usado por el filtro rapido del frontend).
+     * $filtros acepta: busqueda (string), estado (string[]), prioridad
+     * (string[]), solo_atrasadas (bool), unidad_organizacional_id (int),
+     * filtro_rol (string, limita el resultado a un solo rol -- usado por el
+     * filtro rapido del frontend).
      */
     public function obtener(User $usuario, array $filtros = []): array
     {
@@ -139,6 +140,10 @@ class MisTareasService
 
         if (! empty($filtros["estado"])) {
             $query->whereIn("tareas.estado", $filtros["estado"]);
+        }
+
+        if (! empty($filtros["prioridad"])) {
+            $query->whereIn("tareas.prioridad", $filtros["prioridad"]);
         }
 
         if (! empty($filtros["solo_atrasadas"])) {
