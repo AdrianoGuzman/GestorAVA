@@ -798,12 +798,13 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
                     {tarea.responsable.name} · {ROL_USUARIO_LABELS[tarea.rol]}
                 </p>
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
-                {ultimaModificacion && (
-                    <p className="flex items-center gap-1 text-xs">
-                        <Pencil className="size-3 shrink-0" /> {ultimaModificacion}
-                    </p>
-                )}
             </div>
+
+            {ultimaModificacion && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Pencil className="size-3 shrink-0" /> {ultimaModificacion}
+                </p>
+            )}
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <EstadoBadge estado={tarea.estado} />

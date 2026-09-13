@@ -143,6 +143,10 @@
 }
 
 .dark {
+    /* Sin esto, los controles nativos (icono del selector de fecha, scrollbars)
+       siguen renderizando en su paleta clara por defecto y el icono del
+       calendario queda casi invisible sobre un input oscuro. */
+    color-scheme: dark;
     --background: #2d3238;
     --foreground: hsl(0, 0%, 98%);
     --card: #2d3238;
