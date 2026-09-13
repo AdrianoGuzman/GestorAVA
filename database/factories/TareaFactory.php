@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,8 +26,30 @@ class TareaFactory extends Factory
             "fecha_inicio" => null,
             "fecha_compromiso" => fake()->dateTimeBetween("+1 days", "+30 days"),
             "estado" => EstadoTarea::Pendiente,
+            "prioridad" => PrioridadTarea::Media,
             "esta_atrasada" => false,
         ];
+    }
+
+    public function prioridadAlta(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            "prioridad" => PrioridadTarea::Alta,
+        ]);
+    }
+
+    public function prioridadMedia(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            "prioridad" => PrioridadTarea::Media,
+        ]);
+    }
+
+    public function prioridadBaja(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            "prioridad" => PrioridadTarea::Baja,
+        ]);
     }
 
     public function enProgreso(): static

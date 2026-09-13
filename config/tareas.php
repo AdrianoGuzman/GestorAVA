@@ -12,13 +12,15 @@ return [
     | una condicion de bloqueo propia de su modulo (dependencias, checklist,
     | etc.) sin que FinalizacionService conozca los detalles.
     |
-    | Ej: Oscar (RF-22) agrega App\Guards\DependenciasPendientesGuard::class,
-    |     Jeremy (RF-23) agrega App\Guards\ChecklistPendienteGuard::class.
+    | Jeremy agrego App\Guards\ChecklistPendienteGuard::class (RF-23) y
+    | App\Guards\DependenciasPendientesGuard::class (RF-22). Si sumas otro
+    | guard, agregalo a esta misma lista -- append, no reemplazar el array.
     |
     */
 
     "guards_completar" => [
-        //
+        \App\Guards\ChecklistPendienteGuard::class,
+        \App\Guards\DependenciasPendientesGuard::class,
     ],
 
 ];

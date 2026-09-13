@@ -3,6 +3,7 @@
 namespace Tests\Feature\Tarea;
 
 use App\Enums\NivelJerarquico;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\User;
@@ -84,5 +85,36 @@ class DuplicarTareaTest extends TestCase
 
         $response->assertSessionHasErrors('fecha_compromiso');
         $this->assertDatabaseMissing('tareas', ['titulo' => 'Duplicada invalida'], 'usuarios');
+    }
+
+    public function test_duplicar_copia_la_prioridad_de_la_tarea_origen_por_defecto(): void
+    {
+        $origen = $this->crearTareaOrigen();
+        $origen->update(['prioridad' => PrioridadTarea::Alta]);
+        $quienDuplica = User::factory()->conNivel(NivelJerarquico::Directorio)->create();
+
+        $this->actingAs($quienDuplica)->post("/tareas/{$origen->id}/duplicar", [
+            'titulo' => 'Duplicada con prioridad heredada',
+            'fecha_compromiso' => now()->addDays(5)->toDateString(),
+        ]);
+
+        $duplicada = Tarea::where('titulo', 'Duplicada con prioridad heredada')->firstOrFail();
+        $this->assertSame(PrioridadTarea::Alta, $duplicada->prioridad);
+    }
+
+    public function test_duplicar_permite_elegir_una_prioridad_distinta_a_la_de_origen(): void
+    {
+        $origen = $this->crearTareaOrigen();
+        $origen->update(['prioridad' => PrioridadTarea::Baja]);
+        $quienDuplica = User::factory()->conNivel(NivelJerarquico::Directorio)->create();
+
+        $this->actingAs($quienDuplica)->post("/tareas/{$origen->id}/duplicar", [
+            'titulo' => 'Duplicada con prioridad propia',
+            'fecha_compromiso' => now()->addDays(5)->toDateString(),
+            'prioridad' => 'alta',
+        ]);
+
+        $duplicada = Tarea::where('titulo', 'Duplicada con prioridad propia')->firstOrFail();
+        $this->assertSame(PrioridadTarea::Alta, $duplicada->prioridad);
     }
 }

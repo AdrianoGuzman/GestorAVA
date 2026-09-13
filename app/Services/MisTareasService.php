@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\User;
@@ -20,9 +21,10 @@ class MisTareasService
      * asignación inicial al crear (RF-04 D2) -- ese caso ya lo cubre
      * "Creadas por mí".
      *
-     * $filtros acepta: busqueda (string), estado (string[]), solo_atrasadas
-     * (bool), unidad_organizacional_id (int), filtro_rol (string, limita el
-     * resultado a un solo rol -- usado por el filtro rapido del frontend).
+     * $filtros acepta: busqueda (string), estado (string[]), prioridad
+     * (string[]), solo_atrasadas (bool), unidad_organizacional_id (int),
+     * filtro_rol (string, limita el resultado a un solo rol -- usado por el
+     * filtro rapido del frontend).
      */
     public function obtener(User $usuario, array $filtros = []): array
     {
@@ -56,12 +58,18 @@ class MisTareasService
             $roles = array_intersect_key($roles, [$seccionPorFiltro[$filtroRol] => true]);
         }
 
+        // Prioridad alta primero, y a igual prioridad, la fecha mas proxima
+        // primero -- asi lo urgente no se pierde entre tareas de fecha mas
+        // cercana pero menor prioridad.
         $tareas = collect($roles)
             ->flatMap(function ($consulta, $rol) {
                 return $consulta()->with(["responsable", "unidadOrganizacional"])->get()
                     ->each(fn (Tarea $tarea) => $tarea->rol = $rol);
             })
-            ->sortBy("fecha_compromiso")
+            ->sortBy([
+                fn (Tarea $a, Tarea $b) => $b->prioridad->peso() <=> $a->prioridad->peso(),
+                fn (Tarea $a, Tarea $b) => $a->fecha_compromiso <=> $b->fecha_compromiso,
+            ])
             ->values();
 
         return [
@@ -72,6 +80,7 @@ class MisTareasService
                 "en_progreso" => $tareas->where("estado", EstadoTarea::EnProgreso)->count(),
                 "pendientes" => $tareas->where("estado", EstadoTarea::Pendiente)->count(),
                 "completadas" => $tareas->where("estado", EstadoTarea::Completada)->count(),
+                "prioridad_alta" => $tareas->where("prioridad", PrioridadTarea::Alta)->count(),
             ],
         ];
     }
@@ -139,6 +148,10 @@ class MisTareasService
 
         if (! empty($filtros["estado"])) {
             $query->whereIn("tareas.estado", $filtros["estado"]);
+        }
+
+        if (! empty($filtros["prioridad"])) {
+            $query->whereIn("tareas.prioridad", $filtros["prioridad"]);
         }
 
         if (! empty($filtros["solo_atrasadas"])) {

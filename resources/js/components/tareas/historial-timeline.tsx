@@ -25,6 +25,7 @@ const COLOR_EVENTO: Record<TipoEvento, string> = {
     cancelacion: 'bg-rojo-1',
     dependencia_creada: 'bg-gris-1',
     dependencia_resuelta: 'bg-verde-5',
+    tarea_hija_creada: 'bg-gris-1',
     checklist_item_creado: 'bg-gris-1',
     checklist_item_marcado: 'bg-verde-5',
     checklist_item_desmarcado: 'bg-gris-1',
@@ -54,21 +55,32 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     checklist_item_desmarcado: 'Desmarcó un ítem del checklist',
     checklist_item_editado: 'Editó un ítem del checklist',
     checklist_item_eliminado: 'Eliminó un ítem del checklist',
+    tarea_hija_creada: 'Creó una tarea hija',
     adjunto_agregado: 'Adjuntó un archivo',
     tarea_atrasada: 'Se marcó como atrasada automáticamente',
     tarea_editada: 'Editó la tarea',
     tarea_proxima_a_vencer: 'Se avisó que la tarea está por vencer',
 };
 
+/**
+ * Marcar/desmarcar un ítem del checklist queda igual registrado en la BD
+ * (auditoría, RF-23), pero se omite de esta línea de tiempo porque un
+ * checklist que se marca y desmarca varias veces la llena de ruido sin
+ * aportar nada que ya no muestre el propio checklist.
+ */
+const EVENTOS_OCULTOS_EN_TIMELINE = new Set<TipoEvento>(['checklist_item_marcado', 'checklist_item_desmarcado']);
+
 /** RF-24 D5 / RF-16: historial cronológico completo de eventos de la tarea. */
 export function HistorialTimeline({ eventos }: { eventos: HistorialEvento[] }) {
-    if (eventos.length === 0) {
+    const visibles = eventos.filter((evento) => !EVENTOS_OCULTOS_EN_TIMELINE.has(evento.tipo_evento));
+
+    if (visibles.length === 0) {
         return <p className="text-sm text-muted-foreground">Todavía no hay eventos registrados.</p>;
     }
 
     return (
         <ol className="space-y-4 border-l border-gris-3 pl-4">
-            {eventos.map((evento) => (
+            {visibles.map((evento) => (
                 <li key={evento.id} className="relative">
                     <span className={cn('absolute -left-[21px] top-1.5 size-2 rounded-full', COLOR_EVENTO[evento.tipo_evento])} />
                     <p className="text-sm font-medium text-foreground">

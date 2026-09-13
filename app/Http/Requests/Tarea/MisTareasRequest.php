@@ -38,6 +38,8 @@ class MisTareasRequest extends FormRequest
             "busqueda" => ["sometimes", "nullable", "string", "max:255"],
             "estado" => ["sometimes", "array"],
             "estado.*" => ["string", "in:pendiente,en_progreso,completada,cancelada"],
+            "prioridad" => ["sometimes", "array"],
+            "prioridad.*" => ["string", "in:alta,media,baja"],
             "solo_atrasadas" => ["sometimes", "boolean"],
             "unidad_organizacional_id" => ["sometimes", "nullable", "integer", "exists:unidades_organizacionales,id"],
         ];

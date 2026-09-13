@@ -2,15 +2,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
+import type { PrioridadTarea } from '@/types/tarea';
 import { useForm } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 /**
- * Editar titulo/descripcion/fechas de una tarea ya creada -- antes de esto
- * no habia forma de corregir un error de tipeo sin cancelar y crear de
- * nuevo. No toca responsable/colaboradores (eso ya tiene su propio flujo).
+ * Editar titulo/descripcion/fechas/prioridad de una tarea ya creada -- antes
+ * de esto no habia forma de corregir un error de tipeo sin cancelar y crear
+ * de nuevo. No toca responsable/colaboradores (eso ya tiene su propio flujo).
  */
 export function EditarTareaDialog({
     trigger,
@@ -19,6 +22,7 @@ export function EditarTareaDialog({
     descripcion,
     fechaInicio,
     fechaCompromiso,
+    prioridad,
 }: {
     trigger: React.ReactNode;
     tareaId: number;
@@ -26,6 +30,7 @@ export function EditarTareaDialog({
     descripcion: string | null;
     fechaInicio: string | null;
     fechaCompromiso: string;
+    prioridad: PrioridadTarea;
 }) {
     const [open, setOpen] = useState(false);
     const { data, setData, patch, processing, errors, reset } = useForm({
@@ -33,6 +38,7 @@ export function EditarTareaDialog({
         descripcion: descripcion ?? '',
         fecha_inicio: fechaInicio ? fechaInicio.slice(0, 10) : '',
         fecha_compromiso: fechaCompromiso.slice(0, 10),
+        prioridad,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -41,7 +47,7 @@ export function EditarTareaDialog({
         patch(route('tareas.actualizar', tareaId), {
             preserveScroll: true,
             onSuccess: () => setOpen(false),
-            onError: () => reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso'),
+            onError: () => reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso', 'prioridad'),
         });
     };
 
@@ -95,6 +101,23 @@ export function EditarTareaDialog({
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-prioridad">Prioridad</Label>
+                            <Select value={data.prioridad} onValueChange={(valor) => setData('prioridad', valor as PrioridadTarea)}>
+                                <SelectTrigger id="edit-prioridad">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PRIORIDADES_ORDENADAS.map((opcion) => (
+                                        <SelectItem key={opcion} value={opcion}>
+                                            {PRIORIDAD_TAREA_LABELS[opcion]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
                         </div>
                     </div>
 

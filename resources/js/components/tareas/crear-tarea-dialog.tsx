@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { fechaMinimaCompromiso } from '@/lib/estado-tarea';
+import { fechaMinimaCompromiso, PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { SharedData } from '@/types';
+import type { PrioridadTarea } from '@/types/tarea';
 import { useForm, usePage } from '@inertiajs/react';
 import { Plus, UserPlus, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
@@ -20,17 +22,23 @@ import { FormEventHandler, useEffect, useState } from 'react';
  * pasan cuando algo externo necesita abrirlo sin un trigger propio -- ej. el
  * calendario, que lo abre al hacer clic en un dia sin tareas, precargando
  * `fechaCompromisoInicial` con esa fecha.
+ *
+ * `tareaPadreId` (RF-21): si se pasa, esto crea una tarea hija de esa tarea
+ * en vez de una tarea normal -- mismo formulario, solo cambia el endpoint y
+ * el texto del dialog.
  */
 export function CrearTareaDialog({
     trigger,
     personas,
     fechaCompromisoInicial,
+    tareaPadreId,
     open: openControlado,
     onOpenChange,
 }: {
     trigger?: React.ReactNode;
     personas: Persona[];
     fechaCompromisoInicial?: string;
+    tareaPadreId?: number;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
 }) {
@@ -45,6 +53,7 @@ export function CrearTareaDialog({
         descripcion: '',
         fecha_inicio: '',
         fecha_compromiso: fechaCompromisoInicial ?? '',
+        prioridad: 'media' as PrioridadTarea,
         responsable_id: '',
         colaboradores: [] as number[],
     });
@@ -75,7 +84,7 @@ export function CrearTareaDialog({
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('tareas.store'), {
+        post(tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -99,7 +108,7 @@ export function CrearTareaDialog({
                 <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
-                        <DialogTitle>Nueva tarea</DialogTitle>
+                        <DialogTitle>{tareaPadreId ? 'Nueva tarea hija' : 'Nueva tarea'}</DialogTitle>
                         <DialogDescription>Por defecto quedas como responsable, salvo que elijas a otra persona.</DialogDescription>
                     </DialogHeader>
 
@@ -145,6 +154,23 @@ export function CrearTareaDialog({
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="prioridad">Prioridad</Label>
+                            <Select value={data.prioridad} onValueChange={(valor) => setData('prioridad', valor as PrioridadTarea)}>
+                                <SelectTrigger id="prioridad">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PRIORIDADES_ORDENADAS.map((prioridad) => (
+                                        <SelectItem key={prioridad} value={prioridad}>
+                                            {PRIORIDAD_TAREA_LABELS[prioridad]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
                         </div>
 
                         <div className="grid gap-2">
@@ -221,7 +247,7 @@ export function CrearTareaDialog({
 
                     <DialogFooter>
                         <Button type="submit" disabled={processing || data.titulo.trim() === '' || data.fecha_compromiso === ''}>
-                            <Plus /> Crear tarea
+                            <Plus /> {tareaPadreId ? 'Crear tarea hija' : 'Crear tarea'}
                         </Button>
                     </DialogFooter>
                 </form>

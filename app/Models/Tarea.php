@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ class Tarea extends Model {
         "fecha_inicio",
         "fecha_compromiso",
         "estado",
+        "prioridad",
         "esta_atrasada",
         "recordatorio_vencimiento_enviado",
         "tarea_padre_id",
@@ -38,6 +40,7 @@ class Tarea extends Model {
 
     protected $casts = [
         "estado" => EstadoTarea::class,
+        "prioridad" => PrioridadTarea::class,
         "esta_atrasada" => "boolean",
         "recordatorio_vencimiento_enviado" => "boolean",
         "fecha_inicio" => "date",

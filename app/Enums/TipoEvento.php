@@ -20,6 +20,7 @@ enum TipoEvento: string
     case ChecklistItemDesmarcado = 'checklist_item_desmarcado';
     case ChecklistItemEditado = 'checklist_item_editado';
     case ChecklistItemEliminado = 'checklist_item_eliminado';
+    case TareaHijaCreada = 'tarea_hija_creada';
     case AdjuntoAgregado = 'adjunto_agregado';
     case NoParticipacionReportada = 'no_participacion_reportada';
     case TareaAtrasada = 'tarea_atrasada';

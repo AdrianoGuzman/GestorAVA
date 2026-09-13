@@ -3,6 +3,7 @@
 namespace Tests\Feature\Tarea;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\User;
@@ -189,5 +190,36 @@ class EditarTareaTest extends TestCase
         $tarea->refresh();
         $this->assertSame("Titulo sin typo", $tarea->titulo);
         $this->assertTrue($tarea->esta_atrasada);
+    }
+
+    public function test_permite_cambiar_la_prioridad_al_editar(): void
+    {
+        $responsable = User::factory()->create();
+        $tarea = Tarea::factory()->prioridadMedia()->create(["responsable_id" => $responsable->id]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => $tarea->titulo,
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "prioridad" => "alta",
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertSame(PrioridadTarea::Alta, $tarea->fresh()->prioridad);
+    }
+
+    public function test_conserva_la_prioridad_si_no_se_manda_al_editar(): void
+    {
+        $responsable = User::factory()->create();
+        $tarea = Tarea::factory()->prioridadAlta()->create(["responsable_id" => $responsable->id]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => "Solo corrijo el titulo",
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertSame(PrioridadTarea::Alta, $tarea->fresh()->prioridad);
     }
 }

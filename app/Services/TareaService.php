@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Exceptions\PermisoDenegadoException;
 use App\Models\Tarea;
@@ -54,7 +55,15 @@ class TareaService
                 "fecha_inicio" => $datos["fecha_inicio"] ?? null,
                 "fecha_compromiso" => $datos["fecha_compromiso"],
                 "estado" => EstadoTarea::Pendiente,
+                // Defensivo: CrearTareaRequest siempre manda un valor (default
+                // Media via prepareForValidation), pero un llamado directo al
+                // servicio -- ej. tests, DuplicarTareaService -- podria no
+                // traerlo.
+                "prioridad" => $datos["prioridad"] ?? PrioridadTarea::Media->value,
                 "esta_atrasada" => false,
+                // RF-21: null salvo que DependenciaService::crearTareaHija()
+                // la pase explicitamente -- una tarea normal nunca tiene padre.
+                "tarea_padre_id" => $datos["tarea_padre_id"] ?? null,
             ]);
 
             if ($colaboradorIds->isNotEmpty()) {
@@ -65,6 +74,7 @@ class TareaService
                 "responsable_id" => $responsable->id,
                 "colaboradores" => $colaboradorIds->all(),
                 "fecha_compromiso" => $datos["fecha_compromiso"],
+                "prioridad" => $tarea->prioridad->value,
             ]);
 
             return $tarea;
@@ -110,6 +120,7 @@ class TareaService
                 "descripcion" => $tarea->descripcion,
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "prioridad" => $tarea->prioridad->value,
             ];
 
             $tarea->update([
@@ -117,6 +128,7 @@ class TareaService
                 "descripcion" => $datos["descripcion"] ?? null,
                 "fecha_inicio" => $datos["fecha_inicio"] ?? null,
                 "fecha_compromiso" => $datos["fecha_compromiso"],
+                "prioridad" => $datos["prioridad"] ?? $tarea->prioridad->value,
             ]);
 
             // RF-14: si la fecha corregida ya no esta vencida, la tarea deja
@@ -132,6 +144,7 @@ class TareaService
                 "descripcion" => $tarea->descripcion,
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "prioridad" => $tarea->prioridad->value,
             ]);
 
             return $tarea->fresh();

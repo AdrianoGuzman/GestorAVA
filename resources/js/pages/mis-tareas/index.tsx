@@ -1,5 +1,5 @@
 import { CrearTareaDialog } from '@/components/tareas/crear-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { TareaDetalleModal, useTareaDetalleModal } from '@/components/tareas/tarea-detalle-modal';
 import { Button } from '@/components/ui/button';
@@ -13,19 +13,29 @@ import {
     ENTREGADA_CON_ATRASO_BADGE_CLASSES,
     ESTADO_TAREA_BADGE_CLASSES,
     formatearDuracionAtraso,
+    PRIORIDAD_TAREA_BADGE_CLASSES,
+    PRIORIDAD_TAREA_LABELS,
+    PRIORIDADES_ORDENADAS,
     ROL_USUARIO_LABELS,
 } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, TareaResumen } from '@/types/tarea';
+import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, TareaResumen } from '@/types/tarea';
 import { Head, router } from '@inertiajs/react';
 import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
     tareas: TareaResumen[];
-    contadores: { total: number; atrasadas: number; en_progreso: number; pendientes: number; completadas: number };
+    contadores: {
+        total: number;
+        atrasadas: number;
+        en_progreso: number;
+        pendientes: number;
+        completadas: number;
+        prioridad_alta: number;
+    };
     filtros: FiltrosMisTareas;
     unidadesOrganizacionales: { id: number; nombre: string }[];
     usuarios: Persona[];
@@ -272,6 +282,9 @@ function TareaBarra({
                 'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
                 atenuada && 'opacity-60',
                 claseBarraTarea(tarea),
+                // Prioridad alta se destaca con un borde izquierdo, sin pisar
+                // el color de estado/atraso que ya trae claseBarraTarea().
+                tarea.prioridad === 'alta' && 'border-l-4 border-l-naranjo-1',
             )}
         >
             {tarea.titulo}
@@ -762,8 +775,9 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
             </div>
 
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <EstadoBadge estado={tarea.estado} />
+                <PrioridadBadge prioridad={tarea.prioridad} />
             </div>
         </button>
     );
@@ -778,6 +792,11 @@ function ResumenContadores({ contadores }: { contadores: Props['contadores'] }) 
             {contadores.atrasadas > 0 && (
                 <span className="flex items-center gap-2 text-sm font-medium text-rojo-1">
                     <span className="size-2.5 rounded-full bg-rojo-1" /> {contadores.atrasadas} atrasadas
+                </span>
+            )}
+            {contadores.prioridad_alta > 0 && (
+                <span className="flex items-center gap-2 text-sm font-medium text-naranjo-1">
+                    <span className="size-2.5 rounded-full bg-naranjo-1" /> {contadores.prioridad_alta} de prioridad alta
                 </span>
             )}
             <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -809,13 +828,25 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
     }, [busqueda]);
 
     const estadosSeleccionados = filtros.estado ?? [];
-    const filtrosActivos = estadosSeleccionados.length > 0 || !!filtros.solo_atrasadas || !!filtros.unidad_organizacional_id;
+    const prioridadesSeleccionadas = filtros.prioridad ?? [];
+    const filtrosActivos =
+        estadosSeleccionados.length > 0 ||
+        prioridadesSeleccionadas.length > 0 ||
+        !!filtros.solo_atrasadas ||
+        !!filtros.unidad_organizacional_id;
 
     const alternarEstado = (estado: EstadoTarea) => {
         const siguiente = estadosSeleccionados.includes(estado)
             ? estadosSeleccionados.filter((e) => e !== estado)
             : [...estadosSeleccionados, estado];
         actualizarFiltros(filtros, { estado: siguiente });
+    };
+
+    const alternarPrioridad = (prioridad: PrioridadTarea) => {
+        const siguiente = prioridadesSeleccionadas.includes(prioridad)
+            ? prioridadesSeleccionadas.filter((p) => p !== prioridad)
+            : [...prioridadesSeleccionadas, prioridad];
+        actualizarFiltros(filtros, { prioridad: siguiente });
     };
 
     const alternarFiltroRapido = (rol: FiltroRolMisTareas) => {
@@ -860,7 +891,12 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                 <button
                                     type="button"
                                     onClick={() =>
-                                        actualizarFiltros(filtros, { estado: [], solo_atrasadas: false, unidad_organizacional_id: null })
+                                        actualizarFiltros(filtros, {
+                                            estado: [],
+                                            prioridad: [],
+                                            solo_atrasadas: false,
+                                            unidad_organizacional_id: null,
+                                        })
                                     }
                                     className="text-xs font-medium text-verde-6 hover:underline"
                                 >
@@ -887,6 +923,30 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                             )}
                                         >
                                             {estado.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-border pt-4">
+                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Prioridad</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {PRIORIDADES_ORDENADAS.map((prioridad) => {
+                                    const activo = prioridadesSeleccionadas.includes(prioridad);
+                                    return (
+                                        <button
+                                            key={prioridad}
+                                            type="button"
+                                            onClick={() => alternarPrioridad(prioridad)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                                                activo
+                                                    ? PRIORIDAD_TAREA_BADGE_CLASSES[prioridad]
+                                                    : 'border-border text-muted-foreground hover:border-verde-3 hover:text-foreground',
+                                            )}
+                                        >
+                                            {PRIORIDAD_TAREA_LABELS[prioridad]}
                                         </button>
                                     );
                                 })}

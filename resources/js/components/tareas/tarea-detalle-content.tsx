@@ -3,9 +3,10 @@ import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborado
 import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
+import { DependenciasSection } from '@/components/tareas/dependencias-section';
 import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import { HistorialInline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
@@ -106,6 +107,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             descripcion={tarea.descripcion}
                             fechaInicio={tarea.fecha_inicio}
                             fechaCompromiso={tarea.fecha_compromiso}
+                            prioridad={tarea.prioridad}
                             trigger={
                                 <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
                                     <Pencil className="size-4" />
@@ -222,6 +224,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                     descripcion={tarea.descripcion}
                     fechaInicio={tarea.fecha_inicio}
                     fechaCompromiso={tarea.fecha_compromiso}
+                    prioridad={tarea.prioridad}
                     open={duplicarAbierto}
                     onOpenChange={setDuplicarAbierto}
                 />
@@ -231,6 +234,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
             <div className="divide-y divide-border/60 border-b border-border">
                 <FilaMetadata label="Estado">
                     <EstadoBadge estado={tarea.estado} />
+                    <PrioridadBadge prioridad={tarea.prioridad} />
                     {tarea.esta_atrasada && tarea.estado === 'completada' && (
                         <AtrasadaBadge
                             label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
@@ -336,10 +340,15 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
             )}
 
             <div className="border-b border-border py-4">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                    <GitBranch className="size-4" /> Dependencias
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <GitBranch className="size-4 text-verde-6" /> Dependencias
                 </h3>
-                <p className="text-sm text-muted-foreground">Próximamente (RF-21/RF-22) — módulo a cargo de Oscar.</p>
+                <DependenciasSection
+                    tareaId={tarea.id}
+                    tareasHijas={tarea.tareas_hijas}
+                    personas={usuarios}
+                    puedeCrear={permisos.puedeCrearTareaHija}
+                />
             </div>
 
             <div className="border-b border-border py-4">

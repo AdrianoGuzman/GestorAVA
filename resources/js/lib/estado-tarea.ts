@@ -1,4 +1,4 @@
-import type { EstadoTarea, RolUsuarioTarea } from '@/types/tarea';
+import type { EstadoTarea, PrioridadTarea, RolUsuarioTarea } from '@/types/tarea';
 
 /**
  * Colores de estado, unicos para toda la app (badges, listados, RF-24).
@@ -25,6 +25,28 @@ export const ESTADO_TAREA_BADGE_CLASSES: Record<EstadoTarea, string> = {
 };
 
 export const ATRASADA_BADGE_CLASSES = 'border-rojo-1/30 bg-rojo-1/10 text-rojo-1';
+
+/**
+ * Prioridad definida por quien crea la tarea (alta/media/baja). Colores
+ * distintos de "atrasada" (rojo, reservado para vencimiento) para no
+ * confundir dos señales distintas -- alta usa naranjo, un tono de alerta
+ * propio, y baja usa el mismo gris neutro que "cancelada"/"pendiente" para
+ * no llamar la atencion.
+ */
+export const PRIORIDAD_TAREA_LABELS: Record<PrioridadTarea, string> = {
+    alta: 'Alta',
+    media: 'Media',
+    baja: 'Baja',
+};
+
+export const PRIORIDAD_TAREA_BADGE_CLASSES: Record<PrioridadTarea, string> = {
+    alta: 'border-naranjo-1/30 bg-naranjo-1/10 text-naranjo-1',
+    media: 'border-amarillo-1/40 bg-amarillo-1/10 text-amarillo-1',
+    baja: 'border-gris-1/30 bg-gris-1/10 text-gris-1',
+};
+
+/** Orden de mayor a menor urgencia, usado para listar los checkbox/pills de prioridad siempre en el mismo orden. */
+export const PRIORIDADES_ORDENADAS: PrioridadTarea[] = ['alta', 'media', 'baja'];
 
 /**
  * Version atenuada del badge de atraso: se usa cuando la tarea YA esta

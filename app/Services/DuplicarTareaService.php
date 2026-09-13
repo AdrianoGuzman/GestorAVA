@@ -8,7 +8,9 @@ use App\Models\User;
 /**
  * RF-18 (Could): duplicar copia responsable de la tarea origen (y por lo
  * tanto su unidad organizacional, que TareaService::crear() deriva del
- * responsable); titulo, descripcion y fechas quedan editables. Reutiliza
+ * responsable); titulo, descripcion, fechas y prioridad quedan editables
+ * (prioridad ya viene resuelta en $datos -- copiada de la tarea origen por
+ * defecto, ver DuplicarTareaRequest::prepareForValidation()). Reutiliza
  * TareaService::crear() en vez de tocarlo directamente, para que la
  * duplicada sea independiente -- historial propio desde cero y quien
  * duplica queda como creador, no el creador original.
@@ -27,6 +29,7 @@ class DuplicarTareaService
             "responsable_id" => $origen->responsable_id,
             "fecha_inicio" => $datos["fecha_inicio"] ?? null,
             "fecha_compromiso" => $datos["fecha_compromiso"],
+            "prioridad" => $datos["prioridad"] ?? $origen->prioridad->value,
         ], $quienDuplica);
     }
 }
