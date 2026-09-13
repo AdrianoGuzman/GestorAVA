@@ -109,7 +109,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             fechaCompromiso={tarea.fecha_compromiso}
                             prioridad={tarea.prioridad}
                             trigger={
-                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Editar tarea">
                                     <Pencil className="size-4" />
                                 </button>
                             }
@@ -252,7 +252,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             tareaId={tarea.id}
                             personas={usuarios}
                             trigger={
-                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Reasignar responsable">
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Reasignar responsable">
                                     <Pencil className="size-4" />
                                 </button>
                             }
@@ -276,7 +276,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             tareaId={tarea.id}
                             personas={usuarios}
                             trigger={
-                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Agregar colaborador">
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Agregar colaborador">
                                     <Plus className="size-4" />
                                 </button>
                             }
