@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+vendor
+public/build
+public/hot
+tests
+.env
+.env.*
+!.env.example
+*.md
+docker-compose*.yml
