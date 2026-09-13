@@ -271,6 +271,48 @@ class MisTareasTest extends TestCase
             ->where("tareas.0.id", $atrasada->id));
     }
 
+    public function test_el_ultimo_evento_del_historial_viaja_con_cada_tarea(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $otro = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::TareaEditada,
+            "usuario_id" => $otro->id,
+            "datos_evento" => [],
+        ])->forceFill(["created_at" => now()->subDay()])->save();
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::Reasignacion,
+            "usuario_id" => $usuario->id,
+            "datos_evento" => [],
+        ])->forceFill(["created_at" => now()])->save();
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->where("tareas.0.ultimo_evento.tipo_evento", "reasignacion")
+            ->where("tareas.0.ultimo_evento.usuario.id", $usuario->id)
+            ->where("tareas.0.id", $tarea->id));
+    }
+
+    public function test_una_tarea_sin_historial_no_trae_ultimo_evento(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page->where("tareas.0.ultimo_evento", null));
+    }
+
     public function test_filtro_unidad_organizacional(): void
     {
         $obraA = UnidadOrganizacional::factory()->create();

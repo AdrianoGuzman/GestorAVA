@@ -63,7 +63,7 @@ class MisTareasService
         // cercana pero menor prioridad.
         $tareas = collect($roles)
             ->flatMap(function ($consulta, $rol) {
-                return $consulta()->with(["responsable", "unidadOrganizacional"])->get()
+                return $consulta()->with(["responsable", "unidadOrganizacional", "ultimoEvento.usuario"])->get()
                     ->each(fn (Tarea $tarea) => $tarea->rol = $rol);
             })
             ->sortBy([

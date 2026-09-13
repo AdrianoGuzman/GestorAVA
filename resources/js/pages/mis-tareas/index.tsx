@@ -20,10 +20,12 @@ import {
 } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, SharedData } from '@/types';
 import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, TareaResumen } from '@/types/tarea';
-import { Head, router } from '@inertiajs/react';
-import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search, X } from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Pencil, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -74,6 +76,27 @@ function esManana(fecha: string): boolean {
 
 function formatearFecha(fecha: string): string {
     return new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase();
+}
+
+/** Idea D: quien toco la tarea por ultima vez y cuando, sin tener que abrirla. */
+function etiquetaUltimaModificacion(tarea: TareaResumen, usuarioActualId: number): string {
+    const evento = tarea.ultimo_evento;
+    if (!evento) {
+        return '';
+    }
+
+    const cuando = formatDistanceToNow(new Date(evento.created_at), { addSuffix: true, locale: es });
+
+    if (evento.tipo_evento === 'creacion') {
+        return `Sin cambios desde su creación · ${cuando}`;
+    }
+
+    if (!evento.usuario) {
+        return `Actualizada automáticamente · ${cuando}`;
+    }
+
+    const quien = evento.usuario.id === usuarioActualId ? 'ti' : evento.usuario.name;
+    return `Editada por ${quien} · ${cuando}`;
 }
 
 /**
@@ -738,9 +761,11 @@ function actualizarFiltros(filtros: FiltrosMisTareas, cambios: Partial<FiltrosMi
 }
 
 function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: number) => void }) {
+    const { auth } = usePage<SharedData>().props;
     const completada = tarea.estado === 'completada';
     const entregadaConAtraso = completada && tarea.esta_atrasada;
     const mostrarVencimiento = !completada && (tarea.esta_atrasada || esManana(tarea.fecha_compromiso));
+    const ultimaModificacion = etiquetaUltimaModificacion(tarea, auth.user.id);
 
     return (
         <button
@@ -773,6 +798,11 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
                     {tarea.responsable.name} · {ROL_USUARIO_LABELS[tarea.rol]}
                 </p>
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
+                {ultimaModificacion && (
+                    <p className="flex items-center gap-1 text-xs">
+                        <Pencil className="size-3 shrink-0" /> {ultimaModificacion}
+                    </p>
+                )}
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
