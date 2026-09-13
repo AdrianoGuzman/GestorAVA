@@ -29,8 +29,11 @@ prácticos esa IA no se entera nunca.
 - **Elian** — Auth/roles (RF-01 a RF-03).
 - **Jeremy** — Checklist (RF-23). Modelo `ChecklistItem` ya existe (`app/Models/ChecklistItem.php`),
   con su migración y factory. Extender ahí, no crear uno nuevo.
-- **Oscar** — Dependencias entre tareas (RF-21/RF-22). Todavía no hay modelo/migración para esto,
-  hay que crearlo (probablemente tabla pivote o columna en `tareas`).
+- ~~**Oscar** — Dependencias entre tareas (RF-21/RF-22).~~ **Implementado por Jeremy el
+  12-09-2026** (ver nota más abajo, sección "Guards de completado") porque era el hueco más
+  grande y urgente del sprint y Oscar no había empezado. Oscar: revisa esa nota antes de tocar
+  `tareas`/dependencias para no duplicar trabajo -- si te queda algo específico de RF-21/22
+  por ajustar, coordínalo con Jeremy en vez de reescribirlo desde cero.
 - **Franco + Claude** — ciclo de vida central de la tarea (RF-04 a RF-13) y los servicios
   compartidos: `HistorialService`, `NotificacionService`, `PermisosService`.
 
@@ -157,12 +160,28 @@ Con eso alcanza — no hay que tocar `FinalizacionService.php` ni `TareaControll
 Ejemplo de test que verifica el mecanismo: `tests/Feature/Tarea/CompletarTareaTest.php`
 (casos `un_guard_registrado_*`) y `tests/Support/GuardDeBloqueoDePruebas.php`.
 
+**RF-23 (Jeremy, 12-09-2026): `App\Guards\ChecklistPendienteGuard` ya está implementado y
+registrado en `config/tareas.php`.** Bloquea completar si `tarea->checklistItems()` tiene algún
+`completado = false`.
+
+**RF-21/22 (Jeremy, 12-09-2026): dependencias entre tareas completo, no solo el guard.**
+Como Oscar no había empezado y era el hueco más grande del sprint, Jeremy implementó todo:
+`App\Services\DependenciaService::crearTareaHija()` (RF-21, reusa `TareaService::crear()` con
+`tarea_padre_id`), `App\Guards\DependenciasPendientesGuard` (RF-22, ya registrado en
+`config/tareas.php` junto al de checklist), permiso `PermisosService::puedeCrearTareaHija()`
+(responsable o colaborador de la tarea padre), y la tarjeta "Dependencias" real en el frontend
+(`dependencias-section.tsx`, ya no es el placeholder). Si Oscar necesita algo más de RF-21/22
+(ej. otro criterio de permisos, otra vista), partir de esto y coordinar el cambio, no reescribir.
+`guards_completar` en `config/tareas.php` es un array compartido -- si se agrega otro guard,
+hacerlo con append, no reemplazando el array completo.
+
 ## Convenciones de UI para Jeremy y Oscar (cuando construyan su frontend)
 
-La vista de detalle (`resources/js/pages/tareas/show.tsx`) ya tiene reservadas dos tarjetas
-placeholder, una al lado de la otra: **Checklist** (RF-23, Jeremy) y **Dependencias**
-(RF-21/22, Oscar). Reemplazar el contenido de esa tarjeta con el componente real, no
-mover ni renombrar la tarjeta en sí.
+La vista de detalle (`resources/js/pages/tareas/show.tsx`) tenía reservadas dos tarjetas
+placeholder, una al lado de la otra: **Checklist** (RF-23) y **Dependencias** (RF-21/22).
+Ambas ya tienen su componente real (Jeremy construyó las dos, ver nota en "Guards de
+completado" sobre RF-21/22) -- si alguien más toca esa vista, seguir reemplazando dentro de
+la misma tarjeta, no moverla ni renombrarla.
 
 **Decisiones sobre RF-23 (Jeremy) confirmadas con Franco (10-09-2026, ajustada 12-09-2026), distintas de la spec original:**
 - **El responsable o el creador de la tarea asignan el dueño de un ítem** — no hay
@@ -174,9 +193,9 @@ mover ni renombrar la tarjeta en sí.
   responsable es el único involucrado (sin colaboradores), esa tarjeta no debe aparecer —
   en ese caso el responsable usa un "checklist personal" propio (ver abajo, no es RF-23).
 - **Actividad chica y binaria → checklist (RF-23). Actividad grande que necesita su propio
-  responsable y seguimiento → tarea hija (RF-21/22, Oscar), no un ítem de checklist.** Esta
-  es la regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una
-  tarea dependiente completa.
+  responsable y seguimiento → tarea hija (RF-21/22), no un ítem de checklist.** Esta es la
+  regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una tarea
+  dependiente completa.
 
 **Fix de permisos aplicado por Franco (11-09-2026) sobre `ChecklistController`/`ChecklistService`:**
 el backend original no tenía ningún control de acceso (cualquier usuario autenticado podía
@@ -193,24 +212,25 @@ controller (lanzan `PermisoDenegadoException` → sesión con `error`), no hace 
 en el frontend, pero sí ocultar/deshabilitar el botón de marcar si `auth.user.id !== item.dueno_id`
 para no mostrar una acción que el backend va a rechazar.
 
-**Decisión sobre RF-21/22 (Oscar):** el responsable de una tarea hija debe mostrarse bien
-visible en la sección Dependencias de la tarea padre (con avatar, `PersonaAvatar`, link a su
-propio detalle) — pero **no se agrega como colaborador** de la tarea padre (`colaboradores_tarea`).
-Son conceptualmente distintos: un colaborador comparte la misma tarea y hereda sus permisos
+**Decisión sobre RF-21/22:** el responsable de una tarea hija se muestra bien visible en la
+sección Dependencias de la tarea padre (con avatar, `PersonaAvatar`, link a su propio detalle)
+— pero **no se agrega como colaborador** de la tarea padre (`colaboradores_tarea`). Son
+conceptualmente distintos: un colaborador comparte la misma tarea y hereda sus permisos
 (RF-06); el responsable de una tarea hija tiene su propia tarea separada y no debería tener
-permisos sobre la tarea padre solo por estar vinculado como dependencia.
+permisos sobre la tarea padre solo por estar vinculado como dependencia. Ya implementado así
+en `dependencias-section.tsx`.
 
 **Ojo: la sección Dependencias NUNCA se oculta por falta de colaboradores** (a diferencia de
 Checklist, ver arriba) — incluso una tarea chica y sin colaboradores puede necesitar pedir
-ayuda externa creando una tarea hija, así que esa tarjeta siempre debe estar disponible.
+ayuda externa creando una tarea hija, así que esa tarjeta siempre está disponible
+(`DependenciaService::crearTareaHija()` no depende de que la tarea padre tenga colaboradores).
 
-**Ya construido y usable por Oscar sin que tenga que hacer nada extra:** cuando alguien sube
+**La evidencia cruzada de tareas hijas ya funciona sola, sin nada extra:** cuando alguien sube
 un adjunto con categoría "evidencia" (RF-19) en una tarea que tiene `tarea_padre_id` seteado,
 ese archivo aparece automáticamente en "Necesarios para la tarea" de la tarea padre (ver
 `AdjuntoService::deTareasHijas()` y `resources/js/components/tareas/adjuntos-section.tsx`).
-Las relaciones `Tarea::tareaPadre()`/`tareasHijas()` ya existen desde el modelo original — en
-cuanto Oscar construya el flujo de "crear tarea hija" y setee `tarea_padre_id`, esto funciona
-solo, sin que tenga que tocar nada de adjuntos.
+Ahora que `DependenciaService::crearTareaHija()` (RF-21) setea `tarea_padre_id` al crear la
+hija, esto ya se ejercita en la práctica sin que nadie tuviera que tocar nada de adjuntos.
 
 **Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
 ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
