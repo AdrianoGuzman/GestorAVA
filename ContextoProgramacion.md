@@ -286,6 +286,20 @@ usado solo para la UI, que combina el permiso de rol con el estado terminal. Par
 participación), que no tenían ningún guard de estado previo, el chequeo de terminal se agregó
 directo al método `puedeX` — sirve a la vez de guard real y de flag para la UI.
 
+**Decisión explícita (Franco, 13-09-2026): en "Mis tareas" (RF-09), las tareas completadas y
+canceladas se ocultan por defecto del listado, pero nunca se archivan ni se eliminan.** AVA
+pidió trazabilidad fuerte, así que "mover a otra pantalla" o esconderlas sin salida no era
+opción — la solución fue cambiar el *default* del filtro de estado que ya existía, no agregar
+un concepto nuevo de archivo/historial. `MisTareasService::obtener()` aplica
+`ESTADOS_ACTIVOS_POR_DEFECTO` (`pendiente`, `en_progreso`) solo cuando la clave `estado` no
+viene en absoluto en `$filtros` (no cuando viene vacía — con Inertia ambos casos son
+indistinguibles en la query string, así que "Limpiar filtros" también cae en este default, a
+propósito). Los filtros efectivos se devuelven en `$resultado["filtros"]` y viajan al frontend
+sin cambios en `mis-tareas/index.tsx`: las chips "Pendiente"/"En progreso" del filtro de Estado
+(ya existente) quedan preseleccionadas solas, y ver las completadas es un clic en la chip
+"Completada" — no se agregó tab ni componente nuevo. El historial de eventos de cada tarea
+sigue intacto y visible en el detalle, sin tocar.
+
 **RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no
 convenía como funcionalidad — se eliminaron `DuplicarTareaService`, `DuplicarTareaRequest`,
 `DuplicarTareaDialog`, la ruta `tareas/{tarea}/duplicar` y el flag `puedeDuplicar`. Si en algún
