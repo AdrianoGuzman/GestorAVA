@@ -93,18 +93,31 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
                                 {errors.nuevo_responsable_id && <p className="text-sm text-rojo-1">{errors.nuevo_responsable_id}</p>}
                             </div>
 
-                            <label className="flex items-center gap-2 text-sm">
-                                <Checkbox
-                                    checked={data.mantener_como_colaborador}
-                                    onCheckedChange={(checked) => setData('mantener_como_colaborador', checked === true)}
-                                />
-                                El responsable saliente queda como colaborador
-                            </label>
+                            <div className="grid gap-1.5">
+                                <label className="flex items-center gap-2 text-sm font-medium">
+                                    <Checkbox
+                                        checked={data.mantener_como_colaborador}
+                                        onCheckedChange={(checked) => setData('mantener_como_colaborador', checked === true)}
+                                    />
+                                    El responsable saliente queda como colaborador
+                                </label>
+                                <p className="pl-7 text-xs text-muted-foreground">
+                                    Si lo marcás, quien deja de ser responsable se agrega como colaborador en vez de salir por
+                                    completo de la tarea.
+                                </p>
+                            </div>
 
-                            <label className="flex items-center gap-2 text-sm">
-                                <Checkbox checked={data.es_excepcion} onCheckedChange={(checked) => setData('es_excepcion', checked === true)} />
-                                Excepción por ausencia total (RN-12)
-                            </label>
+                            <div className="grid gap-1.5">
+                                <label className="flex items-center gap-2 text-sm font-medium">
+                                    <Checkbox checked={data.es_excepcion} onCheckedChange={(checked) => setData('es_excepcion', checked === true)} />
+                                    Excepción por ausencia total (RN-12)
+                                </label>
+                                <p className="pl-7 text-xs text-muted-foreground">
+                                    Marcala solo si el responsable actual y su superior jerárquico directo de la misma unidad
+                                    están ambos indisponibles: habilita que cualquier superior jerárquico autorice la
+                                    reasignación, pidiendo un motivo obligatorio.
+                                </p>
+                            </div>
 
                             {data.es_excepcion && (
                                 <div className="grid gap-2">
