@@ -18,7 +18,7 @@ return [
     */
 
     "guards_completar" => [
-        //
+        \App\Guards\ChecklistPendienteGuard::class,
     ],
 
 ];

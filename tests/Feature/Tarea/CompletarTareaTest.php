@@ -5,6 +5,7 @@ namespace Tests\Feature\Tarea;
 use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
+use App\Models\ChecklistItem;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
@@ -119,6 +120,44 @@ class CompletarTareaTest extends TestCase
             "unidad_organizacional_id" => $obra->id,
             "estado" => EstadoTarea::EnProgreso,
         ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
+            ->assertRedirect()->assertSessionHas("success");
+
+        $this->assertSame(EstadoTarea::Completada, $tarea->fresh()->estado);
+    }
+
+    public function test_no_se_puede_completar_si_hay_items_del_checklist_compartido_sin_marcar(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $colaborador = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+        ]);
+        $tarea->colaboradores()->attach($colaborador->id);
+        ChecklistItem::factory()->create(["tarea_id" => $tarea->id, "completado" => false]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
+            ->assertSessionHasErrors("bloqueos");
+
+        $this->assertSame(EstadoTarea::EnProgreso, $tarea->fresh()->estado);
+    }
+
+    public function test_se_puede_completar_si_todos_los_items_del_checklist_estan_marcados(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $colaborador = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+        ]);
+        $tarea->colaboradores()->attach($colaborador->id);
+        ChecklistItem::factory()->create(["tarea_id" => $tarea->id, "completado" => true]);
 
         $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
             ->assertRedirect()->assertSessionHas("success");
