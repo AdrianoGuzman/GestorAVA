@@ -14,7 +14,7 @@ personas, cada uno a cargo de un módulo distinto del backend.
 
 ## Stack técnico
 
-- **Backend**: Laravel 11 (PHP), PostgreSQL 16, Redis (colas/cache).
+- **Backend**: Laravel 13 (PHP), PostgreSQL 16, Redis (colas/cache).
 - **Frontend**: Inertia.js + React 19 + TypeScript, Tailwind CSS v4 (config
   CSS-first, sin `tailwind.config.js`), componentes shadcn/ui sobre Radix UI.
 - **Infra**: Docker Compose (Laravel, Postgres, Redis, Mailpit para correo de
@@ -136,9 +136,11 @@ corregirlo), y cuando se cancela una tarea (les llega a los colaboradores).
 - Crear tarea, reasignar responsable (incl. excepción por ausencia total),
   agregar colaboradores, marcar completada, retroceder a pendiente, reportar
   problema (notifica sin cambiar estado), cancelar (cierre definitivo).
-- Vista "Mis tareas" (backend, sin página propia todavía): secciones
-  Responsable / Colaborador / Delegadas por mí / Creadas por mí, con
-  contadores agregados.
+- **"Mis tareas"** (`/mis-tareas`, página real con pestañas Lista/Calendario/
+  Panel de métricas): secciones Responsable / Colaborador / Delegadas por mí /
+  Creadas por mí, filtros, contadores agregados y prioridad (alta/media/baja).
+  El calendario muestra las tareas por fecha de compromiso con indicador de
+  prioridad alta. El Panel de métricas todavía es un placeholder ("Próximamente").
 - **Vista de detalle de tarea** (`/tareas/{id}`, página real ya construida):
   título, estado + atrasada, descripción, fechas, responsable/colaboradores/
   creador, tu propio rol respecto a la tarea, botones de acción habilitados
@@ -146,16 +148,20 @@ corregirlo), y cuando se cancela una tarea (les llega a los colaboradores).
   **adjuntar archivos** (PDF/imágenes/Word/Excel/ZIP, drag-and-drop, descarga
   autenticada — nada queda expuesto por URL pública), separados en "Necesarios
   para la tarea" y "Evidencia" (categoría elegida al subir, no por quién sube).
+- **Checklist compartido** (RF-23): ítems simples, con dueño opcional, bloquea
+  completar la tarea si queda algo sin marcar; solo se muestra si la tarea
+  tiene colaboradores (si no, hay un "checklist personal" no bloqueante).
+- **Dependencias entre tareas** (RF-21/22): crear una tarea hija desde la
+  tarea padre (con su propio responsable y seguimiento), bloquea completar
+  el padre si hay hijas sin terminar; el responsable de la hija se muestra
+  con avatar y link a su propio detalle, sin ser colaborador del padre.
+- **Autenticación/roles** (login, niveles jerárquicos, administración de
+  usuarios) — completo.
 
-## Qué falta (a cargo de otros compañeros, todavía sin UI ni backend propio)
+## Qué falta
 
-- **Checklist** dentro de una tarea (ítems simples, con dueño opcional,
-  bloquea completar la tarea si queda algo sin marcar) — hay una sección
-  placeholder reservada en la vista de detalle.
-- **Dependencias entre tareas** (tarea padre/hija, bloquea completar el padre
-  si hay hijas pendientes) — también con placeholder reservado.
-- **Autenticación/roles** (login, registro, cambio de nombre en el perfil —
-  el bug conocido del cambio de nombre ya lo arregló Elian el 12-09-2026).
+- **Panel de métricas** (`/mis-tareas`, pestaña "Panel de métricas"): sigue
+  siendo un placeholder, sin dueño asignado en el equipo todavía.
 
 ## Convenciones a respetar si se propone algo nuevo
 
