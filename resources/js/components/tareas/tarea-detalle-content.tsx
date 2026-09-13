@@ -347,7 +347,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                 de la barra de arriba hace scroll hasta aca para que se note que
                 existe sin depender de que alguien baje toda la pagina primero. */}
             <div ref={actividadRef} className="scroll-mt-4 pt-4">
-                <HistorialInline eventos={tarea.historial} />
+                <HistorialInline eventos={tarea.historial} usuarios={usuarios} />
             </div>
         </div>
     );

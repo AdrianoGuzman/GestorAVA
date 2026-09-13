@@ -102,6 +102,32 @@ class ChecklistTest extends TestCase
         );
     }
 
+    public function test_editar_la_fecha_limite_registra_el_antes_y_despues_en_el_historial(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+            "texto" => "Paso con fecha",
+            "fecha_limite" => "2026-09-20",
+        ]);
+
+        $this->actingAs($usuario)
+            ->patch("/checklist/{$item->id}", [
+                "texto" => "Paso con fecha",
+                "fecha_limite" => "2026-09-25",
+            ])
+            ->assertRedirect();
+
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ChecklistItemEditado)->latest()->first();
+
+        $this->assertNotNull($evento);
+        $this->assertSame("2026-09-20", $evento->datos_evento["datos_anteriores"]["fecha_limite"]);
+        $this->assertSame("2026-09-25", $evento->datos_evento["fecha_limite"]);
+    }
+
     public function test_elimina_un_item_y_registra_el_historial(): void
     {
         $usuario = User::factory()->create();

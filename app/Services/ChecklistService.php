@@ -94,6 +94,7 @@ class ChecklistService
             $datosAnteriores = [
                 "texto" => $item->texto,
                 "dueno_id" => $item->dueno_id,
+                "fecha_limite" => $item->fecha_limite?->toDateString(),
             ];
 
             $item->update([
@@ -111,6 +112,7 @@ class ChecklistService
                     "datos_anteriores" => $datosAnteriores,
                     "texto" => $item->texto,
                     "dueno_id" => $item->dueno_id,
+                    "fecha_limite" => $item->fecha_limite?->toDateString(),
                 ],
             );
 

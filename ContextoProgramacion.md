@@ -252,6 +252,31 @@ solicitado. Si el equipo decide que sí debería bloquearse, es un cambio chico 
 misma consulta a `tareasHijas()` en `CancelacionService::cancelar()`), pero no se hizo sin que
 alguien lo pida explícitamente.
 
+**Decisión explícita (Franco, 13-09-2026): la línea de tiempo de "Actividad" ahora muestra
+qué cambió en cada edición, no solo quién y cuándo.** El backend ya guardaba el antes/después
+completo de varias acciones (`TareaService::actualizar()`, `ChecklistService::editar()`,
+`ReasignacionService::ejecutar()`) pero `historial-timeline.tsx` solo renderizaba el `motivo`
+cuando existía — el resto de `datos_evento` se descartaba en el render. `construirDetalles()`
+(en `historial-timeline.tsx`) arma esas líneas de detalle por tipo de evento:
+- `tarea_editada` / `checklist_item_editado`: diff campo por campo contra `datos_anteriores`,
+  mostrando **solo los campos que realmente cambiaron** (`diffCampos()`) — la preocupación de
+  Franco era que mostrar los 5 campos de una edición aunque solo se haya movido una fecha
+  satura la línea de tiempo sin aportar nada. Los textos largos (descripción, texto de una
+  subtarea) se truncan a ~50-60 caracteres.
+- `reasignacion` / `reasignacion_excepcional`: responsable anterior → nuevo, resolviendo el id
+  a nombre contra la lista completa de `usuarios` (ya se pasaba a `TareaDetalleContent`, solo
+  faltaba enhebrarla hasta el timeline). De paso se corrigió que el motivo de la excepción
+  (`motivo_excepcion`) no se mostraba nunca — el chequeo original solo miraba la clave `motivo`.
+- `colaborador_agregado` / `tarea_hija_creada`: quién se agregó / qué tarea hija se creó, dato
+  que el backend ya guardaba (`colaborador_id`, `titulo`) sin usarlo en ningún lado.
+
+Se agregó tracking de `fecha_limite` al historial de edición de una subtarea
+(`ChecklistItem::fecha_limite`, ver `ChecklistService::editar()`) porque antes solo quedaba
+registrado texto/dueño — un hueco real dado que el propósito de esto es justamente no perder
+cambios. Si en algún momento la lista de eventos por tarea crece tanto que estos detalles
+saturan igual (fue la preocupación inicial de Franco), la salida más simple es un toggle
+compacto/detallado en `HistorialInline`, no implementado todavía porque no hizo falta.
+
 **Decisión explícita (Franco, 13-09-2026): una tarea completada o cancelada es de solo
 lectura — no se puede hacer nada más que verla.** Primer intento (bloquear solo "agregar
 cosas nuevas" y dejar editar/marcar/eliminar lo existente) quedó corto: Franco encontró que un
