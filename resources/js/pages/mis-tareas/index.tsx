@@ -1,5 +1,5 @@
 import { CrearTareaDialog } from '@/components/tareas/crear-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { TareaDetalleModal, useTareaDetalleModal } from '@/components/tareas/tarea-detalle-modal';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,15 @@ import {
     ENTREGADA_CON_ATRASO_BADGE_CLASSES,
     ESTADO_TAREA_BADGE_CLASSES,
     formatearDuracionAtraso,
+    PRIORIDAD_TAREA_BADGE_CLASSES,
+    PRIORIDAD_TAREA_LABELS,
+    PRIORIDADES_ORDENADAS,
     ROL_USUARIO_LABELS,
 } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, TareaResumen } from '@/types/tarea';
+import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, TareaResumen } from '@/types/tarea';
 import { Head, router } from '@inertiajs/react';
 import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -762,8 +765,9 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
             </div>
 
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <EstadoBadge estado={tarea.estado} />
+                <PrioridadBadge prioridad={tarea.prioridad} />
             </div>
         </button>
     );
@@ -809,13 +813,25 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
     }, [busqueda]);
 
     const estadosSeleccionados = filtros.estado ?? [];
-    const filtrosActivos = estadosSeleccionados.length > 0 || !!filtros.solo_atrasadas || !!filtros.unidad_organizacional_id;
+    const prioridadesSeleccionadas = filtros.prioridad ?? [];
+    const filtrosActivos =
+        estadosSeleccionados.length > 0 ||
+        prioridadesSeleccionadas.length > 0 ||
+        !!filtros.solo_atrasadas ||
+        !!filtros.unidad_organizacional_id;
 
     const alternarEstado = (estado: EstadoTarea) => {
         const siguiente = estadosSeleccionados.includes(estado)
             ? estadosSeleccionados.filter((e) => e !== estado)
             : [...estadosSeleccionados, estado];
         actualizarFiltros(filtros, { estado: siguiente });
+    };
+
+    const alternarPrioridad = (prioridad: PrioridadTarea) => {
+        const siguiente = prioridadesSeleccionadas.includes(prioridad)
+            ? prioridadesSeleccionadas.filter((p) => p !== prioridad)
+            : [...prioridadesSeleccionadas, prioridad];
+        actualizarFiltros(filtros, { prioridad: siguiente });
     };
 
     const alternarFiltroRapido = (rol: FiltroRolMisTareas) => {
@@ -860,7 +876,12 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                 <button
                                     type="button"
                                     onClick={() =>
-                                        actualizarFiltros(filtros, { estado: [], solo_atrasadas: false, unidad_organizacional_id: null })
+                                        actualizarFiltros(filtros, {
+                                            estado: [],
+                                            prioridad: [],
+                                            solo_atrasadas: false,
+                                            unidad_organizacional_id: null,
+                                        })
                                     }
                                     className="text-xs font-medium text-verde-6 hover:underline"
                                 >
@@ -887,6 +908,30 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                             )}
                                         >
                                             {estado.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-border pt-4">
+                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Prioridad</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {PRIORIDADES_ORDENADAS.map((prioridad) => {
+                                    const activo = prioridadesSeleccionadas.includes(prioridad);
+                                    return (
+                                        <button
+                                            key={prioridad}
+                                            type="button"
+                                            onClick={() => alternarPrioridad(prioridad)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                                                activo
+                                                    ? PRIORIDAD_TAREA_BADGE_CLASSES[prioridad]
+                                                    : 'border-border text-muted-foreground hover:border-verde-3 hover:text-foreground',
+                                            )}
+                                        >
+                                            {PRIORIDAD_TAREA_LABELS[prioridad]}
                                         </button>
                                     );
                                 })}

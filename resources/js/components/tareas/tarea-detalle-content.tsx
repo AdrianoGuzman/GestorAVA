@@ -5,7 +5,7 @@ import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import { HistorialTimeline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
@@ -76,6 +76,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                         descripcion={tarea.descripcion}
                                         fechaInicio={tarea.fecha_inicio}
                                         fechaCompromiso={tarea.fecha_compromiso}
+                                        prioridad={tarea.prioridad}
                                         trigger={
                                             <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
                                                 <Pencil className="size-4" />
@@ -108,6 +109,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
                                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                         <EstadoBadge estado={tarea.estado} className="px-3 py-1 text-sm" />
+                                        <PrioridadBadge prioridad={tarea.prioridad} className="px-3 py-1 text-sm" />
                                         {tarea.esta_atrasada && tarea.estado === 'completada' && (
                                             <AtrasadaBadge
                                                 label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
@@ -256,6 +258,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                         descripcion={tarea.descripcion}
                                         fechaInicio={tarea.fecha_inicio}
                                         fechaCompromiso={tarea.fecha_compromiso}
+                                        prioridad={tarea.prioridad}
                                     />
                                 )}
                             </div>

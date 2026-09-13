@@ -2,16 +2,19 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { fechaMinimaCompromiso } from '@/lib/estado-tarea';
+import { fechaMinimaCompromiso, PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
+import type { PrioridadTarea } from '@/types/tarea';
 import { useForm } from '@inertiajs/react';
 import { Copy } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 /**
  * RF-18 (Could): copia responsable y unidad organizacional de la tarea
- * origen (no editables aca); titulo, descripcion y fechas quedan editables,
- * prellenados con los valores de la tarea origen como punto de partida.
+ * origen (no editables aca); titulo, descripcion, fechas y prioridad quedan
+ * editables, prellenados con los valores de la tarea origen como punto de
+ * partida.
  */
 export function DuplicarTareaDialog({
     tareaId,
@@ -19,12 +22,14 @@ export function DuplicarTareaDialog({
     descripcion,
     fechaInicio,
     fechaCompromiso,
+    prioridad,
 }: {
     tareaId: number;
     titulo: string;
     descripcion: string | null;
     fechaInicio: string | null;
     fechaCompromiso: string;
+    prioridad: PrioridadTarea;
 }) {
     const [open, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -32,6 +37,7 @@ export function DuplicarTareaDialog({
         descripcion: descripcion ?? '',
         fecha_inicio: fechaInicio ?? '',
         fecha_compromiso: fechaCompromiso,
+        prioridad,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -99,6 +105,23 @@ export function DuplicarTareaDialog({
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="prioridad">Prioridad</Label>
+                            <Select value={data.prioridad} onValueChange={(valor) => setData('prioridad', valor as PrioridadTarea)}>
+                                <SelectTrigger id="prioridad">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PRIORIDADES_ORDENADAS.map((opcion) => (
+                                        <SelectItem key={opcion} value={opcion}>
+                                            {PRIORIDAD_TAREA_LABELS[opcion]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
                         </div>
                     </div>
 

@@ -1,5 +1,7 @@
 export type EstadoTarea = 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
 
+export type PrioridadTarea = 'alta' | 'media' | 'baja';
+
 export type TipoEvento =
     | 'creacion'
     | 'reasignacion'
@@ -80,6 +82,7 @@ export interface TareaDetalle {
     titulo: string;
     descripcion: string | null;
     estado: EstadoTarea;
+    prioridad: PrioridadTarea;
     esta_atrasada: boolean;
     fecha_inicio: string | null;
     fecha_compromiso: string;
@@ -104,6 +107,7 @@ export interface TareaResumen {
     codigo: string;
     titulo: string;
     estado: EstadoTarea;
+    prioridad: PrioridadTarea;
     esta_atrasada: boolean;
     fecha_compromiso: string;
     updated_at: string;
@@ -126,6 +130,7 @@ export type FiltroRolMisTareas = 'responsable' | 'colaborador' | 'delegadas_por_
 export interface FiltrosMisTareas {
     busqueda?: string | null;
     estado?: EstadoTarea[];
+    prioridad?: PrioridadTarea[];
     solo_atrasadas?: boolean;
     unidad_organizacional_id?: number | null;
     filtro_rol?: FiltroRolMisTareas;
