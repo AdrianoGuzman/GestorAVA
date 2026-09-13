@@ -196,6 +196,18 @@ la misma tarjeta, no moverla ni renombrarla.
   responsable y seguimiento → tarea hija (RF-21/22), no un ítem de checklist.** Esta es la
   regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una tarea
   dependiente completa.
+- **Ajuste 13-09-2026 (Franco): un ítem de checklist ahora puede tener `fecha_limite`
+  opcional**, ademas del dueño — se agregó `fecha_limite` (date, nullable) a
+  `checklist_items` (ver migración `2026_09_13_180000_add_fecha_limite_to_checklist_items_table`)
+  y se expone en `ChecklistItem::$fillable`/`$casts`. Se puede fijar solo al crear o editar el
+  ítem (`CrearChecklistItemRequest`/`EditarChecklistItemRequest`, `ChecklistService::crear()`/
+  `editar()`), sin permiso especial (a diferencia del dueño, que sí requiere
+  `puedeAsignarDuenoChecklist`) — cualquiera con `puedeUsarChecklist` puede ponerla. Al crear
+  exige `after:today` (igual que `fecha_compromiso` de una tarea); al editar no, mismo motivo
+  que `ActualizarTareaRequest`: no forzar mover una fecha ya vencida solo por corregir el
+  texto. Esto relaja un poco la regla de "checklist = binario" de arriba, pero sigue sin
+  responsable propio con seguimiento de estado (eso sigue siendo terreno de tarea hija) —
+  es solo una fecha de referencia, no una fecha de compromiso con las mismas implicancias.
 
 **Fix de permisos aplicado por Franco (11-09-2026) sobre `ChecklistController`/`ChecklistService`:**
 el backend original no tenía ningún control de acceso (cualquier usuario autenticado podía

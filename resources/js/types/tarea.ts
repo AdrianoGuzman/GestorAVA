@@ -75,6 +75,7 @@ export interface ChecklistItem {
     completado: boolean;
     dueno_id: number | null;
     dueno: UsuarioTarea | null;
+    fecha_limite: string | null;
     created_at: string;
 }
 

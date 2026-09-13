@@ -22,6 +22,7 @@ class ChecklistService
         string $texto,
         ?User $dueno,
         User $usuario,
+        ?string $fechaLimite = null,
     ): ChecklistItem {
         if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
@@ -37,11 +38,12 @@ class ChecklistService
 
         $this->validarDueno($tarea, $dueno);
 
-        return DB::connection("usuarios")->transaction(function () use ($tarea, $texto, $dueno, $usuario) {
+        return DB::connection("usuarios")->transaction(function () use ($tarea, $texto, $dueno, $usuario, $fechaLimite) {
             $item = $tarea->checklistItems()->create([
                 "texto" => $texto,
                 "completado" => false,
                 "dueno_id" => $dueno?->id,
+                "fecha_limite" => $fechaLimite,
             ]);
 
             $this->historial->registrar(
@@ -64,6 +66,7 @@ class ChecklistService
         string $texto,
         ?User $dueno,
         User $usuario,
+        ?string $fechaLimite = null,
     ): ChecklistItem {
         $tarea = $item->tarea;
 
@@ -83,7 +86,7 @@ class ChecklistService
 
         $this->validarDueno($tarea, $dueno);
 
-        return DB::connection("usuarios")->transaction(function () use ($item, $texto, $dueno, $usuario, $tarea) {
+        return DB::connection("usuarios")->transaction(function () use ($item, $texto, $dueno, $usuario, $tarea, $fechaLimite) {
             $datosAnteriores = [
                 "texto" => $item->texto,
                 "dueno_id" => $item->dueno_id,
@@ -92,6 +95,7 @@ class ChecklistService
             $item->update([
                 "texto" => $texto,
                 "dueno_id" => $dueno?->id,
+                "fecha_limite" => $fechaLimite,
             ]);
 
             $this->historial->registrar(
