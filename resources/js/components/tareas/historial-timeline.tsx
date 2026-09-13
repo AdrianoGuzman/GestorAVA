@@ -18,6 +18,7 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     checklist_item_desmarcado: 'Desmarcó un ítem del checklist',
     checklist_item_editado: 'Editó un ítem del checklist',
     checklist_item_eliminado: 'Eliminó un ítem del checklist',
+    tarea_hija_creada: 'Creó una tarea hija',
     adjunto_agregado: 'Adjuntó un archivo',
     tarea_atrasada: 'Se marcó como atrasada automáticamente',
     tarea_editada: 'Editó la tarea',

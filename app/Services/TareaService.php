@@ -61,6 +61,9 @@ class TareaService
                 // traerlo.
                 "prioridad" => $datos["prioridad"] ?? PrioridadTarea::Media->value,
                 "esta_atrasada" => false,
+                // RF-21: null salvo que DependenciaService::crearTareaHija()
+                // la pase explicitamente -- una tarea normal nunca tiene padre.
+                "tarea_padre_id" => $datos["tarea_padre_id"] ?? null,
             ]);
 
             if ($colaboradorIds->isNotEmpty()) {

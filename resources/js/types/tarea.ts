@@ -20,6 +20,7 @@ export type TipoEvento =
     | 'checklist_item_desmarcado'
     | 'checklist_item_editado'
     | 'checklist_item_eliminado'
+    | 'tarea_hija_creada'
     | 'adjunto_agregado'
     | 'tarea_atrasada'
     | 'tarea_editada'
@@ -77,6 +78,15 @@ export interface ChecklistItem {
     created_at: string;
 }
 
+/** Tarea hija (RF-21/22), mostrada en la sección Dependencias de la tarea padre. */
+export interface TareaHija {
+    id: number;
+    codigo: string;
+    titulo: string;
+    estado: EstadoTarea;
+    responsable: UsuarioTarea;
+}
+
 export interface TareaDetalle {
     id: number;
     titulo: string;
@@ -96,6 +106,7 @@ export interface TareaDetalle {
     historial: HistorialEvento[];
     adjuntos: AdjuntoTarea[];
     checklist_items: ChecklistItem[];
+    tareas_hijas: TareaHija[];
 }
 
 /** Rol del usuario que consulta respecto de esta tarea (RF-24 D4), coherente con las secciones de RF-09. */
@@ -149,6 +160,7 @@ export interface PermisosTarea {
     puedeUsarChecklistPersonal: boolean;
     puedeUsarChecklist: boolean;
     puedeAsignarDuenoChecklist: boolean;
+    puedeCrearTareaHija: boolean;
     puedeEditar: boolean;
     puedeDuplicar: boolean;
 }

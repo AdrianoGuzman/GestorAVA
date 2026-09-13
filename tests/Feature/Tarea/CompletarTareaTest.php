@@ -164,4 +164,39 @@ class CompletarTareaTest extends TestCase
 
         $this->assertSame(EstadoTarea::Completada, $tarea->fresh()->estado);
     }
+
+    public function test_no_se_puede_completar_si_hay_una_tarea_hija_sin_terminar(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+        ]);
+        Tarea::factory()->hijaDe($padre)->create(["estado" => EstadoTarea::EnProgreso]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$padre->id}/completar")
+            ->assertSessionHasErrors("bloqueos");
+
+        $this->assertSame(EstadoTarea::EnProgreso, $padre->fresh()->estado);
+    }
+
+    public function test_se_puede_completar_si_todas_las_tareas_hijas_estan_completadas_o_canceladas(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+        ]);
+        Tarea::factory()->hijaDe($padre)->completada()->create();
+        Tarea::factory()->hijaDe($padre)->cancelada()->create();
+
+        $this->actingAs($responsable)->patch("/tareas/{$padre->id}/completar")
+            ->assertRedirect()->assertSessionHas("success");
+
+        $this->assertSame(EstadoTarea::Completada, $padre->fresh()->estado);
+    }
 }

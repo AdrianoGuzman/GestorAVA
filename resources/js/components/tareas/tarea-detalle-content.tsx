@@ -3,6 +3,7 @@ import { AgregarColaboradorDialog } from '@/components/tareas/agregar-colaborado
 import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal-section';
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
+import { DependenciasSection } from '@/components/tareas/dependencias-section';
 import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
@@ -306,7 +307,12 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-muted-foreground">Próximamente (RF-21/RF-22) — módulo a cargo de Oscar.</p>
+                            <DependenciasSection
+                                tareaId={tarea.id}
+                                tareasHijas={tarea.tareas_hijas}
+                                personas={usuarios}
+                                puedeCrear={permisos.puedeCrearTareaHija}
+                            />
                         </CardContent>
                     </Card>
                 </div>

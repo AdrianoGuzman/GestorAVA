@@ -22,17 +22,23 @@ import { FormEventHandler, useEffect, useState } from 'react';
  * pasan cuando algo externo necesita abrirlo sin un trigger propio -- ej. el
  * calendario, que lo abre al hacer clic en un dia sin tareas, precargando
  * `fechaCompromisoInicial` con esa fecha.
+ *
+ * `tareaPadreId` (RF-21): si se pasa, esto crea una tarea hija de esa tarea
+ * en vez de una tarea normal -- mismo formulario, solo cambia el endpoint y
+ * el texto del dialog.
  */
 export function CrearTareaDialog({
     trigger,
     personas,
     fechaCompromisoInicial,
+    tareaPadreId,
     open: openControlado,
     onOpenChange,
 }: {
     trigger?: React.ReactNode;
     personas: Persona[];
     fechaCompromisoInicial?: string;
+    tareaPadreId?: number;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
 }) {
@@ -78,7 +84,7 @@ export function CrearTareaDialog({
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('tareas.store'), {
+        post(tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -102,7 +108,7 @@ export function CrearTareaDialog({
                 <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
-                        <DialogTitle>Nueva tarea</DialogTitle>
+                        <DialogTitle>{tareaPadreId ? 'Nueva tarea hija' : 'Nueva tarea'}</DialogTitle>
                         <DialogDescription>Por defecto quedas como responsable, salvo que elijas a otra persona.</DialogDescription>
                     </DialogHeader>
 
@@ -241,7 +247,7 @@ export function CrearTareaDialog({
 
                     <DialogFooter>
                         <Button type="submit" disabled={processing || data.titulo.trim() === '' || data.fecha_compromiso === ''}>
-                            <Plus /> Crear tarea
+                            <Plus /> {tareaPadreId ? 'Crear tarea hija' : 'Crear tarea'}
                         </Button>
                     </DialogFooter>
                 </form>

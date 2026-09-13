@@ -193,4 +193,16 @@ class PermisosService
         return $solicitante->id === $tarea->responsable_id
             || $tarea->colaboradores->contains("id", $solicitante->id);
     }
+
+    /**
+     * RF-21: el responsable o un colaborador de la tarea padre puede crear
+     * una tarea hija para delegar una parte del trabajo -- mismo nivel de
+     * confianza que usar el checklist (puedeUsarChecklist), ya que ambas son
+     * formas de dividir el trabajo de la tarea.
+     */
+    public function puedeCrearTareaHija(Tarea $tareaPadre, User $solicitante): bool
+    {
+        return $solicitante->id === $tareaPadre->responsable_id
+            || $tareaPadre->colaboradores->contains("id", $solicitante->id);
+    }
 }
