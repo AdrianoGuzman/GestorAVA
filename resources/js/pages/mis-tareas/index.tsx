@@ -181,7 +181,23 @@ const VISTAS_CALENDARIO: { value: VistaCalendario; label: string }[] = [
     { value: 'anio', label: 'Año' },
 ];
 
-function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas: TareaResumen[]; onAbrirTarea: (id: number) => void }) {
+function DiaPopoverContenido({
+    dia,
+    tareas,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    dia: Date;
+    tareas: TareaResumen[];
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    // Mismo requisito que en la celda vacia (RF-04, after:today): un dia de
+    // hoy o pasado no puede agendar nada nuevo.
+    const puedeCrearAqui = claveFecha(dia) > hoyClave;
+
     return (
         <>
             <div className="flex items-start justify-between">
@@ -205,18 +221,28 @@ function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas:
                     ))}
                 </div>
             )}
+
+            {puedeCrearAqui && (
+                <PopoverClose asChild>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => onCrearEnFecha(dia)}>
+                        <Plus className="size-3.5" /> Nueva tarea
+                    </Button>
+                </PopoverClose>
+            )}
         </>
     );
 }
 
 /**
  * Toda la celda de un dia es clickeable. Si tiene tareas, abre el popover
- * con el detalle del dia. Si esta vacia y es estrictamente a futuro, abre
- * directo el dialog de "Nueva tarea" con la fecha precargada (no tiene
- * sentido mostrar un popover vacio ahi); un dia de hoy o pasado y vacio no
- * puede agendar nada nuevo (fecha_compromiso exige a futuro, RF-04), asi que
- * ahi si muestra el popover informativo en vez de abrir un formulario que
- * el backend va a rechazar.
+ * con el detalle del dia -- que a su vez ofrece "Nueva tarea" ahi mismo
+ * (DiaPopoverContenido) para poder agendar mas de una tarea el mismo dia,
+ * en vez de quedar limitado a la primera. Si esta vacia y es estrictamente
+ * a futuro, abre directo el dialog de "Nueva tarea" con la fecha precargada
+ * (no tiene sentido mostrar un popover vacio ahi); un dia de hoy o pasado y
+ * vacio no puede agendar nada nuevo (fecha_compromiso exige a futuro,
+ * RF-04), asi que ahi si muestra el popover informativo en vez de abrir un
+ * formulario que el backend va a rechazar.
  */
 function CeldaCalendario({
     dia,
@@ -279,7 +305,7 @@ function CeldaCalendario({
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-64 space-y-3 p-4" align="start">
-                <DiaPopoverContenido dia={dia} tareas={tareas} onAbrirTarea={onAbrirTarea} />
+                <DiaPopoverContenido dia={dia} tareas={tareas} hoyClave={hoyClave} onAbrirTarea={onAbrirTarea} onCrearEnFecha={onCrearEnFecha} />
             </PopoverContent>
         </Popover>
     );
@@ -478,10 +504,9 @@ function VistaDia({
     onCrearEnFecha: (dia: Date) => void;
 }) {
     const tareasDelDia = tareasPorDia.get(claveFecha(dia)) ?? [];
+    const puedeCrearAqui = claveFecha(dia) > hoyClave;
 
     if (tareasDelDia.length === 0) {
-        const puedeCrearAqui = claveFecha(dia) > hoyClave;
-
         return (
             <div className="space-y-3 py-8 text-center">
                 <p className="text-sm text-muted-foreground">No hay tareas para este día.</p>
@@ -495,10 +520,19 @@ function VistaDia({
     }
 
     return (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {tareasDelDia.map((tarea) => (
-                <TareaCard key={tarea.id} tarea={tarea} onAbrir={onAbrirTarea} />
-            ))}
+        <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {tareasDelDia.map((tarea) => (
+                    <TareaCard key={tarea.id} tarea={tarea} onAbrir={onAbrirTarea} />
+                ))}
+            </div>
+            {/* Antes solo se podia agendar en un dia vacio -- con tareas ya
+                cargadas no habia forma de sumar otra el mismo dia. */}
+            {puedeCrearAqui && (
+                <Button variant="outline" size="sm" onClick={() => onCrearEnFecha(dia)}>
+                    <Plus /> Nueva tarea
+                </Button>
+            )}
         </div>
     );
 }
