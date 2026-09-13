@@ -2,9 +2,11 @@ import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
+import { NonModalOverlay } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { useForm } from '@inertiajs/react';
 import { UserCog } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -16,18 +18,18 @@ import { FormEventHandler, useState } from 'react';
 export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React.ReactNode; tareaId: number; personas: Persona[] }) {
     const [open, setOpen] = useState(false);
     const [nuevoResponsable, setNuevoResponsable] = useState<Persona | null>(null);
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, reset } = useForm({
         nuevo_responsable_id: '',
         mantener_como_colaborador: false as boolean,
         es_excepcion: false as boolean,
         motivo_excepcion: '',
     });
+    const { enviar, processing, errors } = useAccionTarea();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('tareas.reasignar', tareaId), {
-            preserveScroll: true,
+        enviar('patch', route('tareas.reasignar', tareaId), data, {
             onSuccess: () => {
                 setOpen(false);
                 setNuevoResponsable(null);
@@ -37,24 +39,27 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
     };
 
     return (
-        // modal={false}: mismo motivo que en AgregarColaboradorDialog -- este
-        // dialogo tambien contiene un PersonaPicker (Popover) y puede quedar
-        // anidado dentro del modal grande de detalle de tarea. NonModalOverlay
-        // repone el fondo difuminado que Radix deja de pintar en ese modo.
+        // Panel lateral (Sheet) en vez de modal centrado, para no tapar la
+        // info de la tarea que queda detras. modal={false}: este dialogo
+        // tambien contiene un PersonaPicker (Popover) y puede quedar anidado
+        // dentro del modal grande de detalle de tarea -- mismo motivo que en
+        // AgregarColaboradorDialog. NonModalOverlay repone el fondo
+        // difuminado que Radix deja de pintar en ese modo (Sheet usa el
+        // mismo primitivo de Radix Dialog por debajo, mismo bug).
         <>
             <NonModalOverlay open={open} onClose={() => setOpen(false)} />
-            <Dialog open={open} onOpenChange={setOpen} modal={false}>
-                <DialogTrigger asChild>{trigger}</DialogTrigger>
-                <DialogContent>
-                    <form onSubmit={submit}>
-                        <DialogHeader>
-                            <DialogTitle>Reasignar responsable</DialogTitle>
-                            <DialogDescription>
+            <Sheet open={open} onOpenChange={setOpen} modal={false}>
+                <SheetTrigger asChild>{trigger}</SheetTrigger>
+                <SheetContent className="flex flex-col overflow-y-auto">
+                    <form onSubmit={submit} className="flex flex-1 flex-col">
+                        <SheetHeader>
+                            <SheetTitle>Reasignar responsable</SheetTitle>
+                            <SheetDescription>
                                 El responsable actual, o su superior jerárquico directo de la misma unidad, puede reasignar esta tarea.
-                            </DialogDescription>
-                        </DialogHeader>
+                            </SheetDescription>
+                        </SheetHeader>
 
-                        <div className="grid gap-4 py-4">
+                        <div className="grid flex-1 gap-4 py-4">
                             <div className="grid gap-2">
                                 <Label>Nuevo responsable</Label>
                                 <PersonaPicker
@@ -115,14 +120,14 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
                             )}
                         </div>
 
-                        <DialogFooter>
+                        <SheetFooter>
                             <Button type="submit" disabled={processing || !nuevoResponsable}>
                                 <UserCog /> Reasignar
                             </Button>
-                        </DialogFooter>
+                        </SheetFooter>
                     </form>
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </>
     );
 }

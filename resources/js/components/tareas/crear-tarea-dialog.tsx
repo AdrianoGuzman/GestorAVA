@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { fechaMinimaCompromiso, PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { SharedData } from '@/types';
 import type { PrioridadTarea } from '@/types/tarea';
@@ -48,7 +49,8 @@ export function CrearTareaDialog({
     const setOpen = onOpenChange ?? setOpenInterno;
     const [responsable, setResponsable] = useState<Persona | null>(null);
     const [colaboradores, setColaboradores] = useState<Persona[]>([]);
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { enviar, processing, errors } = useAccionTarea();
+    const { data, setData, reset } = useForm({
         titulo: '',
         descripcion: '',
         fecha_inicio: '',
@@ -84,8 +86,7 @@ export function CrearTareaDialog({
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), {
-            preserveScroll: true,
+        enviar('post', tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), data, {
             onSuccess: () => {
                 setOpen(false);
                 setResponsable(null);

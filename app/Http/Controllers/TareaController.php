@@ -30,6 +30,7 @@ use App\Services\ReporteProblemaService;
 use App\Services\RetrocesoService;
 use App\Services\TareaService;
 use App\Services\TransicionAutomaticaService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -106,20 +107,20 @@ class TareaController extends Controller
         ]);
     }
 
-    public function actualizar(ActualizarTareaRequest $request, Tarea $tarea): RedirectResponse
+    public function actualizar(ActualizarTareaRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->tareaService->actualizar($tarea, $request->validated(), $request->user());
 
-        return back()->with("success", "Tarea actualizada correctamente.");
+        return $this->exito("Tarea actualizada correctamente.");
     }
 
-    public function agregarAdjunto(AdjuntarArchivoRequest $request, Tarea $tarea): RedirectResponse
+    public function agregarAdjunto(AdjuntarArchivoRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $categoria = CategoriaAdjunto::from($request->validated("categoria"));
 
         $this->adjuntoService->agregar($tarea, $request->file("archivo"), $request->user(), $categoria);
 
-        return back()->with("success", "Archivo adjuntado correctamente.");
+        return $this->exito("Archivo adjuntado correctamente.");
     }
 
     public function descargarAdjunto(Tarea $tarea, AdjuntoTarea $adjunto): StreamedResponse
@@ -136,7 +137,7 @@ class TareaController extends Controller
         return back()->with("success", "Tarea \"{$tarea->titulo}\" creada correctamente.");
     }
 
-    public function reasignar(ReasignarTareaRequest $request, Tarea $tarea): RedirectResponse
+    public function reasignar(ReasignarTareaRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $datos = $request->validated();
         $nuevoResponsable = User::findOrFail($datos["nuevo_responsable_id"]);
@@ -154,49 +155,49 @@ class TareaController extends Controller
             $this->reasignacionService->reasignar($tarea, $nuevoResponsable, $request->user(), $mantenerComoColaborador);
         }
 
-        return back()->with("success", "Responsable reasignado correctamente.");
+        return $this->exito("Responsable reasignado correctamente.");
     }
 
-    public function agregarColaborador(AgregarColaboradorRequest $request, Tarea $tarea): RedirectResponse
+    public function agregarColaborador(AgregarColaboradorRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->colaboradorService->agregar($tarea, $request->validated("colaboradores"), $request->user());
 
-        return back()->with("success", "Colaborador(es) agregado(s) correctamente.");
+        return $this->exito("Colaborador(es) agregado(s) correctamente.");
     }
 
-    public function completar(Request $request, Tarea $tarea): RedirectResponse
+    public function completar(Request $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->finalizacionService->completar($tarea, $request->user());
 
-        return back()->with("success", "Tarea marcada como completada.");
+        return $this->exito("Tarea marcada como completada.");
     }
 
-    public function retroceder(RetrocederTareaRequest $request, Tarea $tarea): RedirectResponse
+    public function retroceder(RetrocederTareaRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->retrocesoService->retroceder($tarea, $request->user(), $request->validated("motivo"));
 
-        return back()->with("success", "Tarea retrocedida a Pendiente.");
+        return $this->exito("Tarea retrocedida a Pendiente.");
     }
 
-    public function reportarProblema(ReportarProblemaRequest $request, Tarea $tarea): RedirectResponse
+    public function reportarProblema(ReportarProblemaRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->reporteProblemaService->reportar($tarea, $request->user(), $request->validated("motivo"));
 
-        return back()->with("success", "Problema reportado correctamente.");
+        return $this->exito("Problema reportado correctamente.");
     }
 
-    public function cancelar(CancelarTareaRequest $request, Tarea $tarea): RedirectResponse
+    public function cancelar(CancelarTareaRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->cancelacionService->cancelar($tarea, $request->user(), $request->validated("motivo"));
 
-        return back()->with("success", "Tarea cancelada.");
+        return $this->exito("Tarea cancelada.");
     }
 
-    public function reportarNoParticipacion(ReportarNoParticipacionRequest $request, Tarea $tarea): RedirectResponse
+    public function reportarNoParticipacion(ReportarNoParticipacionRequest $request, Tarea $tarea): RedirectResponse|JsonResponse
     {
         $this->noParticipacionService->reportar($tarea, $request->user(), $request->validated("motivo"));
 
-        return back()->with("success", "Aviso enviado correctamente.");
+        return $this->exito("Aviso enviado correctamente.");
     }
 
     public function duplicar(DuplicarTareaRequest $request, Tarea $tarea): RedirectResponse

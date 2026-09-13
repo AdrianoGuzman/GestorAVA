@@ -378,4 +378,62 @@ class ChecklistTest extends TestCase
             "id" => $item->id,
         ]);
     }
+
+    public function test_crea_un_item_con_fecha_limite(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+
+        $manana = now()->addDay()->toDateString();
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+                "fecha_limite" => $manana,
+            ])
+            ->assertRedirect();
+
+        $item = ChecklistItem::firstOrFail();
+
+        $this->assertSame($manana, $item->fecha_limite->toDateString());
+    }
+
+    public function test_rechaza_fecha_limite_en_el_pasado_al_crear(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+                "fecha_limite" => now()->subDay()->toDateString(),
+            ])
+            ->assertSessionHasErrors("fecha_limite");
+    }
+
+    public function test_edita_la_fecha_limite_de_un_item(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+        ]);
+
+        $manana = now()->addDay()->toDateString();
+
+        $this->actingAs($usuario)
+            ->patch("/checklist/{$item->id}", [
+                "texto" => $item->texto,
+                "fecha_limite" => $manana,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame($manana, $item->fresh()->fecha_limite->toDateString());
+    }
 }

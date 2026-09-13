@@ -1101,7 +1101,13 @@ export default function MisTareasIndex(props: Props) {
                 )}
             </div>
 
-            <TareaDetalleModal tareaId={modal.tareaId} datos={modal.datos} cargando={modal.cargando} onClose={modal.cerrar} />
+            <TareaDetalleModal
+                tareaId={modal.tareaId}
+                datos={modal.datos}
+                cargando={modal.cargando}
+                onClose={modal.cerrar}
+                refrescar={modal.refrescar}
+            />
         </AppLayout>
     );
 }

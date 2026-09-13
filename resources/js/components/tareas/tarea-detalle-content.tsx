@@ -7,13 +7,13 @@ import { DependenciasSection } from '@/components/tareas/dependencias-section';
 import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
-import { HistorialTimeline } from '@/components/tareas/historial-timeline';
+import { HistorialInline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { calcularHorasAtrasoEntrega, ENTREGADA_CON_ATRASO_BADGE_CLASSES, formatearDuracionAtraso, ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
@@ -21,11 +21,13 @@ import {
     Ban,
     Calendar,
     CircleCheckBig,
+    Copy,
     GitBranch,
     History,
     ListChecks,
     ListTodo,
     MessageSquareWarning,
+    MoreHorizontal,
     Paperclip,
     Pencil,
     Plus,
@@ -33,6 +35,7 @@ import {
     UserX,
     Users,
 } from 'lucide-react';
+import { ReactNode, useRef, useState } from 'react';
 
 export interface TareaDetalleContentProps {
     tarea: TareaDetalle;
@@ -56,294 +59,316 @@ function calcularPlazo(fechaInicio: string | null, fechaCompromiso: string): str
 }
 
 /**
+ * Fila de metadata estilo Asana: etiqueta angosta a la izquierda, valor a
+ * la derecha -- reemplaza los bloques "etiqueta arriba, valor abajo" que
+ * antes vivian repartidos entre el header y una barra lateral propia.
+ */
+function FilaMetadata({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <div className="flex items-center gap-4 py-2">
+            <span className="w-36 shrink-0 text-sm text-muted-foreground">{label}</span>
+            <div className="flex flex-1 flex-wrap items-center gap-2 text-sm text-foreground">{children}</div>
+        </div>
+    );
+}
+
+/**
  * RF-24: contenido de la vista de detalle de una tarea, sin el AppLayout ni
  * el Head -- extraido de la pagina para poder reusarlo tal cual dentro del
  * modal de "Mis tareas" (ver tarea-detalle-modal.tsx), que muestra esto
  * mismo sin navegar fuera del listado.
+ *
+ * Estructura tomada de una referencia de Asana que el equipo penso que
+ * resolvia mejor el desorden de la version anterior (cajas anidadas,
+ * historial escondido en un panel aparte): una sola columna sin tarjetas,
+ * filas de metadata compactas, acciones en una barra separada arriba del
+ * contenido, y el historial integrado al final como "Actividad" en vez de
+ * oculto en un Sheet.
  */
 export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPersonal, adjuntosDeTareasHijas, permisos }: TareaDetalleContentProps) {
+    const [problemaAbierto, setProblemaAbierto] = useState(false);
+    const [noParticiparAbierto, setNoParticiparAbierto] = useState(false);
+    const [duplicarAbierto, setDuplicarAbierto] = useState(false);
+    const actividadRef = useRef<HTMLDivElement>(null);
+
+    const hayMasAcciones = permisos.puedeReportarProblema || permisos.puedeReportarNoParticipacion || permisos.puedeDuplicar;
+
     return (
-        <div className="grid flex-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-            <div className="flex flex-col gap-6">
-                <Card className="overflow-hidden border-t-4 border-t-verde-5">
-                    <CardHeader>
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <CardTitle>{tarea.titulo}</CardTitle>
-                                {permisos.puedeEditar && (
-                                    <EditarTareaDialog
-                                        tareaId={tarea.id}
-                                        titulo={tarea.titulo}
-                                        descripcion={tarea.descripcion}
-                                        fechaInicio={tarea.fecha_inicio}
-                                        fechaCompromiso={tarea.fecha_compromiso}
-                                        prioridad={tarea.prioridad}
-                                        trigger={
-                                            <button type="button" className="text-verde-6 hover:text-verde-5" title="Editar tarea">
-                                                <Pencil className="size-4" />
-                                            </button>
-                                        }
-                                    />
-                                )}
-                            </div>
-                            {rolUsuario && (
-                                <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
-                                    Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}
-                                </span>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid gap-6 sm:grid-cols-[1fr_auto]">
-                            <div>
-                                <h3 className="mb-2 text-sm font-semibold text-foreground">Descripción</h3>
-                                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
-                                    {tarea.descripcion || <span className="text-muted-foreground">Sin descripción.</span>}
-                                </p>
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                    Creada el {formatearFecha(tarea.created_at)} por {tarea.creador.name}
-                                </p>
-                            </div>
+        <div className="flex w-full flex-1 flex-col">
+            {/* Barra de acciones: separada del contenido, como el titulo+acciones
+                de Asana en vez de repartidas entre el header y una columna lateral. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-semibold text-foreground">{tarea.titulo}</h1>
+                    {permisos.puedeEditar && (
+                        <EditarTareaDialog
+                            tareaId={tarea.id}
+                            titulo={tarea.titulo}
+                            descripcion={tarea.descripcion}
+                            fechaInicio={tarea.fecha_inicio}
+                            fechaCompromiso={tarea.fecha_compromiso}
+                            prioridad={tarea.prioridad}
+                            trigger={
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Editar tarea">
+                                    <Pencil className="size-4" />
+                                </button>
+                            }
+                        />
+                    )}
+                </div>
 
-                            <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4 text-sm sm:w-64">
-                                <div>
-                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Estado</p>
-                                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                                        <EstadoBadge estado={tarea.estado} className="px-3 py-1 text-sm" />
-                                        <PrioridadBadge prioridad={tarea.prioridad} className="px-3 py-1 text-sm" />
-                                        {tarea.esta_atrasada && tarea.estado === 'completada' && (
-                                            <AtrasadaBadge
-                                                label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
-                                                className={cn(ENTREGADA_CON_ATRASO_BADGE_CLASSES, 'px-3 py-1 text-sm')}
-                                            />
-                                        )}
-                                        {tarea.esta_atrasada && tarea.estado !== 'completada' && <AtrasadaBadge className="px-3 py-1 text-sm" />}
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Fecha inicio / término</p>
-                                    <p className="mt-1.5 flex items-center gap-1.5 font-medium text-foreground">
-                                        <Calendar className="size-4 shrink-0 text-gris-1" />
-                                        {tarea.fecha_inicio ? formatearFecha(tarea.fecha_inicio) : 'Sin definir'} —{' '}
-                                        {formatearFecha(tarea.fecha_compromiso)}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Plazo</p>
-                                    <p className="mt-1.5 font-medium text-foreground">
-                                        {calcularPlazo(tarea.fecha_inicio, tarea.fecha_compromiso)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {tarea.estado === 'cancelada' && tarea.motivo_cancelacion && (
-                            <p className="rounded-md border border-gris-1/30 bg-gris-1/10 p-3 text-sm text-foreground">
-                                Motivo de cancelación: {tarea.motivo_cancelacion}
-                            </p>
-                        )}
-
-                        <div className="grid gap-6 sm:grid-cols-3">
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Responsable</p>
-                                <div className="mt-1.5 flex items-center gap-2">
-                                    <User className="size-5 shrink-0 text-gris-1" />
-                                    <span className="text-base font-semibold text-foreground">{tarea.responsable.name}</span>
-                                    {permisos.puedeReasignar && (
-                                        <ReasignarDialog
-                                            tareaId={tarea.id}
-                                            personas={usuarios}
-                                            trigger={
-                                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Reasignar responsable">
-                                                    <Pencil className="size-4" />
-                                                </button>
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Colaboradores</p>
-                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                    {tarea.colaboradores.length === 0 ? (
-                                        <>
-                                            <Users className="size-4 shrink-0 text-gris-1" />
-                                            <span className="text-muted-foreground">Nadie más</span>
-                                        </>
-                                    ) : (
-                                        tarea.colaboradores.map((colaborador) => (
-                                            <PersonaAvatar
-                                                key={colaborador.id}
-                                                nombre={colaborador.name}
-                                                email={colaborador.email}
-                                                rol="Colaborador"
-                                            />
-                                        ))
-                                    )}
-                                    {permisos.puedeAgregarColaborador && (
-                                        <AgregarColaboradorDialog
-                                            tareaId={tarea.id}
-                                            personas={usuarios}
-                                            trigger={
-                                                <button type="button" className="text-verde-6 hover:text-verde-5" title="Agregar colaborador">
-                                                    <Plus className="size-4" />
-                                                </button>
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                {permisos.puedeCompletar && (
-                                    <ConfirmarCompletarDialog
-                                        tareaId={tarea.id}
-                                        trigger={
-                                            <Button size="sm">
-                                                <CircleCheckBig /> Completar
-                                            </Button>
-                                        }
-                                    />
-                                )}
-                                {permisos.puedeCancelar && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.cancelar"
-                                        title="Cancelar tarea"
-                                        description="Cierre definitivo: la tarea no vuelve a nadie y no se puede revertir."
-                                        submitLabel="Cancelar tarea"
-                                        submitIcon={Ban}
-                                        variant="destructive"
-                                        trigger={
-                                            <Button size="sm" variant="destructive">
-                                                <Ban /> Cancelar
-                                            </Button>
-                                        }
-                                    />
-                                )}
+                <div className="flex flex-wrap items-center gap-2">
+                    {rolUsuario && (
+                        <span className="inline-flex items-center rounded-full border border-verde-3 bg-verde-2 px-2.5 py-0.5 text-xs font-medium text-gris-2">
+                            Tu rol: {ROL_USUARIO_LABELS[rolUsuario]}
+                        </span>
+                    )}
+                    {tarea.historial.length > 0 && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => actividadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        >
+                            <History /> Actividad
+                            <span className="rounded-full bg-verde-2 px-1.5 py-0.5 text-xs font-semibold text-gris-2">
+                                {tarea.historial.length}
+                            </span>
+                        </Button>
+                    )}
+                    {permisos.puedeCompletar && (
+                        <ConfirmarCompletarDialog
+                            tareaId={tarea.id}
+                            trigger={
+                                <Button size="sm">
+                                    <CircleCheckBig /> Completar
+                                </Button>
+                            }
+                        />
+                    )}
+                    {permisos.puedeCancelar && (
+                        <MotivoDialog
+                            tareaId={tarea.id}
+                            routeName="tareas.cancelar"
+                            title="Cancelar tarea"
+                            description="Cierre definitivo: la tarea no vuelve a nadie y no se puede revertir."
+                            submitLabel="Cancelar tarea"
+                            submitIcon={Ban}
+                            variant="destructive"
+                            trigger={
+                                <Button size="sm" variant="destructive">
+                                    <Ban /> Cancelar
+                                </Button>
+                            }
+                        />
+                    )}
+                    {hayMasAcciones && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost">
+                                    <MoreHorizontal /> Más acciones
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
                                 {permisos.puedeReportarProblema && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.reportar-problema"
-                                        title="Reportar problema"
-                                        description="Avisa que la tarea está mal definida. No cambia su estado ni interrumpe el trabajo: solo notifica a quien puede corregirla (el creador si reportás como responsable, el responsable si reportás como colaborador)."
-                                        submitLabel="Reportar problema"
-                                        submitIcon={MessageSquareWarning}
-                                        trigger={
-                                            <Button size="sm" variant="outline">
-                                                <MessageSquareWarning /> Notificar problema
-                                            </Button>
-                                        }
-                                    />
+                                    <DropdownMenuItem onSelect={() => setProblemaAbierto(true)}>
+                                        <MessageSquareWarning /> Notificar problema
+                                    </DropdownMenuItem>
                                 )}
                                 {permisos.puedeReportarNoParticipacion && (
-                                    <MotivoDialog
-                                        tareaId={tarea.id}
-                                        routeName="tareas.no-participar"
-                                        title="No puedo ser parte de esto"
-                                        description="Avisa que no puedes o no quieres seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si eres el responsable, el responsable si eres colaborador)."
-                                        submitLabel="Enviar aviso"
-                                        submitIcon={UserX}
-                                        trigger={
-                                            <Button size="sm" variant="outline">
-                                                <UserX /> No puedo ser parte
-                                            </Button>
-                                        }
-                                    />
+                                    <DropdownMenuItem onSelect={() => setNoParticiparAbierto(true)}>
+                                        <UserX /> No puedo ser parte
+                                    </DropdownMenuItem>
                                 )}
                                 {permisos.puedeDuplicar && (
-                                    <DuplicarTareaDialog
-                                        tareaId={tarea.id}
-                                        titulo={tarea.titulo}
-                                        descripcion={tarea.descripcion}
-                                        fechaInicio={tarea.fecha_inicio}
-                                        fechaCompromiso={tarea.fecha_compromiso}
-                                        prioridad={tarea.prioridad}
-                                    />
+                                    <DropdownMenuItem onSelect={() => setDuplicarAbierto(true)}>
+                                        <Copy /> Duplicar
+                                    </DropdownMenuItem>
                                 )}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
+            </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
+            {/* Dialogos de "Más acciones": sin trigger propio, se abren solo via
+                el estado de arriba (ver nota en MotivoDialog/DuplicarTareaDialog
+                sobre por que no van directo dentro de un DropdownMenuItem). */}
+            {permisos.puedeReportarProblema && (
+                <MotivoDialog
+                    tareaId={tarea.id}
+                    routeName="tareas.reportar-problema"
+                    title="Reportar problema"
+                    description="Avisa que la tarea está mal definida. No cambia su estado ni interrumpe el trabajo: solo notifica a quien puede corregirla (el creador si reportás como responsable, el responsable si reportás como colaborador)."
+                    submitLabel="Reportar problema"
+                    submitIcon={MessageSquareWarning}
+                    open={problemaAbierto}
+                    onOpenChange={setProblemaAbierto}
+                />
+            )}
+            {permisos.puedeReportarNoParticipacion && (
+                <MotivoDialog
+                    tareaId={tarea.id}
+                    routeName="tareas.no-participar"
+                    title="No puedo ser parte de esto"
+                    description="Avisa que no puedes o no quieres seguir participando. No te saca de la tarea ni cambia nada por su cuenta: solo notifica a quien puede decidir qué hacer (el creador si eres el responsable, el responsable si eres colaborador)."
+                    submitLabel="Enviar aviso"
+                    submitIcon={UserX}
+                    open={noParticiparAbierto}
+                    onOpenChange={setNoParticiparAbierto}
+                />
+            )}
+            {permisos.puedeDuplicar && (
+                <DuplicarTareaDialog
+                    tareaId={tarea.id}
+                    titulo={tarea.titulo}
+                    descripcion={tarea.descripcion}
+                    fechaInicio={tarea.fecha_inicio}
+                    fechaCompromiso={tarea.fecha_compromiso}
+                    prioridad={tarea.prioridad}
+                    open={duplicarAbierto}
+                    onOpenChange={setDuplicarAbierto}
+                />
+            )}
+
+            {/* Metadata: filas simples etiqueta/valor, una sola columna. */}
+            <div className="divide-y divide-border/60 border-b border-border">
+                <FilaMetadata label="Estado">
+                    <EstadoBadge estado={tarea.estado} />
+                    <PrioridadBadge prioridad={tarea.prioridad} />
+                    {tarea.esta_atrasada && tarea.estado === 'completada' && (
+                        <AtrasadaBadge
+                            label={`Entregada con ${formatearDuracionAtraso(calcularHorasAtrasoEntrega(tarea.fecha_compromiso, tarea.updated_at))} de atraso`}
+                            className={ENTREGADA_CON_ATRASO_BADGE_CLASSES}
+                        />
+                    )}
+                    {tarea.esta_atrasada && tarea.estado !== 'completada' && <AtrasadaBadge />}
+                </FilaMetadata>
+
+                <FilaMetadata label="Responsable">
+                    <User className="size-4 shrink-0 text-gris-1" />
+                    <span className="font-medium">{tarea.responsable.name}</span>
+                    {permisos.puedeReasignar && (
+                        <ReasignarDialog
+                            tareaId={tarea.id}
+                            personas={usuarios}
+                            trigger={
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Reasignar responsable">
+                                    <Pencil className="size-4" />
+                                </button>
+                            }
+                        />
+                    )}
+                </FilaMetadata>
+
+                <FilaMetadata label="Colaboradores">
+                    {tarea.colaboradores.length === 0 ? (
+                        <>
+                            <Users className="size-4 shrink-0 text-gris-1" />
+                            <span className="text-muted-foreground">Nadie más</span>
+                        </>
+                    ) : (
+                        tarea.colaboradores.map((colaborador) => (
+                            <PersonaAvatar key={colaborador.id} nombre={colaborador.name} email={colaborador.email} rol="Colaborador" />
+                        ))
+                    )}
+                    {permisos.puedeAgregarColaborador && (
+                        <AgregarColaboradorDialog
+                            tareaId={tarea.id}
+                            personas={usuarios}
+                            trigger={
+                                <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Agregar colaborador">
+                                    <Plus className="size-4" />
+                                </button>
+                            }
+                        />
+                    )}
+                </FilaMetadata>
+
+                <FilaMetadata label="Fecha inicio / término">
+                    <Calendar className="size-4 shrink-0 text-gris-1" />
+                    <span>
+                        {tarea.fecha_inicio ? formatearFecha(tarea.fecha_inicio) : 'Sin definir'} — {formatearFecha(tarea.fecha_compromiso)}
+                    </span>
+                </FilaMetadata>
+
+                <FilaMetadata label="Plazo">{calcularPlazo(tarea.fecha_inicio, tarea.fecha_compromiso)}</FilaMetadata>
+            </div>
+
+            {/* Descripción */}
+            <div className="border-b border-border py-4">
+                <h3 className="mb-2 text-sm font-semibold text-foreground">Descripción</h3>
+                <p className="text-sm whitespace-pre-wrap text-foreground">
+                    {tarea.descripcion || <span className="text-muted-foreground">Sin descripción.</span>}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                    Creada el {formatearFecha(tarea.created_at)} por {tarea.creador.name}
+                </p>
+            </div>
+
+            {tarea.estado === 'cancelada' && tarea.motivo_cancelacion && (
+                <div className="border-b border-border py-4">
+                    <p className={cn('text-sm text-foreground')}>Motivo de cancelación: {tarea.motivo_cancelacion}</p>
+                </div>
+            )}
+
+            {(permisos.puedeUsarChecklistPersonal || tarea.colaboradores.length > 0) && (
+                <div className="grid gap-6 border-b border-border py-4 sm:grid-cols-2 sm:items-start">
                     {permisos.puedeUsarChecklistPersonal && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <ListTodo className="size-4 text-verde-6" /> Mi checklist
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ChecklistPersonalSection tareaId={tarea.id} items={checklistPersonal} />
-                            </CardContent>
-                        </Card>
+                        <div>
+                            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <ListTodo className="size-4 text-verde-6" /> Mi checklist
+                            </h3>
+                            <ChecklistPersonalSection tareaId={tarea.id} items={checklistPersonal} />
+                        </div>
                     )}
 
                     {tarea.colaboradores.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <ListChecks className="size-4 text-verde-6" /> Checklist
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ChecklistSection
-                                    tareaId={tarea.id}
-                                    items={tarea.checklist_items}
-                                    personasElegibles={[tarea.responsable, ...tarea.colaboradores]}
-                                    puedeUsar={permisos.puedeUsarChecklist}
-                                    puedeAsignarDueno={permisos.puedeAsignarDuenoChecklist}
-                                />
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <GitBranch className="size-4 text-verde-6" /> Dependencias
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <DependenciasSection
+                        <div>
+                            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <ListChecks className="size-4 text-verde-6" /> Checklist
+                            </h3>
+                            <ChecklistSection
                                 tareaId={tarea.id}
-                                tareasHijas={tarea.tareas_hijas}
-                                personas={usuarios}
-                                puedeCrear={permisos.puedeCrearTareaHija}
+                                items={tarea.checklist_items}
+                                personasElegibles={[tarea.responsable, ...tarea.colaboradores]}
+                                puedeUsar={permisos.puedeUsarChecklist}
+                                puedeAsignarDueno={permisos.puedeAsignarDuenoChecklist}
                             />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    )}
                 </div>
+            )}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Paperclip className="size-4 text-verde-6" /> Adjuntos
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <AdjuntosSection
-                            tareaId={tarea.id}
-                            adjuntos={tarea.adjuntos}
-                            adjuntosDeTareasHijas={adjuntosDeTareasHijas}
-                            puedeAdjuntar={permisos.puedeAdjuntar}
-                        />
-                    </CardContent>
-                </Card>
+            <div className="border-b border-border py-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <GitBranch className="size-4 text-verde-6" /> Dependencias
+                </h3>
+                <DependenciasSection
+                    tareaId={tarea.id}
+                    tareasHijas={tarea.tareas_hijas}
+                    personas={usuarios}
+                    puedeCrear={permisos.puedeCrearTareaHija}
+                />
             </div>
 
-            <Card className="lg:sticky lg:top-4">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <History className="size-4 text-verde-6" /> Historial
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-                    <HistorialTimeline eventos={tarea.historial} />
-                </CardContent>
-            </Card>
+            <div className="border-b border-border py-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Paperclip className="size-4 text-verde-6" /> Adjuntos
+                </h3>
+                <AdjuntosSection
+                    tareaId={tarea.id}
+                    adjuntos={tarea.adjuntos}
+                    adjuntosDeTareasHijas={adjuntosDeTareasHijas}
+                    puedeAdjuntar={permisos.puedeAdjuntar}
+                />
+            </div>
+
+            {/* Actividad: historial integrado al pie, siempre visible -- el boton
+                de la barra de arriba hace scroll hasta aca para que se note que
+                existe sin depender de que alguien baje toda la pagina primero. */}
+            <div ref={actividadRef} className="scroll-mt-4 pt-4">
+                <HistorialInline eventos={tarea.historial} />
+            </div>
         </div>
     );
 }

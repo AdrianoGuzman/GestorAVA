@@ -1,6 +1,6 @@
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { cn } from '@/lib/utils';
 import type { AdjuntoDeTareaHija, AdjuntoTarea, CategoriaAdjunto } from '@/types/tarea';
-import { router } from '@inertiajs/react';
 import { Download, File as FileIcon, FileImage, FileSpreadsheet, FileText, Link2, Paperclip } from 'lucide-react';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -81,8 +81,8 @@ export function AdjuntosSection({
     puedeAdjuntar: boolean;
 }) {
     const [categoria, setCategoria] = useState<CategoriaAdjunto>('evidencia');
-    const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { enviar, processing: subiendo } = useAccionTarea();
 
     const onDrop = (archivosAceptados: File[]) => {
         const archivo = archivosAceptados[0];
@@ -93,11 +93,8 @@ export function AdjuntosSection({
         formData.append('archivo', archivo);
         formData.append('categoria', categoria);
 
-        router.post(route('tareas.adjuntos.store', tareaId), formData, {
+        enviar('post', route('tareas.adjuntos.store', tareaId), formData, {
             forceFormData: true,
-            preserveScroll: true,
-            onStart: () => setSubiendo(true),
-            onFinish: () => setSubiendo(false),
             onError: (errores) => setError(errores.archivo ?? errores.categoria ?? 'No se pudo subir el archivo.'),
         });
     };
