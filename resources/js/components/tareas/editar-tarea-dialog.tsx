@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DatePickerButton } from '@/components/ui/date-picker-button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,24 +82,23 @@ export function EditarTareaDialog({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-fecha_inicio">Fecha inicio (opcional)</Label>
-                                <Input
-                                    id="edit-fecha_inicio"
-                                    type="date"
-                                    value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                <Label>Fecha inicio (opcional)</Label>
+                                <DatePickerButton
+                                    label="Elegir fecha"
+                                    valor={data.fecha_inicio}
+                                    onChange={(valor) => setData('fecha_inicio', valor)}
+                                    className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_inicio && <p className="text-sm text-rojo-1">{errors.fecha_inicio}</p>}
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-fecha_compromiso">Fecha término</Label>
-                                <Input
-                                    id="edit-fecha_compromiso"
-                                    type="date"
-                                    value={data.fecha_compromiso}
-                                    onChange={(e) => setData('fecha_compromiso', e.target.value)}
-                                    required
+                                <Label>Fecha término</Label>
+                                <DatePickerButton
+                                    label="Elegir fecha"
+                                    valor={data.fecha_compromiso}
+                                    onChange={(valor) => setData('fecha_compromiso', valor)}
+                                    className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
                             </div>

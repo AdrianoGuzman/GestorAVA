@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { CalendarDays, X } from 'lucide-react';
 import { useState } from 'react';
+import type { Matcher } from 'react-day-picker';
 
 /** yyyy-MM-dd en horario local -- evita el corrimiento de un dia que da
  *  `new Date('yyyy-MM-dd')` (lo interpreta como UTC medianoche). */
@@ -50,6 +51,7 @@ export function DatePickerButton({
     onChange,
     className,
     soloFuturo,
+    minFecha,
     compact = false,
 }: {
     label: string;
@@ -58,10 +60,20 @@ export function DatePickerButton({
     className?: string;
     /** Deshabilita hoy y fechas pasadas en el calendario (para fechas de compromiso). */
     soloFuturo?: boolean;
+    /** Ademas de soloFuturo, no permite elegir un dia anterior a esta fecha "yyyy-MM-dd" (ej. termino no puede ser antes que inicio). */
+    minFecha?: string;
     compact?: boolean;
 }) {
     const [abierto, setAbierto] = useState(false);
     const fechaFormateada = valor ? stringAFecha(valor).toLocaleDateString('es-CL') : null;
+
+    const limites: Matcher[] = [];
+    if (soloFuturo) {
+        limites.push({ before: new Date(new Date().setHours(24, 0, 0, 0)) });
+    }
+    if (minFecha) {
+        limites.push({ before: stringAFecha(minFecha) });
+    }
 
     return (
         <Popover open={abierto} onOpenChange={setAbierto}>
@@ -86,7 +98,7 @@ export function DatePickerButton({
                 <Calendar
                     mode="single"
                     selected={valor ? stringAFecha(valor) : undefined}
-                    disabled={soloFuturo ? { before: new Date(new Date().setHours(24, 0, 0, 0)) } : undefined}
+                    disabled={limites.length > 0 ? limites : undefined}
                     onSelect={(fecha) => {
                         onChange(fecha ? fechaAString(fecha) : '');
                         setAbierto(false);
