@@ -1,11 +1,15 @@
 import { CrearTareaDialog } from '@/components/tareas/crear-tarea-dialog';
-import { EstadoBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge } from '@/components/tareas/estado-badge';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { Button } from '@/components/ui/button';
 import type { TareaHija } from '@/types/tarea';
 import { Link } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { CalendarDays, Plus } from 'lucide-react';
+
+function formatearFecha(fecha: string): string {
+    return new Date(fecha).toLocaleDateString('es-CL');
+}
 
 /**
  * RF-21/22: tareas hijas de esta tarea. El responsable de una hija se
@@ -32,11 +36,22 @@ export function DependenciasSection({
             ) : (
                 <ul className="space-y-1.5">
                     {tareasHijas.map((hija) => (
-                        <li key={hija.id} className="flex items-center gap-2 rounded-md border border-gris-3 px-2.5 py-1.5">
+                        <li
+                            key={hija.id}
+                            className="flex items-center gap-2 rounded-md border border-gris-3 px-2.5 py-1.5 transition-colors hover:bg-muted/50"
+                        >
                             <PersonaAvatar nombre={hija.responsable.name} email={hija.responsable.email} rol="Responsable" className="size-6" />
-                            <Link href={route('tareas.show', hija.id)} className="min-w-0 flex-1 truncate text-sm font-medium text-foreground hover:underline">
+                            <Link
+                                href={route('tareas.show', hija.id)}
+                                className="min-w-0 flex-1 truncate text-sm font-medium text-foreground hover:underline"
+                            >
                                 {hija.codigo} — {hija.titulo}
                             </Link>
+                            <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                                <CalendarDays className="size-3.5" />
+                                {formatearFecha(hija.fecha_compromiso)}
+                            </span>
+                            {hija.esta_atrasada && hija.estado !== 'completada' && <AtrasadaBadge />}
                             <EstadoBadge estado={hija.estado} />
                         </li>
                     ))}

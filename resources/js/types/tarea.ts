@@ -86,6 +86,8 @@ export interface TareaHija {
     titulo: string;
     estado: EstadoTarea;
     responsable: UsuarioTarea;
+    fecha_compromiso: string;
+    esta_atrasada: boolean;
 }
 
 export interface TareaDetalle {
