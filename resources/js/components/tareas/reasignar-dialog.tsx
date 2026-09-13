@@ -59,7 +59,7 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="grid flex-1 gap-4 py-4">
+                        <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
                                 <Label>Nuevo responsable</Label>
                                 <PersonaPicker
