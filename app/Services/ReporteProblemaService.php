@@ -30,7 +30,9 @@ class ReporteProblemaService
     {
         if (! $this->permisos->puedeReportarProblema($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede reportar un problema."
+                $tarea->estado->esTerminal()
+                    ? "No se puede reportar un problema en una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede reportar un problema."
             );
         }
 

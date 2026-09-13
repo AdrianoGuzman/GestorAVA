@@ -26,7 +26,9 @@ class ChecklistService
     ): ChecklistItem {
         if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $tarea->estado->esTerminal()
+                    ? "No se pueden agregar ítems al checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 
@@ -72,7 +74,9 @@ class ChecklistService
 
         if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $tarea->estado->esTerminal()
+                    ? "No se puede editar el checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 
@@ -131,7 +135,9 @@ class ChecklistService
     ): ChecklistItem {
         if (! $this->permisos->puedeMarcarChecklistItem($item, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el dueño asignado de este ítem puede marcarlo o desmarcarlo."
+                $item->tarea->estado->esTerminal()
+                    ? "No se puede modificar el checklist de una tarea completada o cancelada."
+                    : "Solo el dueño asignado de este ítem puede marcarlo o desmarcarlo."
             );
         }
 
@@ -159,7 +165,9 @@ class ChecklistService
     {
         if (! $this->permisos->puedeUsarChecklist($item->tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $item->tarea->estado->esTerminal()
+                    ? "No se puede eliminar un ítem del checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 

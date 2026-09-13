@@ -252,6 +252,46 @@ solicitado. Si el equipo decide que sí debería bloquearse, es un cambio chico 
 misma consulta a `tareasHijas()` en `CancelacionService::cancelar()`), pero no se hizo sin que
 alguien lo pida explícitamente.
 
+**Decisión explícita (Franco, 13-09-2026): una tarea completada o cancelada es de solo
+lectura — no se puede hacer nada más que verla.** Primer intento (bloquear solo "agregar
+cosas nuevas" y dejar editar/marcar/eliminar lo existente) quedó corto: Franco encontró que un
+ítem de checklist con dueño se podía seguir marcando/desmarcando después de completar la tarea
+("el completar todavía deja seleccionar"), y aclaró que la regla real es más simple: **tarea
+terminal (`EstadoTarea::esTerminal()`) = de solo lectura, sin excepciones.**
+
+Una vez que `Tarea::estado` es terminal, esto queda bloqueado (rol correcto o no):
+- Editar la tarea (`puedeEditar`), reasignar responsable (`puedeReasignar`, incluida la
+  excepción RN-12 vía `puedeAutorizarExcepcion`).
+- Agregar colaboradores (`puedeAgregarColaborador`), crear tareas hijas (`puedeCrearTareaHija`).
+- Checklist compartido y personal completos — crear, editar, marcar/desmarcar, eliminar
+  (`puedeUsarChecklist`, `puedeUsarChecklistPersonal`, `puedeMarcarChecklistItem`). Importante:
+  el chequeo de dueño de un ítem (`puedeMarcarChecklistItem`) NO pasaba por
+  `puedeUsarChecklist`, así que el estado terminal se valida ahí aparte; mismo caso en
+  `ChecklistPersonalService::alternar()/eliminar()`, que solo validaban dueño del ítem.
+- Adjuntar archivos (`puedeAdjuntar`), reportar problema (`puedeReportarProblema`), avisar no
+  participación (`puedeReportarNoParticipacion`).
+- Cancelar: ya estaba bloqueado por el guard de estado en `CancelacionService`; lo nuevo es que
+  el botón "Cancelar" tampoco se muestra (`puedeMostrarCancelar`).
+
+Lo único que sigue andando sobre una tarea terminal es **ver** su info — la tarea, el
+checklist, los adjuntos, el historial, todo sigue siendo visible, solo no editable.
+
+Para `puedeCancelar`/`puedeCompletar`/`puedeEditar`, que ya tenían su propio guard de estado
+con mensaje específico en el service (`CancelacionService`, `FinalizacionService`,
+`TareaService::actualizar()`) y tests que esperan ese mensaje exacto (`assertSessionHasErrors`),
+NO se tocó el método base ni el orden de los checks — se agregó un método
+`puedeMostrar*` aparte (`puedeMostrarCancelar`, `puedeMostrarCompletar`, `puedeMostrarEditar`)
+usado solo para la UI, que combina el permiso de rol con el estado terminal. Para el resto
+(reasignar, colaboradores, tareas hijas, checklist, adjuntos, reportar problema/no
+participación), que no tenían ningún guard de estado previo, el chequeo de terminal se agregó
+directo al método `puedeX` — sirve a la vez de guard real y de flag para la UI.
+
+**RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no
+convenía como funcionalidad — se eliminaron `DuplicarTareaService`, `DuplicarTareaRequest`,
+`DuplicarTareaDialog`, la ruta `tareas/{tarea}/duplicar` y el flag `puedeDuplicar`. Si en algún
+momento se quiere retomar, hay que reconstruirlo desde cero (o desde el historial de git), no
+queda nada parcial dando vueltas.
+
 **Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
 ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
 importar si hay colaboradores. Ver `ChecklistPersonalService.php`.

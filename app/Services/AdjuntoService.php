@@ -30,7 +30,9 @@ class AdjuntoService
     {
         if (! $this->permisos->puedeAdjuntar($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede adjuntar archivos."
+                $tarea->estado->esTerminal()
+                    ? "No se pueden adjuntar archivos a una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede adjuntar archivos."
             );
         }
 

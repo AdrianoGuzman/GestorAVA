@@ -4,7 +4,6 @@ import { ChecklistPersonalSection } from '@/components/tareas/checklist-personal
 import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { DependenciasSection } from '@/components/tareas/dependencias-section';
-import { DuplicarTareaDialog } from '@/components/tareas/duplicar-tarea-dialog';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
 import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import { HistorialInline } from '@/components/tareas/historial-timeline';
@@ -21,7 +20,6 @@ import {
     Ban,
     Calendar,
     CircleCheckBig,
-    Copy,
     GitBranch,
     History,
     ListChecks,
@@ -88,10 +86,9 @@ function FilaMetadata({ label, children }: { label: string; children: ReactNode 
 export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPersonal, adjuntosDeTareasHijas, permisos }: TareaDetalleContentProps) {
     const [problemaAbierto, setProblemaAbierto] = useState(false);
     const [noParticiparAbierto, setNoParticiparAbierto] = useState(false);
-    const [duplicarAbierto, setDuplicarAbierto] = useState(false);
     const actividadRef = useRef<HTMLDivElement>(null);
 
-    const hayMasAcciones = permisos.puedeReportarProblema || permisos.puedeReportarNoParticipacion || permisos.puedeDuplicar;
+    const hayMasAcciones = permisos.puedeReportarProblema || permisos.puedeReportarNoParticipacion;
 
     return (
         <div className="flex w-full flex-1 flex-col">
@@ -179,11 +176,6 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                                         <UserX /> No puedo ser parte
                                     </DropdownMenuItem>
                                 )}
-                                {permisos.puedeDuplicar && (
-                                    <DropdownMenuItem onSelect={() => setDuplicarAbierto(true)}>
-                                        <Copy /> Duplicar
-                                    </DropdownMenuItem>
-                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
@@ -191,8 +183,8 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
             </div>
 
             {/* Dialogos de "Más acciones": sin trigger propio, se abren solo via
-                el estado de arriba (ver nota en MotivoDialog/DuplicarTareaDialog
-                sobre por que no van directo dentro de un DropdownMenuItem). */}
+                el estado de arriba (ver nota en MotivoDialog sobre por que no
+                van directo dentro de un DropdownMenuItem). */}
             {permisos.puedeReportarProblema && (
                 <MotivoDialog
                     tareaId={tarea.id}
@@ -215,18 +207,6 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                     submitIcon={UserX}
                     open={noParticiparAbierto}
                     onOpenChange={setNoParticiparAbierto}
-                />
-            )}
-            {permisos.puedeDuplicar && (
-                <DuplicarTareaDialog
-                    tareaId={tarea.id}
-                    titulo={tarea.titulo}
-                    descripcion={tarea.descripcion}
-                    fechaInicio={tarea.fecha_inicio}
-                    fechaCompromiso={tarea.fecha_compromiso}
-                    prioridad={tarea.prioridad}
-                    open={duplicarAbierto}
-                    onOpenChange={setDuplicarAbierto}
                 />
             )}
 
@@ -318,7 +298,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                                 <ListTodo className="size-4 text-verde-6" /> Mi checklist
                             </h3>
-                            <ChecklistPersonalSection tareaId={tarea.id} items={checklistPersonal} />
+                            <ChecklistPersonalSection tareaId={tarea.id} items={checklistPersonal} puedeUsar={permisos.puedeUsarChecklistPersonal} />
                         </div>
                     )}
 

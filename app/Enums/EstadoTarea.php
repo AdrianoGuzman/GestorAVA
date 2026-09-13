@@ -25,4 +25,18 @@ enum EstadoTarea: string
             self::Completada, self::Cancelada => false,
         };
     }
+
+    /**
+     * Decision de Franco (13-09-2026): una tarea completada o cancelada no
+     * admite mas colaboradores, tareas hijas ni items de checklist (nuevo o
+     * personal) -- no tiene sentido seguir sumando trabajo a algo que ya
+     * cerro. Editar/marcar/eliminar lo que ya existia sigue permitido.
+     */
+    public function esTerminal(): bool
+    {
+        return match ($this) {
+            self::Completada, self::Cancelada => true,
+            self::Pendiente, self::EnProgreso => false,
+        };
+    }
 }

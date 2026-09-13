@@ -83,4 +83,40 @@ class CrearTareaHijaTest extends TestCase
 
         $this->assertSame(0, Tarea::where("tarea_padre_id", $padre->id)->count());
     }
+
+    public function test_no_se_pueden_crear_tareas_hijas_de_una_tarea_padre_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$padre->id}/hijas", [
+            "titulo" => "Tarea hija tardía",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertSessionHas("error");
+
+        $this->assertSame(0, Tarea::where("tarea_padre_id", $padre->id)->count());
+    }
+
+    public function test_no_se_pueden_crear_tareas_hijas_de_una_tarea_padre_cancelada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$padre->id}/hijas", [
+            "titulo" => "Tarea hija tardía",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertSessionHas("error");
+
+        $this->assertSame(0, Tarea::where("tarea_padre_id", $padre->id)->count());
+    }
 }

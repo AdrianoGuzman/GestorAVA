@@ -47,6 +47,7 @@ export function ChecklistSection({
     tareaId: number;
     items: ChecklistItem[];
     personasElegibles: Persona[];
+    /** false para una tarea completada/cancelada -- ya no admite items nuevos, editarlos, eliminarlos ni marcarlos. */
     puedeUsar: boolean;
     puedeAsignarDueno: boolean;
 }) {
@@ -198,7 +199,7 @@ export function ChecklistSection({
             ) : (
                 <ul className="space-y-1.5">
                     {itemsVisibles.map((item) => {
-                        const puedeMarcar = item.dueno_id !== null ? item.dueno_id === auth.user.id : puedeUsar;
+                        const puedeMarcar = puedeUsar && (item.dueno_id === null || item.dueno_id === auth.user.id);
 
                         return (
                             <li
@@ -209,7 +210,7 @@ export function ChecklistSection({
                                     checked={item.completado}
                                     disabled={!puedeMarcar}
                                     onCheckedChange={() => alternar(item)}
-                                    title={!puedeMarcar ? 'Solo el dueño de este ítem puede marcarlo' : undefined}
+                                    title={!puedeMarcar ? (puedeUsar ? 'Solo el dueño de este ítem puede marcarlo' : 'La tarea ya está cerrada') : undefined}
                                     className="size-5 rounded-full border-gris-1/40 transition-colors duration-200 data-[state=checked]:border-verde-5 data-[state=checked]:bg-verde-5 data-[state=checked]:text-gris-2"
                                 />
                                 <span className={cn('flex-1 text-sm text-foreground transition-colors', item.completado && 'text-muted-foreground')}>

@@ -28,7 +28,9 @@ class DependenciaService
     {
         if (! $this->permisos->puedeCrearTareaHija($tareaPadre, $creador)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede crear una tarea hija."
+                $tareaPadre->estado->esTerminal()
+                    ? "No se pueden crear tareas hijas de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede crear una tarea hija."
             );
         }
 

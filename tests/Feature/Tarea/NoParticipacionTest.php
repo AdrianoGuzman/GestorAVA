@@ -105,4 +105,21 @@ class NoParticipacionTest extends TestCase
 
         $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::NoParticipacionReportada)->exists());
     }
+
+    public function test_no_se_puede_avisar_sobre_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/no-participar", [
+            "motivo" => "Intento tardío",
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::NoParticipacionReportada)->exists());
+    }
 }

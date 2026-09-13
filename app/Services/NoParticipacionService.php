@@ -29,7 +29,9 @@ class NoParticipacionService
     {
         if (! $this->permisos->puedeReportarNoParticipacion($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede avisar que no puede participar."
+                $tarea->estado->esTerminal()
+                    ? "No se puede avisar sobre una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede avisar que no puede participar."
             );
         }
 

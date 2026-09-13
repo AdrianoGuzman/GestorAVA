@@ -8,7 +8,6 @@ use App\Http\Requests\Tarea\AdjuntarArchivoRequest;
 use App\Http\Requests\Tarea\AgregarColaboradorRequest;
 use App\Http\Requests\Tarea\CancelarTareaRequest;
 use App\Http\Requests\Tarea\CrearTareaRequest;
-use App\Http\Requests\Tarea\DuplicarTareaRequest;
 use App\Http\Requests\Tarea\ReasignarTareaRequest;
 use App\Http\Requests\Tarea\ReportarNoParticipacionRequest;
 use App\Http\Requests\Tarea\ReportarProblemaRequest;
@@ -20,7 +19,6 @@ use App\Models\User;
 use App\Services\AdjuntoService;
 use App\Services\CancelacionService;
 use App\Services\ColaboradorService;
-use App\Services\DuplicarTareaService;
 use App\Services\FinalizacionService;
 use App\Services\MisTareasService;
 use App\Services\NoParticipacionService;
@@ -52,7 +50,6 @@ class TareaController extends Controller
         private readonly AdjuntoService $adjuntoService,
         private readonly PermisosService $permisos,
         private readonly MisTareasService $misTareasService,
-        private readonly DuplicarTareaService $duplicarTareaService,
     ) {
     }
 
@@ -89,20 +86,17 @@ class TareaController extends Controller
             "permisos" => [
                 "puedeReasignar" => $this->permisos->puedeReasignar($tarea, $usuario),
                 "puedeAgregarColaborador" => $this->permisos->puedeAgregarColaborador($tarea, $usuario),
-                "puedeCompletar" => $this->permisos->puedeCompletar($tarea, $usuario),
+                "puedeCompletar" => $this->permisos->puedeMostrarCompletar($tarea, $usuario),
                 "puedeRetroceder" => $this->permisos->puedeRetroceder($tarea, $usuario),
                 "puedeReportarProblema" => $this->permisos->puedeReportarProblema($tarea, $usuario),
                 "puedeReportarNoParticipacion" => $this->permisos->puedeReportarNoParticipacion($tarea, $usuario),
-                "puedeCancelar" => $this->permisos->puedeCancelar($tarea, $usuario),
+                "puedeCancelar" => $this->permisos->puedeMostrarCancelar($tarea, $usuario),
                 "puedeAdjuntar" => $this->permisos->puedeAdjuntar($tarea, $usuario),
                 "puedeUsarChecklistPersonal" => $this->permisos->puedeUsarChecklistPersonal($tarea, $usuario),
                 "puedeUsarChecklist" => $this->permisos->puedeUsarChecklist($tarea, $usuario),
                 "puedeAsignarDuenoChecklist" => $this->permisos->puedeAsignarDuenoChecklist($tarea, $usuario),
                 "puedeCrearTareaHija" => $this->permisos->puedeCrearTareaHija($tarea, $usuario),
-                "puedeEditar" => $this->permisos->puedeEditar($tarea, $usuario),
-                // RF-18: duplicar no tiene restriccion de rol en la spec, cualquiera
-                // con acceso al detalle puede hacerlo.
-                "puedeDuplicar" => true,
+                "puedeEditar" => $this->permisos->puedeMostrarEditar($tarea, $usuario),
             ],
         ]);
     }
@@ -198,12 +192,5 @@ class TareaController extends Controller
         $this->noParticipacionService->reportar($tarea, $request->user(), $request->validated("motivo"));
 
         return $this->exito("Aviso enviado correctamente.");
-    }
-
-    public function duplicar(DuplicarTareaRequest $request, Tarea $tarea): RedirectResponse
-    {
-        $nueva = $this->duplicarTareaService->duplicar($tarea, $request->validated(), $request->user());
-
-        return redirect()->route("tareas.show", $nueva)->with("success", "Tarea duplicada como \"{$nueva->titulo}\".");
     }
 }

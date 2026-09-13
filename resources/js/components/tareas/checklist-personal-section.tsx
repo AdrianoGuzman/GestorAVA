@@ -12,7 +12,16 @@ import { FormEventHandler, useState } from 'react';
  * "Mi checklist": guia personal y privada, sin dueño que asignar y sin
  * bloquear nada. Distinta del checklist compartido de RF-23.
  */
-export function ChecklistPersonalSection({ tareaId, items }: { tareaId: number; items: ChecklistPersonalItem[] }) {
+export function ChecklistPersonalSection({
+    tareaId,
+    items,
+    puedeUsar,
+}: {
+    tareaId: number;
+    items: ChecklistPersonalItem[];
+    /** false para una tarea completada/cancelada -- ya no admite items nuevos, ni marcar/eliminar los existentes. */
+    puedeUsar: boolean;
+}) {
     const { data, setData, reset } = useForm({ texto: '' });
     const agregar = useAccionTarea();
     const accionMarcar = useAccionTarea();
@@ -74,26 +83,28 @@ export function ChecklistPersonalSection({ tareaId, items }: { tareaId: number; 
 
     return (
         <div className="space-y-3">
-            <form
-                onSubmit={submit}
-                className="flex items-center rounded-md border border-input bg-background pr-1 transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-            >
-                <Input
-                    value={data.texto}
-                    onChange={(e) => setData('texto', e.target.value)}
-                    placeholder="Agregar un paso..."
-                    className="h-9 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Button
-                    type="submit"
-                    size="icon"
-                    variant="ghost"
-                    className="size-7 shrink-0 rounded-full text-verde-6 hover:bg-verde-1 hover:text-verde-6"
-                    disabled={agregar.processing || data.texto.trim() === ''}
+            {puedeUsar && (
+                <form
+                    onSubmit={submit}
+                    className="flex items-center rounded-md border border-input bg-background pr-1 transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
                 >
-                    <Plus className="size-4" />
-                </Button>
-            </form>
+                    <Input
+                        value={data.texto}
+                        onChange={(e) => setData('texto', e.target.value)}
+                        placeholder="Agregar un paso..."
+                        className="h-9 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Button
+                        type="submit"
+                        size="icon"
+                        variant="ghost"
+                        className="size-7 shrink-0 rounded-full text-verde-6 hover:bg-verde-1 hover:text-verde-6"
+                        disabled={agregar.processing || data.texto.trim() === ''}
+                    >
+                        <Plus className="size-4" />
+                    </Button>
+                </form>
+            )}
 
             {itemsVisibles.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Es tu guía personal — no afecta la tarea ni la ve nadie más.</p>
@@ -106,20 +117,24 @@ export function ChecklistPersonalSection({ tareaId, items }: { tareaId: number; 
                         >
                             <Checkbox
                                 checked={item.completado}
+                                disabled={!puedeUsar}
                                 onCheckedChange={() => alternar(item)}
+                                title={!puedeUsar ? 'La tarea ya está cerrada' : undefined}
                                 className="size-5 rounded-full border-gris-1/40 transition-colors duration-200 data-[state=checked]:border-verde-5 data-[state=checked]:bg-verde-5 data-[state=checked]:text-gris-2"
                             />
                             <span className={cn('flex-1 text-sm text-foreground transition-colors', item.completado && 'text-muted-foreground')}>
                                 {item.texto}
                             </span>
-                            <button
-                                type="button"
-                                onClick={() => eliminar(item)}
-                                className="rounded-full p-1 text-gris-1 opacity-0 transition-colors group-hover:opacity-100 hover:bg-rojo-1/10 hover:text-rojo-1"
-                                title="Eliminar"
-                            >
-                                <Trash2 className="size-3.5" />
-                            </button>
+                            {puedeUsar && (
+                                <button
+                                    type="button"
+                                    onClick={() => eliminar(item)}
+                                    className="rounded-full p-1 text-gris-1 opacity-0 transition-colors group-hover:opacity-100 hover:bg-rojo-1/10 hover:text-rojo-1"
+                                    title="Eliminar"
+                                >
+                                    <Trash2 className="size-3.5" />
+                                </button>
+                            )}
                         </li>
                     ))}
                 </ul>

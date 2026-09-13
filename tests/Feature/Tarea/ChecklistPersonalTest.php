@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tarea;
 
+use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Models\ChecklistPersonalItem;
 use App\Models\Tarea;
@@ -148,5 +149,79 @@ class ChecklistPersonalTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->has("checklistPersonal", 1)
             ->where("checklistPersonal.0.texto", "Item del colaborador"));
+    }
+
+    public function test_no_se_pueden_agregar_items_a_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/checklist-personal", [
+            "texto" => "Intento tardío",
+        ])->assertSessionHas("error");
+
+        $this->assertDatabaseCount("checklist_personal_items", 0);
+    }
+
+    public function test_no_se_pueden_agregar_items_a_una_tarea_cancelada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/checklist-personal", [
+            "texto" => "Intento tardío",
+        ])->assertSessionHas("error");
+
+        $this->assertDatabaseCount("checklist_personal_items", 0);
+    }
+
+    public function test_no_se_puede_alternar_un_item_de_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+        $item = ChecklistPersonalItem::factory()->create([
+            "tarea_id" => $tarea->id,
+            "usuario_id" => $responsable->id,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/checklist-personal/{$item->id}")
+            ->assertSessionHas("error");
+
+        $this->assertFalse($item->fresh()->completado);
+    }
+
+    public function test_no_se_puede_eliminar_un_item_de_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+        $item = ChecklistPersonalItem::factory()->create([
+            "tarea_id" => $tarea->id,
+            "usuario_id" => $responsable->id,
+        ]);
+
+        $this->actingAs($responsable)->delete("/tareas/{$tarea->id}/checklist-personal/{$item->id}")
+            ->assertSessionHas("error");
+
+        $this->assertDatabaseHas("checklist_personal_items", ["id" => $item->id]);
     }
 }

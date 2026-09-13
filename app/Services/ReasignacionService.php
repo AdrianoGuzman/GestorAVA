@@ -25,7 +25,9 @@ class ReasignacionService
     {
         if (! $this->permisos->puedeReasignar($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable actual o su superior jerarquico directo de la misma unidad puede reasignar esta tarea."
+                $tarea->estado->esTerminal()
+                    ? "No se puede reasignar una tarea completada o cancelada."
+                    : "Solo el responsable actual o su superior jerarquico directo de la misma unidad puede reasignar esta tarea."
             );
         }
 
@@ -41,7 +43,9 @@ class ReasignacionService
     {
         if (! $this->permisos->puedeAutorizarExcepcion($tarea, $autorizador)) {
             throw new PermisoDenegadoException(
-                "Solo un usuario de nivel jerarquico superior al del responsable puede autorizar esta excepcion."
+                $tarea->estado->esTerminal()
+                    ? "No se puede reasignar una tarea completada o cancelada."
+                    : "Solo un usuario de nivel jerarquico superior al del responsable puede autorizar esta excepcion."
             );
         }
 
