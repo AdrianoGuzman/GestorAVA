@@ -74,7 +74,7 @@ class ReportarProblemaTest extends TestCase
         Notification::assertNotSentTo($colaborador, ProblemaReportadoNotification::class);
     }
 
-    public function test_si_el_responsable_es_tambien_el_creador_no_hay_a_quien_notificar(): void
+    public function test_el_responsable_no_puede_reportar_si_tambien_es_el_creador(): void
     {
         Notification::fake();
 
@@ -88,9 +88,9 @@ class ReportarProblemaTest extends TestCase
 
         $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reportar-problema", [
             "motivo" => "Ya no aplica como la definí.",
-        ])->assertRedirect()->assertSessionHas("success");
+        ])->assertSessionHas("error");
 
-        $this->assertTrue($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::ProblemaReportado)->exists());
         Notification::assertNothingSent();
     }
 

@@ -135,11 +135,15 @@ class PermisosService
      * puede reportar que está mal definida. Decision de Franco
      * (13-09-2026): no aplica sobre una tarea ya completada o cancelada --
      * una vez cerrada no tiene sentido seguir notificando sobre su
-     * definición.
+     * definición. Tampoco aplica si el responsable es tambien el creador
+     * (ver mismaPersonaEnAmbosExtremos()) -- ahi el destinatario siempre
+     * seria el mismo que reporta, y esa persona ya puede corregir la
+     * definicion editando la tarea directamente.
      */
     public function puedeReportarProblema(Tarea $tarea, User $solicitante): bool
     {
         return ! $tarea->estado->esTerminal()
+            && ! $this->mismaPersonaEnAmbosExtremos($tarea, $solicitante)
             && ($solicitante->id === $tarea->responsable_id || $tarea->colaboradores->contains("id", $solicitante->id));
     }
 
@@ -148,12 +152,28 @@ class PermisosService
      * seguir participando en la tarea. Solo notifica, no cambia nada por su
      * cuenta (a diferencia de agregar/quitar colaboradores, RF-06). Decision
      * de Franco (13-09-2026): no aplica sobre una tarea ya completada o
-     * cancelada.
+     * cancelada, ni si el responsable es tambien el creador (mismo motivo
+     * que en puedeReportarProblema: no hay a quien avisar, y esa persona ya
+     * puede reasignar la tarea si no puede seguir con ella).
      */
     public function puedeReportarNoParticipacion(Tarea $tarea, User $solicitante): bool
     {
         return ! $tarea->estado->esTerminal()
+            && ! $this->mismaPersonaEnAmbosExtremos($tarea, $solicitante)
             && ($solicitante->id === $tarea->responsable_id || $tarea->colaboradores->contains("id", $solicitante->id));
+    }
+
+    /**
+     * Reportar problema / avisar no participacion notifican "al otro
+     * extremo": si reporta el responsable, le llega al creador (ver
+     * ReporteProblemaService/NoParticipacionService::obtenerDestinatario()).
+     * Si esa misma persona es responsable Y creador, ese destinatario es
+     * ella misma -- el unico caso real donde eso pasa, porque un colaborador
+     * que ademas sea creador SI notifica a un responsable distinto.
+     */
+    private function mismaPersonaEnAmbosExtremos(Tarea $tarea, User $solicitante): bool
+    {
+        return $solicitante->id === $tarea->responsable_id && $tarea->responsable_id === $tarea->creador_id;
     }
 
     /**

@@ -73,6 +73,26 @@ class NoParticipacionTest extends TestCase
         Notification::assertNotSentTo($colaborador, NoParticipacionReportadaNotification::class);
     }
 
+    public function test_el_responsable_no_puede_avisar_si_tambien_es_el_creador(): void
+    {
+        Notification::fake();
+
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $responsable->id,
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/no-participar", [
+            "motivo" => "Ya no puedo seguir con esto.",
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->historial()->where("tipo_evento", TipoEvento::NoParticipacionReportada)->exists());
+        Notification::assertNothingSent();
+    }
+
     public function test_un_usuario_ajeno_no_puede_avisar(): void
     {
         $obra = UnidadOrganizacional::factory()->create();

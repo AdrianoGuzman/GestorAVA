@@ -124,7 +124,9 @@ está mal definida, puede reportarlo con un motivo. A diferencia de una
 "reasignación" o un "rechazo" clásico, **esto no cambia el estado de la
 tarea ni interrumpe el trabajo** — solo notifica a quien puede corregir la
 definición: si reporta el responsable, le llega al creador; si reporta un
-colaborador, le llega al responsable.
+colaborador, le llega al responsable. Si el responsable es también el
+creador, la acción no está disponible (se notificaría a sí mismo) — mismo
+criterio para "No puedo ser parte de esto".
 
 **Notificaciones**: por correo (Mailpit en local) cuando te asignan como
 responsable/colaborador, cuando retrocede un colaborador (le llega al

@@ -23,17 +23,22 @@ class ReporteProblemaService
      * trabajo sigue su curso normal, solo se registra en el historial y se
      * notifica a quien puede corregir la definición: si reporta el
      * responsable, va al creador; si reporta un colaborador, va al
-     * responsable. Sin destinatario (y sin notificación) si esa persona es
-     * el mismo que reporta -- ej. el responsable creó su propia tarea.
+     * responsable. Decision de Franco (13-09-2026): si el responsable es
+     * tambien el creador, la accion ni siquiera queda disponible (ver
+     * PermisosService::puedeReportarProblema()) -- notificarse a uno mismo
+     * no tiene sentido, y esa persona ya puede editar la tarea directamente.
      */
     public function reportar(Tarea $tarea, User $solicitante, string $motivo): void
     {
         if (! $this->permisos->puedeReportarProblema($tarea, $solicitante)) {
-            throw new PermisoDenegadoException(
-                $tarea->estado->esTerminal()
-                    ? "No se puede reportar un problema en una tarea completada o cancelada."
-                    : "Solo el responsable o un colaborador de la tarea puede reportar un problema."
-            );
+            $mensaje = match (true) {
+                $tarea->estado->esTerminal() => "No se puede reportar un problema en una tarea completada o cancelada.",
+                $solicitante->id === $tarea->responsable_id && $tarea->responsable_id === $tarea->creador_id =>
+                    "Sos el creador y el responsable de esta tarea -- si algo está mal definido, corregilo editando la tarea.",
+                default => "Solo el responsable o un colaborador de la tarea puede reportar un problema.",
+            };
+
+            throw new PermisoDenegadoException($mensaje);
         }
 
         $this->historial->registrar($tarea, TipoEvento::ProblemaReportado, $solicitante, [

@@ -300,6 +300,22 @@ sin cambios en `mis-tareas/index.tsx`: las chips "Pendiente"/"En progreso" del f
 "Completada" — no se agregó tab ni componente nuevo. El historial de eventos de cada tarea
 sigue intacto y visible en el detalle, sin tocar.
 
+**Decisión explícita (Franco, 13-09-2026): "Reportar problema" (RF-13) y "No puedo ser
+parte" ya no se ofrecen cuando el responsable es también el creador de la tarea.**
+Ambas acciones notifican "al otro extremo" (`ReporteProblemaService`/
+`NoParticipacionService::obtenerDestinatario()`): si reporta el responsable, le llega al
+creador; si reporta un colaborador, le llega al responsable. Cuando la misma persona es
+responsable y creador, ese destinatario es ella misma -- antes el service ya evitaba
+enviar la notificación en ese caso (`$destinatario->id !== $solicitante->id`), pero la
+acción seguía disponible y "funcionaba" sin avisarle a nadie, sin que quedara claro por
+qué. Ahora `PermisosService::mismaPersonaEnAmbosExtremos()` bloquea el permiso directamente
+(`puedeReportarProblema`/`puedeReportarNoParticipacion` devuelven `false`), así el botón ni
+aparece en el frontend (ambos ya estaban condicionados a esos permisos) y el intento por
+ruta directa devuelve un mensaje explicando la alternativa real: editar la tarea (si el
+problema es la definición) o reasignarla (si no podés seguir con ella). Un colaborador que
+además sea el creador SÍ puede seguir usando ambas acciones -- le llegan a un responsable
+distinto, no hay auto-notificación en ese caso.
+
 **RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no
 convenía como funcionalidad — se eliminaron `DuplicarTareaService`, `DuplicarTareaRequest`,
 `DuplicarTareaDialog`, la ruta `tareas/{tarea}/duplicar` y el flag `puedeDuplicar`. Si en algún
