@@ -255,7 +255,7 @@ function CeldaCalendario({
                     }
                 }}
                 className={cn(
-                    'group relative cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-verde-1/30',
+                    'group relative cursor-pointer text-left transition-all hover:border-verde-5 hover:bg-verde-1/30 active:scale-[0.98]',
                     className,
                 )}
             >
@@ -273,7 +273,7 @@ function CeldaCalendario({
                 <div
                     role="button"
                     tabIndex={0}
-                    className={cn('cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-muted/40', className)}
+                    className={cn('cursor-pointer text-left transition-all hover:border-verde-5 hover:bg-muted/40 active:scale-[0.98]', className)}
                 >
                     {children}
                 </div>
@@ -302,7 +302,7 @@ function TareaBarra({
                 onAbrir(tarea.id);
             }}
             className={cn(
-                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
+                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-all hover:opacity-80 active:scale-[0.97]',
                 atenuada && 'opacity-60',
                 claseBarraTarea(tarea),
                 // Prioridad alta se destaca con un borde izquierdo, sin pisar
@@ -772,7 +772,7 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
             type="button"
             onClick={() => onAbrir(tarea.id)}
             className={cn(
-                'block w-full rounded-lg border border-border p-4 text-left transition-colors hover:border-verde-5 hover:bg-muted/30',
+                'block w-full rounded-lg border border-border p-4 text-left transition-all hover:border-verde-5 hover:bg-muted/30 active:scale-[0.99]',
                 completada && 'border-border/60 bg-muted/20',
             )}
         >
@@ -1085,20 +1085,22 @@ export default function MisTareasIndex(props: Props) {
                     ))}
                 </div>
 
-                {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
+                <div key={tab} className="animate-in fade-in-0 duration-200">
+                    {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
 
-                {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
+                    {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
 
-                {tab === 'metricas' && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Panel de métricas</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Próximamente.</p>
-                        </CardContent>
-                    </Card>
-                )}
+                    {tab === 'metricas' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Panel de métricas</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Próximamente.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </div>
 
             <TareaDetalleModal
