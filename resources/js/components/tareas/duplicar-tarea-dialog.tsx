@@ -12,6 +12,12 @@ import { FormEventHandler, useState } from 'react';
  * RF-18 (Could): copia responsable y unidad organizacional de la tarea
  * origen (no editables aca); titulo, descripcion y fechas quedan editables,
  * prellenados con los valores de la tarea origen como punto de partida.
+ *
+ * `trigger` es opcional: por defecto usa su propio boton "Duplicar", pero
+ * si se omite el dialogo se abre solo via `open`/`onOpenChange`
+ * controlados desde afuera -- lo usa el menu "Mas acciones" del detalle
+ * de tarea (ver nota en MotivoDialog sobre por que no se dispara desde un
+ * DialogTrigger dentro de un DropdownMenuItem).
  */
 export function DuplicarTareaDialog({
     tareaId,
@@ -19,14 +25,22 @@ export function DuplicarTareaDialog({
     descripcion,
     fechaInicio,
     fechaCompromiso,
+    trigger,
+    open: openControlado,
+    onOpenChange,
 }: {
     tareaId: number;
     titulo: string;
     descripcion: string | null;
     fechaInicio: string | null;
     fechaCompromiso: string;
+    trigger?: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [openInterno, setOpenInterno] = useState(false);
+    const open = openControlado ?? openInterno;
+    const setOpen = onOpenChange ?? setOpenInterno;
     const { data, setData, post, processing, errors, reset } = useForm({
         titulo,
         descripcion: descripcion ?? '',
@@ -48,11 +62,7 @@ export function DuplicarTareaDialog({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                    <Copy /> Duplicar
-                </Button>
-            </DialogTrigger>
+            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>

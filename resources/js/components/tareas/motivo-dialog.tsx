@@ -9,6 +9,12 @@ import { FormEventHandler, useState } from 'react';
 /**
  * Dialogo generico para las 3 acciones de tarea que piden un motivo de
  * texto obligatorio: retroceder (RF-12), rechazar (RF-13) y cancelar (RF-25).
+ *
+ * `trigger` es opcional: sin el, el dialogo se abre solo via `open`/
+ * `onOpenChange` controlados desde afuera -- lo usa el menu "Mas acciones"
+ * del detalle de tarea, que dispara `onSelect` en vez de un `DialogTrigger`
+ * propio (abrir un Dialog directo desde un DropdownMenuItem es un anti-
+ * patron conocido de Radix: los dos compiten por el mismo click).
  */
 export function MotivoDialog({
     trigger,
@@ -19,8 +25,10 @@ export function MotivoDialog({
     submitLabel,
     submitIcon: SubmitIcon,
     variant = 'default',
+    open: openControlado,
+    onOpenChange,
 }: {
-    trigger: React.ReactNode;
+    trigger?: React.ReactNode;
     title: string;
     description: string;
     routeName: string;
@@ -28,8 +36,12 @@ export function MotivoDialog({
     submitLabel: string;
     submitIcon?: LucideIcon;
     variant?: 'default' | 'destructive';
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [openInterno, setOpenInterno] = useState(false);
+    const open = openControlado ?? openInterno;
+    const setOpen = onOpenChange ?? setOpenInterno;
     const { data, setData, patch, processing, errors, reset } = useForm({ motivo: '' });
 
     const submit: FormEventHandler = (e) => {
@@ -46,7 +58,7 @@ export function MotivoDialog({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
