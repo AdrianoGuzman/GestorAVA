@@ -28,7 +28,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
     tareas: TareaResumen[];
-    contadores: { total: number; atrasadas: number; en_progreso: number; pendientes: number; completadas: number };
+    contadores: {
+        total: number;
+        atrasadas: number;
+        en_progreso: number;
+        pendientes: number;
+        completadas: number;
+        prioridad_alta: number;
+    };
     filtros: FiltrosMisTareas;
     unidadesOrganizacionales: { id: number; nombre: string }[];
     usuarios: Persona[];
@@ -782,6 +789,11 @@ function ResumenContadores({ contadores }: { contadores: Props['contadores'] }) 
             {contadores.atrasadas > 0 && (
                 <span className="flex items-center gap-2 text-sm font-medium text-rojo-1">
                     <span className="size-2.5 rounded-full bg-rojo-1" /> {contadores.atrasadas} atrasadas
+                </span>
+            )}
+            {contadores.prioridad_alta > 0 && (
+                <span className="flex items-center gap-2 text-sm font-medium text-naranjo-1">
+                    <span className="size-2.5 rounded-full bg-naranjo-1" /> {contadores.prioridad_alta} de prioridad alta
                 </span>
             )}
             <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

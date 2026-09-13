@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoTarea;
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\User;
@@ -57,12 +58,18 @@ class MisTareasService
             $roles = array_intersect_key($roles, [$seccionPorFiltro[$filtroRol] => true]);
         }
 
+        // Prioridad alta primero, y a igual prioridad, la fecha mas proxima
+        // primero -- asi lo urgente no se pierde entre tareas de fecha mas
+        // cercana pero menor prioridad.
         $tareas = collect($roles)
             ->flatMap(function ($consulta, $rol) {
                 return $consulta()->with(["responsable", "unidadOrganizacional"])->get()
                     ->each(fn (Tarea $tarea) => $tarea->rol = $rol);
             })
-            ->sortBy("fecha_compromiso")
+            ->sortBy([
+                fn (Tarea $a, Tarea $b) => $b->prioridad->peso() <=> $a->prioridad->peso(),
+                fn (Tarea $a, Tarea $b) => $a->fecha_compromiso <=> $b->fecha_compromiso,
+            ])
             ->values();
 
         return [
@@ -73,6 +80,7 @@ class MisTareasService
                 "en_progreso" => $tareas->where("estado", EstadoTarea::EnProgreso)->count(),
                 "pendientes" => $tareas->where("estado", EstadoTarea::Pendiente)->count(),
                 "completadas" => $tareas->where("estado", EstadoTarea::Completada)->count(),
+                "prioridad_alta" => $tareas->where("prioridad", PrioridadTarea::Alta)->count(),
             ],
         ];
     }

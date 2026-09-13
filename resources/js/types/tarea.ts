@@ -122,6 +122,7 @@ export interface ContadoresMisTareas {
     en_progreso: number;
     pendientes: number;
     completadas: number;
+    prioridad_alta: number;
 }
 
 /** Filtro rapido por rol (RF-09): distinto del rol real de cada tarea, es el valor que viaja en la URL. */
