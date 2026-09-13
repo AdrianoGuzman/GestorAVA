@@ -136,6 +136,7 @@ class ChecklistTest extends TestCase
         ]);
         $item = ChecklistItem::factory()->create([
             "tarea_id" => $tarea->id,
+            "texto" => "Paso a eliminar",
         ]);
 
         $this->actingAs($usuario)
@@ -146,11 +147,12 @@ class ChecklistTest extends TestCase
             "id" => $item->id,
         ]);
 
-        $this->assertTrue(
-            $tarea->historial()
-                ->where("tipo_evento", TipoEvento::ChecklistItemEliminado)
-                ->exists()
-        );
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ChecklistItemEliminado)->first();
+
+        $this->assertNotNull($evento);
+        // El item ya no existe una vez borrado -- sin guardar el texto en el
+        // propio evento, el historial no podria decir que subtarea era.
+        $this->assertSame("Paso a eliminar", $evento->datos_evento["texto"]);
     }
 
     public function test_permite_asignar_como_dueno_al_responsable_de_la_tarea(): void

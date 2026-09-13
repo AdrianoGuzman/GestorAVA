@@ -176,6 +176,7 @@ class ChecklistService
         DB::connection("usuarios")->transaction(function () use ($item, $usuario) {
             $tarea = $item->tarea;
             $itemId = $item->id;
+            $texto = $item->texto;
 
             $item->delete();
 
@@ -185,6 +186,7 @@ class ChecklistService
                 $usuario,
                 [
                     "checklist_item_id" => $itemId,
+                    "texto" => $texto,
                 ],
             );
         });

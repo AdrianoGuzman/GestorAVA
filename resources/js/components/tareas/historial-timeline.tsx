@@ -154,6 +154,18 @@ function construirDetalles(evento: HistorialEvento, nombrePorId: Map<number, str
                 { key: 'fecha_limite', label: 'Fecha límite', formatear: formatearFecha },
             ]);
         }
+        case 'checklist_item_creado': {
+            const detalles: DetalleEvento[] = [];
+            if (typeof datos.texto === 'string') {
+                detalles.push({ label: 'Subtarea', actual: formatearTexto(datos.texto, 60) });
+            }
+            if (typeof datos.dueno_id === 'number') {
+                detalles.push({ label: 'Dueño', actual: nombreDe(datos.dueno_id) });
+            }
+            return detalles;
+        }
+        case 'checklist_item_eliminado':
+            return typeof datos.texto === 'string' ? [{ label: 'Subtarea', actual: formatearTexto(datos.texto, 60) }] : [];
         case 'reasignacion':
         case 'reasignacion_excepcional': {
             const detalles: DetalleEvento[] = [
