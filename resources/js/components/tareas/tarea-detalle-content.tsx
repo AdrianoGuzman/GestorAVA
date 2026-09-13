@@ -22,8 +22,8 @@ import {
     CircleCheckBig,
     GitBranch,
     History,
-    ListChecks,
     ListTodo,
+    ListTree,
     MessageSquareWarning,
     MoreHorizontal,
     Paperclip,
@@ -305,7 +305,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                     {tarea.colaboradores.length > 0 && (
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                                <ListChecks className="size-4 text-verde-6" /> Checklist
+                                <ListTree className="size-4 text-verde-6" /> Subtareas
                             </h3>
                             <ChecklistSection
                                 tareaId={tarea.id}

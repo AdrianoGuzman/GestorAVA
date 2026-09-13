@@ -1,7 +1,6 @@
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { circuloOpcionClasses, DatePickerButton } from '@/components/ui/date-picker-button';
 import { Input } from '@/components/ui/input';
 import { useAccionTarea } from '@/hooks/use-accion-tarea';
@@ -9,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 import type { ChecklistItem } from '@/types/tarea';
 import { useForm, usePage } from '@inertiajs/react';
-import { CalendarDays, Plus, Trash2, UserPlus, X } from 'lucide-react';
+import { CalendarDays, Check, Plus, Trash2, UserPlus, X } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 function iniciales(nombre: string): string {
@@ -36,6 +35,11 @@ function estaVencido(item: ChecklistItem): boolean {
  * Checklist compartido (RF-23). Solo se renderiza si la tarea tiene
  * colaboradores (ver show.tsx); si el responsable es el único involucrado,
  * usa "Mi checklist" en su lugar.
+ *
+ * La UI le dice "Subtareas" (Franco, 13-09-2026): mismo bloqueo de RF-11/23,
+ * mismas rutas y misma tabla -- solo cambia el nombre y el distintivo visual
+ * de cada ítem (un círculo relleno en vez de un checkbox clásico) para que
+ * no se confunda con un checklist genérico.
  */
 export function ChecklistSection({
     tareaId,
@@ -136,7 +140,7 @@ export function ChecklistSection({
                     <Input
                         value={data.texto}
                         onChange={(e) => setData('texto', e.target.value)}
-                        placeholder="Agregar un paso..."
+                        placeholder="Agregar una subtarea..."
                         className="h-8 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
 
@@ -195,7 +199,7 @@ export function ChecklistSection({
             )}
 
             {itemsVisibles.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin ítems todavía.</p>
+                <p className="text-sm text-muted-foreground">Sin subtareas todavía.</p>
             ) : (
                 <ul className="space-y-1.5">
                     {itemsVisibles.map((item) => {
@@ -206,14 +210,35 @@ export function ChecklistSection({
                                 key={item.id}
                                 className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
                             >
-                                <Checkbox
-                                    checked={item.completado}
+                                <button
+                                    type="button"
                                     disabled={!puedeMarcar}
-                                    onCheckedChange={() => alternar(item)}
-                                    title={!puedeMarcar ? (puedeUsar ? 'Solo el dueño de este ítem puede marcarlo' : 'La tarea ya está cerrada') : undefined}
-                                    className="size-5 rounded-full border-gris-1/40 transition-colors duration-200 data-[state=checked]:border-verde-5 data-[state=checked]:bg-verde-5 data-[state=checked]:text-gris-2"
-                                />
-                                <span className={cn('flex-1 text-sm text-foreground transition-colors', item.completado && 'text-muted-foreground')}>
+                                    onClick={() => alternar(item)}
+                                    title={
+                                        !puedeMarcar
+                                            ? puedeUsar
+                                                ? 'Solo el dueño de esta subtarea puede marcarla'
+                                                : 'La tarea ya está cerrada'
+                                            : item.completado
+                                              ? 'Marcar como pendiente'
+                                              : 'Marcar como hecha'
+                                    }
+                                    className={cn(
+                                        'flex size-5 shrink-0 items-center justify-center rounded-full border transition-all',
+                                        item.completado
+                                            ? 'border-verde-5 bg-verde-5 text-gris-2'
+                                            : 'border-dashed border-gris-1/50 text-transparent hover:border-verde-6',
+                                        !puedeMarcar && 'cursor-not-allowed opacity-60 hover:border-gris-1/50',
+                                    )}
+                                >
+                                    <Check className="size-3" strokeWidth={3} />
+                                </button>
+                                <span
+                                    className={cn(
+                                        'flex-1 text-sm text-foreground transition-colors',
+                                        item.completado && 'text-muted-foreground line-through',
+                                    )}
+                                >
                                     {item.texto}
                                 </span>
                                 {item.fecha_limite && (
@@ -228,7 +253,7 @@ export function ChecklistSection({
                                     </span>
                                 )}
                                 {item.dueno && (
-                                    <PersonaAvatar nombre={item.dueno.name} email={item.dueno.email} rol="Dueño del ítem" className="size-6" />
+                                    <PersonaAvatar nombre={item.dueno.name} email={item.dueno.email} rol="Dueño de la subtarea" className="size-6" />
                                 )}
                                 {puedeUsar && (
                                     <button

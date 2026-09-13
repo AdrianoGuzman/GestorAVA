@@ -50,11 +50,11 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
     cancelacion: 'Canceló la tarea',
     dependencia_creada: 'Creó una dependencia',
     dependencia_resuelta: 'Resolvió una dependencia',
-    checklist_item_creado: 'Agregó un ítem al checklist',
-    checklist_item_marcado: 'Marcó un ítem del checklist',
-    checklist_item_desmarcado: 'Desmarcó un ítem del checklist',
-    checklist_item_editado: 'Editó un ítem del checklist',
-    checklist_item_eliminado: 'Eliminó un ítem del checklist',
+    checklist_item_creado: 'Agregó una subtarea',
+    checklist_item_marcado: 'Marcó una subtarea como hecha',
+    checklist_item_desmarcado: 'Desmarcó una subtarea',
+    checklist_item_editado: 'Editó una subtarea',
+    checklist_item_eliminado: 'Eliminó una subtarea',
     tarea_hija_creada: 'Creó una tarea hija',
     adjunto_agregado: 'Adjuntó un archivo',
     tarea_atrasada: 'Se marcó como atrasada automáticamente',
@@ -63,10 +63,11 @@ const ETIQUETAS_EVENTO: Record<TipoEvento, string> = {
 };
 
 /**
- * Marcar/desmarcar un ítem del checklist queda igual registrado en la BD
- * (auditoría, RF-23), pero se omite de esta línea de tiempo porque un
- * checklist que se marca y desmarca varias veces la llena de ruido sin
- * aportar nada que ya no muestre el propio checklist.
+ * Marcar/desmarcar una subtarea (checklist compartido, RF-23 -- la UI le
+ * dice "Subtareas") queda igual registrado en la BD para auditoría, pero se
+ * omite de esta línea de tiempo porque una subtarea que se marca y desmarca
+ * varias veces la llena de ruido sin aportar nada que ya no muestre la
+ * propia lista de subtareas.
  */
 const EVENTOS_OCULTOS_EN_TIMELINE = new Set<TipoEvento>(['checklist_item_marcado', 'checklist_item_desmarcado']);
 
