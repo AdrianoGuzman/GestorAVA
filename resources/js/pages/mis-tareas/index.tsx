@@ -282,6 +282,9 @@ function TareaBarra({
                 'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
                 atenuada && 'opacity-60',
                 claseBarraTarea(tarea),
+                // Prioridad alta se destaca con un borde izquierdo, sin pisar
+                // el color de estado/atraso que ya trae claseBarraTarea().
+                tarea.prioridad === 'alta' && 'border-l-4 border-l-naranjo-1',
             )}
         >
             {tarea.titulo}
