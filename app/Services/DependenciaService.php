@@ -13,6 +13,7 @@ class DependenciaService
         private readonly TareaService $tareaService,
         private readonly HistorialService $historial,
         private readonly PermisosService $permisos,
+        private readonly NotificacionService $notificaciones,
     ) {
     }
 
@@ -20,9 +21,11 @@ class DependenciaService
      * RF-21: crea una tarea hija de $tareaPadre -- una tarea normal (con su
      * propio responsable y seguimiento) pero con tarea_padre_id seteado.
      * Reusa TareaService::crear() en vez de duplicar su logica (responsable
-     * por defecto, colaboradores, notificaciones); solo agrega el vinculo con
-     * el padre y un evento en el historial del padre para que quede claro de
-     * donde salio esa tarea.
+     * por defecto, colaboradores, notificacion al responsable de la tarea
+     * hija); esto solo agrega el vinculo con el padre, un evento en su
+     * historial, y avisa al responsable de la tarea padre (EP-20) de que se
+     * creo una dependencia a partir de su tarea -- salvo que el mismo la
+     * haya creado.
      */
     public function crearTareaHija(Tarea $tareaPadre, array $datos, User $creador): Tarea
     {
@@ -41,6 +44,10 @@ class DependenciaService
             "tarea_hija_id" => $tareaHija->id,
             "titulo" => $tareaHija->titulo,
         ]);
+
+        if ($tareaPadre->responsable_id !== $creador->id) {
+            $this->notificaciones->notificarDependenciaCreada($tareaPadre->responsable, $tareaPadre, $tareaHija, $creador);
+        }
 
         return $tareaHija;
     }
