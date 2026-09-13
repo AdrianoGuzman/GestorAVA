@@ -13,7 +13,7 @@ export default function TareaShow(props: TareaDetalleContentProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={tarea.titulo} />
-            <div className="p-4">
+            <div className="mx-auto max-w-3xl p-4">
                 <TareaDetalleContent {...props} />
             </div>
         </AppLayout>

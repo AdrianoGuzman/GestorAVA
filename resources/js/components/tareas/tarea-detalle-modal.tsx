@@ -94,14 +94,14 @@ export function TareaDetalleModal({
         <>
             <NonModalOverlay open={tareaId !== null} onClose={onClose} />
 
-            {/* modal={false}: adentro se abren otros Dialog (Reasignar, Agregar
-                colaborador) con su propio Popover de seleccion de persona -- con
-                el modal de aca "atrapando" el foco/scroll, esos anidados quedan
-                visibles pero no interactuables (no se puede hacer scroll ni
-                elegir a nadie). Al desactivar el modal de este nivel, el Dialog
-                interno vuelve a ser el unico que atrapa el foco y funciona bien. */}
+            {/* modal={false}: adentro se abren Reasignar/Agregar colaborador (Sheet)
+                con su propio Popover de seleccion de persona -- con el modal de
+                aca "atrapando" el foco/scroll, esos anidados quedan visibles pero
+                no interactuables (no se puede hacer scroll ni elegir a nadie). Al
+                desactivar el modal de este nivel, el panel interno vuelve a ser
+                el unico que atrapa el foco y funciona bien. */}
             <Dialog open={tareaId !== null} onOpenChange={(open) => !open && onClose()} modal={false}>
-                <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
+                <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
                     <DialogTitle className="sr-only">{datos?.tarea.titulo ?? 'Detalle de tarea'}</DialogTitle>
                     {cargando || !datos ? (
                         <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
