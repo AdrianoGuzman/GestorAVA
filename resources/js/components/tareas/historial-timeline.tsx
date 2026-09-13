@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DatePickerButton } from '@/components/ui/date-picker-button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { HistorialEvento, TipoEvento } from '@/types/tarea';
@@ -142,21 +142,9 @@ export function HistorialInline({ eventos }: { eventos: HistorialEvento[] }) {
                 </h3>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                        type="date"
-                        aria-label="Desde"
-                        value={desde}
-                        onChange={(e) => setDesde(e.target.value)}
-                        className="h-8 w-36 text-xs"
-                    />
+                    <DatePickerButton label="Desde" valor={desde} onChange={setDesde} />
                     <span className="text-xs text-muted-foreground">a</span>
-                    <Input
-                        type="date"
-                        aria-label="Hasta"
-                        value={hasta}
-                        onChange={(e) => setHasta(e.target.value)}
-                        className="h-8 w-36 text-xs"
-                    />
+                    <DatePickerButton label="Hasta" valor={hasta} onChange={setHasta} />
                     {hayFiltro && (
                         <Button
                             variant="ghost"
