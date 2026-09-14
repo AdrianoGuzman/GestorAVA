@@ -3,6 +3,7 @@
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistPersonalController;
 use App\Http\Controllers\DependenciaController;
+use App\Http\Controllers\ExportarTareaController;
 use App\Http\Controllers\MisTareasController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\TareaController;
@@ -43,6 +44,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tareas/{tarea}/adjuntos', [TareaController::class, 'agregarAdjunto'])->name('tareas.adjuntos.store');
     Route::post('tareas/{tarea}/hijas', [DependenciaController::class, 'store'])->name('tareas.hijas.store');
     Route::get('tareas/{tarea}/adjuntos/{adjunto}/descargar', [TareaController::class, 'descargarAdjunto'])->name('tareas.adjuntos.descargar');
+    Route::get('tareas/{tarea}/exportar-pdf', [ExportarTareaController::class, 'pdf'])->name('tareas.exportar-pdf');
+    Route::get('tareas/{tarea}/exportar-excel', [ExportarTareaController::class, 'excel'])->name('tareas.exportar-excel');
     Route::post('tareas/{tarea}/checklist', [ChecklistController::class, 'store'])->name('checklist.store');
     Route::patch('checklist/{checklistItem}', [ChecklistController::class, 'update'])->name('checklist.update');
     Route::patch('checklist/{checklistItem}/marcar', [ChecklistController::class, 'marcar'])->name('checklist.marcar');

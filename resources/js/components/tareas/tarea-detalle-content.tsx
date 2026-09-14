@@ -20,6 +20,9 @@ import {
     Ban,
     Calendar,
     CircleCheckBig,
+    Download,
+    FileSpreadsheet,
+    FileText,
     GitBranch,
     History,
     ListTodo,
@@ -132,6 +135,28 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             </span>
                         </Button>
                     )}
+                    {/* Sin permiso propio: cualquiera que pueda abrir el detalle de la
+                        tarea (ver TareaController::show(), sin restriccion adicional)
+                        puede exportar el mismo registro que esta viendo. */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                                <Download /> Exportar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <a href={route('tareas.exportar-pdf', tarea.id)}>
+                                    <FileText /> Exportar a PDF
+                                </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a href={route('tareas.exportar-excel', tarea.id)}>
+                                    <FileSpreadsheet /> Exportar a Excel
+                                </a>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     {permisos.puedeCompletar && (
                         <ConfirmarCompletarDialog
                             tareaId={tarea.id}

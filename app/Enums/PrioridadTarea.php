@@ -21,4 +21,14 @@ enum PrioridadTarea: string
             self::Baja => 1,
         };
     }
+
+    /** Mismo texto que PRIORIDAD_TAREA_LABELS en resources/js/lib/estado-tarea.ts -- usado en exportes PDF/Excel. */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Alta => "Alta",
+            self::Media => "Media",
+            self::Baja => "Baja",
+        };
+    }
 }

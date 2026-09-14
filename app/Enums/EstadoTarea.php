@@ -39,4 +39,15 @@ enum EstadoTarea: string
             self::Pendiente, self::EnProgreso => false,
         };
     }
+
+    /** Mismo texto que ESTADO_TAREA_LABELS en resources/js/lib/estado-tarea.ts -- usado en exportes PDF/Excel. */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pendiente => "Pendiente",
+            self::EnProgreso => "En progreso",
+            self::Completada => "Completada",
+            self::Cancelada => "Cancelada",
+        };
+    }
 }

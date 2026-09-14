@@ -341,6 +341,32 @@ problema es la definición) o reasignarla (si no podés seguir con ella). Un col
 además sea el creador SÍ puede seguir usando ambas acciones -- le llegan a un responsable
 distinto, no hay auto-notificación en ese caso.
 
+**Decisión explícita (Franco, 13-09-2026): exportar una tarea a PDF y Excel (trazabilidad
+"para llevar" fuera de la app).** `ExportarTareaController` (rutas `tareas.exportar-pdf` /
+`tareas.exportar-excel`, sin permiso propio -- quien puede abrir `/tareas/{tarea}` puede
+exportarla) arma las mismas 3 tablas para ambos formatos vía `ExportacionTareaService`
+(datos generales, subtareas -- solo el checklist compartido, "Mi checklist" es privado y no
+sale del registro de la tarea --, e historial): una sola fuente de verdad en vez de duplicar
+el armado de filas. El Excel usa `TareaExport implements FromView` (Maatwebsite) -- el Blade
+(`resources/views/exports/tarea.blade.php`) es una tabla HTML con estilos inline por celda,
+que Maatwebsite convierte en celdas reales de Excel (colores, fusión, autosize), no una
+imagen. Un vistazo real generado y revisado con openpyxl confirma que los colores de marca
+(`#A0F700` verde-5 para encabezados de sección, `#ECF3E5` verde-1 para encabezados de tabla)
+llegan igual que en las planillas de referencia de AVA (`CONTEXTO/Planillas excel AVA/*.xlsx`).
+El PDF (`resources/views/pdf/tarea.blade.php`, dompdf) usa el mismo esquema de colores y
+lleva el isotipo AVA (`public/images/logo-ava.png`, recortado del PNG oficial en
+`CONTEXTO/ENTREGA FINAL/Logotipo & Isotipo/`).
+
+**Alcance deliberadamente más simple que el timeline interactivo**: la tabla de historial
+exportada muestra fecha/usuario/evento/motivo, sin el detalle campo-por-campo ("antes →
+después") que sí tiene `historial-timeline.tsx` (ver la decisión de "Idea A" más abajo) --
+replicar esa lógica de diff en PHP para PDF y Excel es una extensión razonable a futuro si
+hace falta, pero se dejó fuera de este primer alcance para no triplicar la misma lógica
+(TS + PDF + Excel) de una sola vez. `TipoEvento::label()`, `EstadoTarea::label()` y
+`PrioridadTarea::label()` (nuevos métodos en los enums) son la única pieza que ya comparten
+frontend y backend -- mismo texto que `ETIQUETAS_EVENTO`/`ESTADO_TAREA_LABELS`/
+`PRIORIDAD_TAREA_LABELS` en el frontend, a mano por ahora (no hay generación automática).
+
 **RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no
 convenía como funcionalidad — se eliminaron `DuplicarTareaService`, `DuplicarTareaRequest`,
 `DuplicarTareaDialog`, la ruta `tareas/{tarea}/duplicar` y el flag `puedeDuplicar`. Si en algún
