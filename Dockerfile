@@ -21,7 +21,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 WORKDIR /var/www/app
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Con --dev (no --no-dev): los seeders de la demo usan factories con
+# fake() (fakerphp/faker, require-dev) para cargar los usuarios de prueba.
+RUN composer install --optimize-autoloader --no-interaction
 RUN npm ci && npm run build
 
 RUN chmod -R 775 storage bootstrap/cache
