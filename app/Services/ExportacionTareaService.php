@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
+use App\Models\HistorialTarea;
 use App\Models\Tarea;
+use App\Models\User;
+use Illuminate\Support\Carbon;
 
 /**
  * Prepara las mismas 3 tablas (datos generales, subtareas, historial) para
@@ -16,6 +20,8 @@ use App\Models\Tarea;
 class ExportacionTareaService
 {
     private const EVENTOS_OCULTOS = [TipoEvento::ChecklistItemMarcado, TipoEvento::ChecklistItemDesmarcado];
+
+    private const SIN_VALOR = "(vacío)";
 
     public function datosGenerales(Tarea $tarea): array
     {
@@ -47,17 +53,139 @@ class ExportacionTareaService
             ->all();
     }
 
+    /**
+     * Mismo nivel de detalle que historial-timeline.tsx (construirDetalles()
+     * en el frontend, Franco 13-09-2026 D2: "igual de detallado en los
+     * documentos"): cada fila trae, ademas del motivo, las lineas de "Campo:
+     * anterior → actual" que ya arma el timeline interactivo -- misma fuente
+     * de datos (datos_evento/datos_anteriores), misma logica, portada a PHP
+     * porque un documento exportado no puede llamar al codigo del navegador.
+     * Si el frontend cambia esta logica, hay que actualizar las dos.
+     */
     public function historial(Tarea $tarea): array
     {
+        // "name" es un accessor (nombre completo armado desde nombre_1/apellido_1,
+        // etc.), no una columna real -- pluck() de query builder no lo ve y falla
+        // en SQL. Hay que traer los modelos y recien ahi pluckear en PHP.
+        $nombrePorId = User::all()->pluck("name", "id");
+
         return $tarea->historial
             ->reject(fn ($evento) => in_array($evento->tipo_evento, self::EVENTOS_OCULTOS, true))
-            ->map(fn ($evento) => [
-                "fecha" => $evento->created_at->format("d-m-Y H:i"),
-                "usuario" => $evento->usuario?->name ?? "Sistema",
-                "evento" => $evento->tipo_evento->label(),
-                "motivo" => $evento->datos_evento["motivo"] ?? $evento->datos_evento["motivo_excepcion"] ?? "—",
-            ])
+            ->map(function (HistorialTarea $evento) use ($nombrePorId) {
+                $lineas = [];
+
+                $motivo = $evento->datos_evento["motivo"] ?? $evento->datos_evento["motivo_excepcion"] ?? null;
+                if ($motivo) {
+                    $lineas[] = "Motivo: {$motivo}";
+                }
+
+                array_push($lineas, ...$this->detalles($evento, $nombrePorId));
+
+                return [
+                    "fecha" => $evento->created_at->format("d-m-Y H:i"),
+                    "usuario" => $evento->usuario?->name ?? "Sistema",
+                    "evento" => $evento->tipo_evento->label(),
+                    "detalle" => $lineas === [] ? ["—"] : $lineas,
+                ];
+            })
             ->values()
             ->all();
+    }
+
+    /** @return string[] */
+    private function detalles(HistorialTarea $evento, \Illuminate\Support\Collection $nombrePorId): array
+    {
+        $datos = $evento->datos_evento ?? [];
+        $nombreDe = fn ($id) => is_int($id) ? ($nombrePorId[$id] ?? "Usuario #{$id}") : self::SIN_VALOR;
+
+        return match ($evento->tipo_evento) {
+            TipoEvento::TareaEditada => $this->diffCampos($datos["datos_anteriores"] ?? null, $datos, [
+                ["titulo", "Título", fn ($v) => $this->formatearTexto($v, 60)],
+                ["descripcion", "Descripción", fn ($v) => $this->formatearTexto($v, 50)],
+                ["fecha_inicio", "Fecha inicio", fn ($v) => $this->formatearFecha($v)],
+                ["fecha_compromiso", "Fecha término", fn ($v) => $this->formatearFecha($v)],
+                ["prioridad", "Prioridad", fn ($v) => $this->formatearPrioridad($v)],
+            ]),
+
+            TipoEvento::ChecklistItemEditado => $this->diffCampos($datos["datos_anteriores"] ?? null, $datos, [
+                ["texto", "Texto", fn ($v) => $this->formatearTexto($v, 60)],
+                ["dueno_id", "Dueño", fn ($v) => $v === null ? "Sin dueño" : $nombreDe($v)],
+                ["fecha_limite", "Fecha límite", fn ($v) => $this->formatearFecha($v)],
+            ]),
+
+            TipoEvento::ChecklistItemCreado => array_filter([
+                isset($datos["texto"]) ? "Subtarea: {$this->formatearTexto($datos['texto'], 60)}" : null,
+                isset($datos["dueno_id"]) && is_int($datos["dueno_id"]) ? "Dueño: {$nombreDe($datos['dueno_id'])}" : null,
+            ]),
+
+            TipoEvento::ChecklistItemEliminado => isset($datos["texto"])
+                ? ["Subtarea: {$this->formatearTexto($datos['texto'], 60)}"]
+                : [],
+
+            TipoEvento::Reasignacion, TipoEvento::ReasignacionExcepcional => array_filter([
+                "Responsable: {$nombreDe($datos['responsable_anterior_id'] ?? null)} → {$nombreDe($datos['responsable_nuevo_id'] ?? null)}",
+                ($datos["mantuvo_como_colaborador"] ?? false) === true ? "Responsable saliente: quedó como colaborador" : null,
+            ]),
+
+            TipoEvento::ColaboradorAgregado => isset($datos["colaborador_id"])
+                ? ["Colaborador agregado: {$nombreDe($datos['colaborador_id'])}"]
+                : [],
+
+            TipoEvento::TareaHijaCreada => isset($datos["titulo"])
+                ? ["Tarea hija: {$datos['titulo']}"]
+                : [],
+
+            default => [],
+        };
+    }
+
+    /**
+     * @param  array{0: string, 1: string, 2: callable}[]  $campos  [clave, etiqueta, formateador]
+     * @return string[]
+     */
+    private function diffCampos(?array $antes, array $despues, array $campos): array
+    {
+        if ($antes === null) {
+            return [];
+        }
+
+        $lineas = [];
+        foreach ($campos as [$clave, $etiqueta, $formatear]) {
+            $valorAntes = $antes[$clave] ?? null;
+            $valorDespues = $despues[$clave] ?? null;
+
+            if ($valorAntes === $valorDespues) {
+                continue;
+            }
+
+            $lineas[] = "{$etiqueta}: {$formatear($valorAntes)} → {$formatear($valorDespues)}";
+        }
+
+        return $lineas;
+    }
+
+    private function formatearTexto(mixed $valor, int $max): string
+    {
+        if ($valor === null || $valor === "") {
+            return self::SIN_VALOR;
+        }
+
+        $texto = (string) $valor;
+
+        return mb_strlen($texto) > $max ? mb_substr($texto, 0, $max)."…" : $texto;
+    }
+
+    private function formatearFecha(mixed $valor): string
+    {
+        if (! is_string($valor) || $valor === "") {
+            return self::SIN_VALOR;
+        }
+
+        return Carbon::parse(mb_substr($valor, 0, 10))->format("d-m-Y");
+    }
+
+    private function formatearPrioridad(mixed $valor): string
+    {
+        return is_string($valor) ? (PrioridadTarea::tryFrom($valor)?->label() ?? self::SIN_VALOR) : self::SIN_VALOR;
     }
 }

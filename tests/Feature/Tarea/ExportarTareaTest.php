@@ -3,10 +3,12 @@
 namespace Tests\Feature\Tarea;
 
 use App\Enums\NivelJerarquico;
+use App\Enums\TipoEvento;
 use App\Models\ChecklistItem;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
+use App\Services\ExportacionTareaService;
 use Tests\Concerns\RefreshesDualSchemaDatabase;
 use Tests\TestCase;
 
@@ -77,5 +79,70 @@ class ExportarTareaTest extends TestCase
 
         $this->actingAs($responsable)->get("/tareas/{$tarea->id}/exportar-pdf")->assertOk();
         $this->actingAs($responsable)->get("/tareas/{$tarea->id}/exportar-excel")->assertOk();
+    }
+
+    /**
+     * Franco (13-09-2026 D2): "igual de detallado" -- el historial exportado
+     * debe traer el mismo diff campo-por-campo que ya muestra
+     * historial-timeline.tsx, no solo motivo.
+     */
+    public function test_el_historial_exportado_solo_detalla_los_campos_que_cambiaron(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::TareaEditada,
+            "usuario_id" => $responsable->id,
+            "datos_evento" => [
+                "datos_anteriores" => [
+                    "titulo" => $tarea->titulo,
+                    "descripcion" => $tarea->descripcion,
+                    "fecha_inicio" => null,
+                    "fecha_compromiso" => "2026-09-15",
+                    "prioridad" => $tarea->prioridad->value,
+                ],
+                "titulo" => $tarea->titulo,
+                "descripcion" => $tarea->descripcion,
+                "fecha_inicio" => null,
+                "fecha_compromiso" => "2026-09-22",
+                "prioridad" => $tarea->prioridad->value,
+            ],
+        ]);
+        $tarea->load(["historial" => fn ($query) => $query->with("usuario")]);
+
+        $filas = app(ExportacionTareaService::class)->historial($tarea);
+
+        $this->assertCount(1, $filas[0]["detalle"]);
+        $this->assertSame("Fecha término: 15-09-2026 → 22-09-2026", $filas[0]["detalle"][0]);
+    }
+
+    public function test_el_historial_exportado_resuelve_el_responsable_a_nombre_en_una_reasignacion(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $anterior = $this->usuario(NivelJerarquico::JefeArea, $obra);
+        $nuevo = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $nuevo->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::Reasignacion,
+            "usuario_id" => $anterior->id,
+            "datos_evento" => [
+                "responsable_anterior_id" => $anterior->id,
+                "responsable_nuevo_id" => $nuevo->id,
+                "mantuvo_como_colaborador" => true,
+            ],
+        ]);
+        $tarea->load(["historial" => fn ($query) => $query->with("usuario")]);
+
+        $filas = app(ExportacionTareaService::class)->historial($tarea);
+
+        $this->assertSame("Responsable: {$anterior->name} → {$nuevo->name}", $filas[0]["detalle"][0]);
+        $this->assertSame("Responsable saliente: quedó como colaborador", $filas[0]["detalle"][1]);
     }
 }

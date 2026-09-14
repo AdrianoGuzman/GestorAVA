@@ -5,7 +5,10 @@
     <title>{{ $tarea->codigo }}</title>
     <style>
         @page { margin: 30px 34px; }
-        body { font-family: Helvetica, Arial, sans-serif; color: #2D3238; font-size: 11px; }
+        /* DejaVu Sans (viene con dompdf) en vez de Helvetica: Helvetica no trae el
+           glifo de "→" que usan las líneas de detalle del historial (RF-16/24 D2)
+           y dompdf lo reemplaza por "?" en silencio, sin avisar del glifo faltante. */
+        body { font-family: 'DejaVu Sans', sans-serif; color: #2D3238; font-size: 11px; }
 
         .header { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
         .header td { vertical-align: middle; }
@@ -101,7 +104,7 @@
                     <th>Fecha</th>
                     <th>Usuario</th>
                     <th>Evento</th>
-                    <th>Motivo</th>
+                    <th>Detalle</th>
                 </tr>
             </thead>
             <tbody>
@@ -110,7 +113,13 @@
                         <td>{{ $evento['fecha'] }}</td>
                         <td>{{ $evento['usuario'] }}</td>
                         <td>{{ $evento['evento'] }}</td>
-                        <td>{{ $evento['motivo'] }}</td>
+                        <td>
+                            @foreach ($evento['detalle'] as $linea)
+                                {{ $linea }}@if (! $loop->last)
+                                    <br>
+                                @endif
+                            @endforeach
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

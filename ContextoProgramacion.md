@@ -357,14 +357,19 @@ El PDF (`resources/views/pdf/tarea.blade.php`, dompdf) usa el mismo esquema de c
 lleva el isotipo AVA (`public/images/logo-ava.png`, recortado del PNG oficial en
 `CONTEXTO/ENTREGA FINAL/Logotipo & Isotipo/`).
 
-**Alcance deliberadamente más simple que el timeline interactivo**: la tabla de historial
-exportada muestra fecha/usuario/evento/motivo, sin el detalle campo-por-campo ("antes →
-después") que sí tiene `historial-timeline.tsx` (ver la decisión de "Idea A" más abajo) --
-replicar esa lógica de diff en PHP para PDF y Excel es una extensión razonable a futuro si
-hace falta, pero se dejó fuera de este primer alcance para no triplicar la misma lógica
-(TS + PDF + Excel) de una sola vez. `TipoEvento::label()`, `EstadoTarea::label()` y
-`PrioridadTarea::label()` (nuevos métodos en los enums) son la única pieza que ya comparten
-frontend y backend -- mismo texto que `ETIQUETAS_EVENTO`/`ESTADO_TAREA_LABELS`/
+**Actualización (Franco, 13-09-2026 D2): "igual de detallado" -- se sumó el mismo detalle
+campo-por-campo que ya tiene `historial-timeline.tsx`.** `ExportacionTareaService::detalles()`
+es un port a PHP de `construirDetalles()`/`diffCampos()` del frontend (mismos campos, mismos
+truncados a 50-60 caracteres, misma resolución de `responsable_anterior_id`/`dueno_id` a
+nombre) -- **si esa lógica cambia en el frontend, hay que actualizar las dos** (no hay una
+sola fuente de verdad entre TS y PHP todavía; se evaluó y no valía la pena la abstracción
+extra solo para 2 consumidores). Cada fila de historial trae una lista de líneas (motivo +
+diffs), unidas con `<br>` en los Blade de PDF/Excel. En el Excel, `TareaExport` fija anchos de
+columna (`WithColumnWidths`, no `ShouldAutoSize` -- con contenido multilínea el autosize deja
+una columna absurda) y activa `wrapText` con un evento `AfterSheet` para que el detalle se lea
+en varias líneas dentro de la celda en vez de cortarse. `TipoEvento::label()`, `EstadoTarea::
+label()` y `PrioridadTarea::label()` (nuevos métodos en los enums) son la única pieza que ya
+comparten frontend y backend -- mismo texto que `ETIQUETAS_EVENTO`/`ESTADO_TAREA_LABELS`/
 `PRIORIDAD_TAREA_LABELS` en el frontend, a mano por ahora (no hay generación automática).
 
 **RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no

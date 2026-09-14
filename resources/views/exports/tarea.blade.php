@@ -57,14 +57,20 @@
             <td style="background-color:#ECF3E5;font-weight:bold;">FECHA</td>
             <td style="background-color:#ECF3E5;font-weight:bold;">USUARIO</td>
             <td style="background-color:#ECF3E5;font-weight:bold;">EVENTO</td>
-            <td style="background-color:#ECF3E5;font-weight:bold;">MOTIVO</td>
+            <td style="background-color:#ECF3E5;font-weight:bold;">DETALLE</td>
         </tr>
         @foreach ($historial as $evento)
             <tr>
                 <td>{{ $evento['fecha'] }}</td>
                 <td>{{ $evento['usuario'] }}</td>
                 <td>{{ $evento['evento'] }}</td>
-                <td>{{ $evento['motivo'] }}</td>
+                <td style="vertical-align:top;">
+                    @foreach ($evento['detalle'] as $linea)
+                        {{ $linea }}@if (! $loop->last)
+                            <br>
+                        @endif
+                    @endforeach
+                </td>
             </tr>
         @endforeach
     @endif
