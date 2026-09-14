@@ -53,6 +53,18 @@ class HandleInertiaRequests extends Middleware
                 'notificacionesNoLeidas' => $request->user()?->notificacionesRecibidas()->where('leida', false)->count() ?? 0,
                 'puedeEliminarUsuarios' => $request->user()?->nivel_jerarquico?->puedeEliminarUsuarios() ?? false,
             ],
+            // PermisoDenegadoException::render() y Controller::exito() flashean
+            // esto (back()->with()) -- sin compartirlo, esos mensajes quedaban
+            // en la sesion sin que ninguna vista los leyera nunca. "error" lo
+            // escucha FlashToaster en cualquier pagina (poco frecuente, siempre
+            // vale la pena mostrarlo); "success" lo consume useAccionTarea al
+            // vuelo de cada peticion, no un listener global -- si no, acciones
+            // de alta frecuencia como marcar un item de checklist mostrarian un
+            // toast en cada click.
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ]);
     }
 }

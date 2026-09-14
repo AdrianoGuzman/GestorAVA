@@ -32,6 +32,8 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    /** PermisoDenegadoException::render() y Controller::exito() flashean esto -- ver flash-toaster.tsx. */
+    flash: { success: string | null; error: string | null };
     [key: string]: unknown;
 }
 

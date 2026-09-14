@@ -1,4 +1,5 @@
 import { TareaModalContext } from '@/components/tareas/tarea-modal-context';
+import { toast } from '@/hooks/use-toast';
 import { router } from '@inertiajs/react';
 import axios, { AxiosError } from 'axios';
 import { useContext, useState } from 'react';
@@ -12,6 +13,13 @@ interface OpcionesAccionTarea {
     preserveScroll?: boolean;
     /** Necesario del lado de Inertia para mandar un FormData (subida de archivos). */
     forceFormData?: boolean;
+    /**
+     * Sin toast de exito -- para acciones de alta frecuencia (marcar un item
+     * de checklist, agregar/editar/eliminar un paso) donde un toast en cada
+     * click seria puro ruido. El resto de las acciones (crear/editar tarea,
+     * reasignar, completar, cancelar, etc.) sí lo muestran por defecto.
+     */
+    silencioso?: boolean;
 }
 
 type Datos = Record<string, unknown> | FormData;
@@ -50,7 +58,13 @@ export function useAccionTarea() {
             router[metodo](url, datos as never, {
                 preserveScroll: opciones.preserveScroll ?? true,
                 forceFormData: opciones.forceFormData,
-                onSuccess: () => opciones.onSuccess?.(),
+                onSuccess: (page) => {
+                    const mensaje = (page.props as { flash?: { success?: string | null } }).flash?.success;
+                    if (!opciones.silencioso && mensaje) {
+                        toast({ variant: 'success', title: mensaje });
+                    }
+                    opciones.onSuccess?.();
+                },
                 onError: (erroresRecibidos) => {
                     const planos = erroresRecibidos as Record<string, string>;
                     setErrors(planos);
@@ -72,8 +86,13 @@ export function useAccionTarea() {
             // si soltaramos el optimismo apenas termina la mutacion, por un
             // instante se veria el dato VIEJO (el refetch todavia no llego),
             // y el checkbox parpadearia marcado -> desmarcado -> marcado.
-            .then(() => contexto.refrescar())
-            .then(() => opciones.onSuccess?.())
+            .then((respuesta) => contexto.refrescar().then(() => respuesta.data?.message as string | undefined))
+            .then((mensaje) => {
+                if (!opciones.silencioso && mensaje) {
+                    toast({ variant: 'success', title: mensaje });
+                }
+                opciones.onSuccess?.();
+            })
             .catch((error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>) => {
                 // onError se llama SIEMPRE que la accion no se concreto (422 de
                 // validacion, 403 de permiso, error de red, etc.) -- si no,

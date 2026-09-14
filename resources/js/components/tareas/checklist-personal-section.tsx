@@ -42,7 +42,7 @@ export function ChecklistPersonalSection({
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        agregar.enviar('post', route('tareas.checklist-personal.store', tareaId), data, { onSuccess: () => reset() });
+        agregar.enviar('post', route('tareas.checklist-personal.store', tareaId), data, { onSuccess: () => reset(), silencioso: true });
     };
 
     const alternar = (item: ChecklistPersonalItem) => {
@@ -55,6 +55,7 @@ export function ChecklistPersonalSection({
             {
                 onSuccess: () => quitarOptimista(item.id),
                 onError: () => quitarOptimista(item.id),
+                silencioso: true,
             },
         );
     };
@@ -67,6 +68,7 @@ export function ChecklistPersonalSection({
             route('tareas.checklist-personal.destroy', [tareaId, item.id]),
             {},
             {
+                silencioso: true,
                 onError: () =>
                     setEliminadosOptimista((prev) => {
                         const siguiente = new Set(prev);
