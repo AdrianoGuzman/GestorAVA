@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { stringAFecha } from '@/components/ui/date-picker-button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     ATRASADA_BADGE_CLASSES,
@@ -67,15 +68,21 @@ const TABS: { value: Tab; label: string; icono: typeof ListTodo }[] = [
     { value: 'metricas', label: 'Panel de métricas', icono: Gauge },
 ];
 
+/**
+ * `fecha` llega como "yyyy-MM-dd" -- parsearla con `new Date(fecha)` directo
+ * la interpreta como medianoche UTC y en un navegador con huso horario
+ * negativo (Chile, UTC-3/4) se corre un dia hacia atras al comparar contra
+ * "hoy" en hora local. Mismo bug que documenta `claveFecha` mas abajo.
+ */
 function esManana(fecha: string): boolean {
     const manana = new Date();
     manana.setDate(manana.getDate() + 1);
-    const objetivo = new Date(fecha);
+    const objetivo = stringAFecha(fecha.slice(0, 10));
     return manana.toDateString() === objetivo.toDateString();
 }
 
 function formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase();
+    return stringAFecha(fecha.slice(0, 10)).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase();
 }
 
 /** Idea D: quien toco la tarea por ultima vez y cuando, sin tener que abrirla. */
