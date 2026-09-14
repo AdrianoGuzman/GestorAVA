@@ -1,7 +1,7 @@
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Button } from '@/components/ui/button';
-import { circuloOpcionClasses, DatePickerButton } from '@/components/ui/date-picker-button';
+import { circuloOpcionClasses, DatePickerButton, stringAFecha } from '@/components/ui/date-picker-button';
 import { Input } from '@/components/ui/input';
 import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ function iniciales(nombre: string): string {
 }
 
 function formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleDateString('es-CL');
+    return stringAFecha(fecha.slice(0, 10)).toLocaleDateString('es-CL');
 }
 
 function estaVencido(item: ChecklistItem): boolean {

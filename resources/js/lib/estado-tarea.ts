@@ -1,3 +1,4 @@
+import { stringAFecha } from '@/components/ui/date-picker-button';
 import type { EstadoTarea, PrioridadTarea, RolUsuarioTarea } from '@/types/tarea';
 
 /**
@@ -80,7 +81,7 @@ export function fechaMinimaCompromiso(): string {
  * calculo contra un limite horario configurado.
  */
 export function calcularHorasAtrasoEntrega(fechaCompromiso: string, completadaEn: string): number {
-    const compromiso = new Date(fechaCompromiso);
+    const compromiso = stringAFecha(fechaCompromiso.slice(0, 10));
     compromiso.setHours(0, 0, 0, 0);
     const completada = new Date(completadaEn);
 

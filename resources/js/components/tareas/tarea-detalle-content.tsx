@@ -12,6 +12,7 @@ import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
 import { Button } from '@/components/ui/button';
+import { stringAFecha } from '@/components/ui/date-picker-button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { calcularHorasAtrasoEntrega, ENTREGADA_CON_ATRASO_BADGE_CLASSES, formatearDuracionAtraso, ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
@@ -49,7 +50,7 @@ export interface TareaDetalleContentProps {
 
 function formatearFecha(fecha: string | null): string {
     if (!fecha) return '—';
-    return new Date(fecha).toLocaleDateString('es-CL');
+    return stringAFecha(fecha.slice(0, 10)).toLocaleDateString('es-CL');
 }
 
 /** Plazo = diferencia entre fecha_inicio y fecha_compromiso (fecha término). */
