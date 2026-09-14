@@ -149,7 +149,11 @@ class MisTareasTest extends TestCase
             "estado" => EstadoTarea::Pendiente,
         ]);
 
-        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+        // Sin esto, "completada" queda fuera por el default de estados
+        // activos y los contadores no reflejarian las 3 tareas creadas.
+        $response = $this->actingAs($usuario)
+            ->get("/mis-tareas?estado[]=pendiente&estado[]=en_progreso&estado[]=completada")
+            ->assertOk();
 
         $response->assertInertia(fn ($page) => $page
             ->where("contadores.total", 3)
@@ -157,6 +161,51 @@ class MisTareasTest extends TestCase
             ->where("contadores.en_progreso", 1)
             ->where("contadores.pendientes", 1)
             ->where("contadores.completadas", 1));
+    }
+
+    public function test_sin_filtro_de_estado_se_ocultan_completadas_y_canceladas_por_defecto(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $pendiente = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Pendiente,
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $pendiente->id)
+            ->where("filtros.estado", ["pendiente", "en_progreso"]));
+    }
+
+    public function test_filtro_de_estado_explicito_puede_traer_completadas(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $completada = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?estado[]=completada")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $completada->id));
     }
 
     public function test_filtro_rol_devuelve_solo_ese_rol(): void
@@ -269,6 +318,48 @@ class MisTareasTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->has("tareas", 1)
             ->where("tareas.0.id", $atrasada->id));
+    }
+
+    public function test_el_ultimo_evento_del_historial_viaja_con_cada_tarea(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $otro = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::TareaEditada,
+            "usuario_id" => $otro->id,
+            "datos_evento" => [],
+        ])->forceFill(["created_at" => now()->subDay()])->save();
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::Reasignacion,
+            "usuario_id" => $usuario->id,
+            "datos_evento" => [],
+        ])->forceFill(["created_at" => now()])->save();
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->where("tareas.0.ultimo_evento.tipo_evento", "reasignacion")
+            ->where("tareas.0.ultimo_evento.usuario.id", $usuario->id)
+            ->where("tareas.0.id", $tarea->id));
+    }
+
+    public function test_una_tarea_sin_historial_no_trae_ultimo_evento(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page->where("tareas.0.ultimo_evento", null));
     }
 
     public function test_filtro_unidad_organizacional(): void

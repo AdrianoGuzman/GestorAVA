@@ -20,10 +20,12 @@ import {
 } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, SharedData } from '@/types';
 import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, TareaResumen } from '@/types/tarea';
-import { Head, router } from '@inertiajs/react';
-import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Plus, Search, X } from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Gauge, ListFilter, ListTodo, Pencil, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -74,6 +76,27 @@ function esManana(fecha: string): boolean {
 
 function formatearFecha(fecha: string): string {
     return new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase();
+}
+
+/** Idea D: quien toco la tarea por ultima vez y cuando, sin tener que abrirla. */
+function etiquetaUltimaModificacion(tarea: TareaResumen, usuarioActualId: number): string {
+    const evento = tarea.ultimo_evento;
+    if (!evento) {
+        return '';
+    }
+
+    const cuando = formatDistanceToNow(new Date(evento.created_at), { addSuffix: true, locale: es });
+
+    if (evento.tipo_evento === 'creacion') {
+        return `Sin cambios desde su creación · ${cuando}`;
+    }
+
+    if (!evento.usuario) {
+        return `Actualizada automáticamente · ${cuando}`;
+    }
+
+    const quien = evento.usuario.id === usuarioActualId ? 'ti' : evento.usuario.name;
+    return `Editada por ${quien} · ${cuando}`;
 }
 
 /**
@@ -158,7 +181,23 @@ const VISTAS_CALENDARIO: { value: VistaCalendario; label: string }[] = [
     { value: 'anio', label: 'Año' },
 ];
 
-function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas: TareaResumen[]; onAbrirTarea: (id: number) => void }) {
+function DiaPopoverContenido({
+    dia,
+    tareas,
+    hoyClave,
+    onAbrirTarea,
+    onCrearEnFecha,
+}: {
+    dia: Date;
+    tareas: TareaResumen[];
+    hoyClave: string;
+    onAbrirTarea: (id: number) => void;
+    onCrearEnFecha: (dia: Date) => void;
+}) {
+    // Mismo requisito que en la celda vacia (RF-04, after:today): un dia de
+    // hoy o pasado no puede agendar nada nuevo.
+    const puedeCrearAqui = claveFecha(dia) > hoyClave;
+
     return (
         <>
             <div className="flex items-start justify-between">
@@ -182,18 +221,28 @@ function DiaPopoverContenido({ dia, tareas, onAbrirTarea }: { dia: Date; tareas:
                     ))}
                 </div>
             )}
+
+            {puedeCrearAqui && (
+                <PopoverClose asChild>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => onCrearEnFecha(dia)}>
+                        <Plus className="size-3.5" /> Nueva tarea
+                    </Button>
+                </PopoverClose>
+            )}
         </>
     );
 }
 
 /**
  * Toda la celda de un dia es clickeable. Si tiene tareas, abre el popover
- * con el detalle del dia. Si esta vacia y es estrictamente a futuro, abre
- * directo el dialog de "Nueva tarea" con la fecha precargada (no tiene
- * sentido mostrar un popover vacio ahi); un dia de hoy o pasado y vacio no
- * puede agendar nada nuevo (fecha_compromiso exige a futuro, RF-04), asi que
- * ahi si muestra el popover informativo en vez de abrir un formulario que
- * el backend va a rechazar.
+ * con el detalle del dia -- que a su vez ofrece "Nueva tarea" ahi mismo
+ * (DiaPopoverContenido) para poder agendar mas de una tarea el mismo dia,
+ * en vez de quedar limitado a la primera. Si esta vacia y es estrictamente
+ * a futuro, abre directo el dialog de "Nueva tarea" con la fecha precargada
+ * (no tiene sentido mostrar un popover vacio ahi); un dia de hoy o pasado y
+ * vacio no puede agendar nada nuevo (fecha_compromiso exige a futuro,
+ * RF-04), asi que ahi si muestra el popover informativo en vez de abrir un
+ * formulario que el backend va a rechazar.
  */
 function CeldaCalendario({
     dia,
@@ -232,7 +281,7 @@ function CeldaCalendario({
                     }
                 }}
                 className={cn(
-                    'group relative cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-verde-1/30',
+                    'group relative cursor-pointer text-left transition-all hover:border-verde-5 hover:bg-verde-1/30 active:scale-[0.98]',
                     className,
                 )}
             >
@@ -250,13 +299,13 @@ function CeldaCalendario({
                 <div
                     role="button"
                     tabIndex={0}
-                    className={cn('cursor-pointer text-left transition-colors hover:border-verde-5 hover:bg-muted/40', className)}
+                    className={cn('cursor-pointer text-left transition-all hover:border-verde-5 hover:bg-muted/40 active:scale-[0.98]', className)}
                 >
                     {children}
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-64 space-y-3 p-4" align="start">
-                <DiaPopoverContenido dia={dia} tareas={tareas} onAbrirTarea={onAbrirTarea} />
+                <DiaPopoverContenido dia={dia} tareas={tareas} hoyClave={hoyClave} onAbrirTarea={onAbrirTarea} onCrearEnFecha={onCrearEnFecha} />
             </PopoverContent>
         </Popover>
     );
@@ -279,7 +328,7 @@ function TareaBarra({
                 onAbrir(tarea.id);
             }}
             className={cn(
-                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-opacity hover:opacity-80',
+                'block w-full truncate rounded-md border px-2 py-1 text-left text-xs font-medium transition-all hover:opacity-80 active:scale-[0.97]',
                 atenuada && 'opacity-60',
                 claseBarraTarea(tarea),
                 // Prioridad alta se destaca con un borde izquierdo, sin pisar
@@ -455,10 +504,9 @@ function VistaDia({
     onCrearEnFecha: (dia: Date) => void;
 }) {
     const tareasDelDia = tareasPorDia.get(claveFecha(dia)) ?? [];
+    const puedeCrearAqui = claveFecha(dia) > hoyClave;
 
     if (tareasDelDia.length === 0) {
-        const puedeCrearAqui = claveFecha(dia) > hoyClave;
-
         return (
             <div className="space-y-3 py-8 text-center">
                 <p className="text-sm text-muted-foreground">No hay tareas para este día.</p>
@@ -472,10 +520,19 @@ function VistaDia({
     }
 
     return (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {tareasDelDia.map((tarea) => (
-                <TareaCard key={tarea.id} tarea={tarea} onAbrir={onAbrirTarea} />
-            ))}
+        <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {tareasDelDia.map((tarea) => (
+                    <TareaCard key={tarea.id} tarea={tarea} onAbrir={onAbrirTarea} />
+                ))}
+            </div>
+            {/* Antes solo se podia agendar en un dia vacio -- con tareas ya
+                cargadas no habia forma de sumar otra el mismo dia. */}
+            {puedeCrearAqui && (
+                <Button variant="outline" size="sm" onClick={() => onCrearEnFecha(dia)}>
+                    <Plus /> Nueva tarea
+                </Button>
+            )}
         </div>
     );
 }
@@ -738,16 +795,18 @@ function actualizarFiltros(filtros: FiltrosMisTareas, cambios: Partial<FiltrosMi
 }
 
 function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: number) => void }) {
+    const { auth } = usePage<SharedData>().props;
     const completada = tarea.estado === 'completada';
     const entregadaConAtraso = completada && tarea.esta_atrasada;
     const mostrarVencimiento = !completada && (tarea.esta_atrasada || esManana(tarea.fecha_compromiso));
+    const ultimaModificacion = etiquetaUltimaModificacion(tarea, auth.user.id);
 
     return (
         <button
             type="button"
             onClick={() => onAbrir(tarea.id)}
             className={cn(
-                'block w-full rounded-lg border border-border p-4 text-left transition-colors hover:border-verde-5 hover:bg-muted/30',
+                'block w-full rounded-lg border border-border p-4 text-left transition-all hover:border-verde-5 hover:bg-muted/30 active:scale-[0.99]',
                 completada && 'border-border/60 bg-muted/20',
             )}
         >
@@ -774,6 +833,12 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
                 </p>
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
             </div>
+
+            {ultimaModificacion && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Pencil className="size-3 shrink-0" /> {ultimaModificacion}
+                </p>
+            )}
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <EstadoBadge estado={tarea.estado} />
@@ -1054,23 +1119,31 @@ export default function MisTareasIndex(props: Props) {
                     ))}
                 </div>
 
-                {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
+                <div key={tab} className="animate-in fade-in-0 duration-200">
+                    {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
 
-                {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
+                    {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
 
-                {tab === 'metricas' && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Panel de métricas</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Próximamente.</p>
-                        </CardContent>
-                    </Card>
-                )}
+                    {tab === 'metricas' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Panel de métricas</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Próximamente.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </div>
 
-            <TareaDetalleModal tareaId={modal.tareaId} datos={modal.datos} cargando={modal.cargando} onClose={modal.cerrar} />
+            <TareaDetalleModal
+                tareaId={modal.tareaId}
+                datos={modal.datos}
+                cargando={modal.cargando}
+                onClose={modal.cerrar}
+                refrescar={modal.refrescar}
+            />
         </AppLayout>
     );
 }

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Tarea;
 
 use App\Enums\CategoriaAdjunto;
+use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
@@ -280,5 +281,25 @@ class AdjuntoTareaTest extends TestCase
         $response = $this->actingAs($responsablePadre)->get("/tareas/{$tareaPadre->id}")->assertOk();
 
         $response->assertInertia(fn ($page) => $page->has("adjuntosDeTareasHijas", 0));
+    }
+
+    public function test_no_se_pueden_adjuntar_archivos_a_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $archivo = UploadedFile::fake()->create("evidencia.pdf", 100, "application/pdf");
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/adjuntos", [
+            "archivo" => $archivo,
+            "categoria" => "evidencia",
+        ])->assertSessionHas("error");
+
+        $this->assertCount(0, $tarea->fresh()->adjuntos);
     }
 }

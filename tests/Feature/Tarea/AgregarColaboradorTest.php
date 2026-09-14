@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tarea;
 
+use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
@@ -135,5 +136,41 @@ class AgregarColaboradorTest extends TestCase
         ])->assertRedirect()->assertSessionHas("success");
 
         $this->assertFalse($tarea->fresh()->colaboradores->contains("id", $responsable->id));
+    }
+
+    public function test_no_se_pueden_agregar_colaboradores_a_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $candidato = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/colaboradores", [
+            "colaboradores" => [$candidato->id],
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->fresh()->colaboradores->contains("id", $candidato->id));
+    }
+
+    public function test_no_se_pueden_agregar_colaboradores_a_una_tarea_cancelada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $candidato = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/colaboradores", [
+            "colaboradores" => [$candidato->id],
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->fresh()->colaboradores->contains("id", $candidato->id));
     }
 }

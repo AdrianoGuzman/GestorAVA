@@ -7,6 +7,7 @@ use App\Models\Notificacion;
 use App\Models\Tarea;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use App\Notifications\DependenciaCreadaNotification;
 use App\Notifications\NoParticipacionReportadaNotification;
 use App\Notifications\ProblemaReportadoNotification;
 use App\Notifications\TareaAsignadaNotification;
@@ -77,6 +78,22 @@ class NotificacionService
         ]);
 
         $destinatario->notify(new NoParticipacionReportadaNotification($tarea, $quienReporta, $motivo));
+    }
+
+    /**
+     * RF-21/RF-22: avisa al responsable de la tarea padre que se creó una
+     * tarea hija (dependencia) a partir de su tarea. Sin notificación si el
+     * mismo responsable fue quien creó la dependencia.
+     */
+    public function notificarDependenciaCreada(User $responsablePadre, Tarea $tareaPadre, Tarea $tareaHija, User $creador): void
+    {
+        $responsablePadre->notificacionesRecibidas()->create([
+            "tarea_id" => $tareaPadre->id,
+            "tipo" => TipoNotificacion::DependenciaCreada,
+            "mensaje" => "{$creador->name} creó la tarea \"{$tareaHija->titulo}\" como dependencia de \"{$tareaPadre->titulo}\".",
+        ]);
+
+        $responsablePadre->notify(new DependenciaCreadaNotification($tareaPadre, $tareaHija, $creador));
     }
 
     /**

@@ -23,7 +23,9 @@ class ChecklistPersonalService
     {
         if (! $this->permisos->puedeUsarChecklistPersonal($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist personal."
+                $tarea->estado->esTerminal()
+                    ? "No se pueden agregar ítems a una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist personal."
             );
         }
 
@@ -37,6 +39,7 @@ class ChecklistPersonalService
     public function alternar(ChecklistPersonalItem $item, User $usuario): ChecklistPersonalItem
     {
         $this->verificarPropietario($item, $usuario);
+        $this->verificarNoTerminal($item);
 
         $item->update(["completado" => ! $item->completado]);
 
@@ -46,6 +49,7 @@ class ChecklistPersonalService
     public function eliminar(ChecklistPersonalItem $item, User $usuario): void
     {
         $this->verificarPropietario($item, $usuario);
+        $this->verificarNoTerminal($item);
 
         $item->delete();
     }
@@ -54,6 +58,21 @@ class ChecklistPersonalService
     {
         if ($item->usuario_id !== $usuario->id) {
             throw new PermisoDenegadoException("Este ítem de tu checklist personal no te pertenece.");
+        }
+    }
+
+    /**
+     * A diferencia de agregar() (que pasa por puedeUsarChecklistPersonal),
+     * marcar/eliminar un item ya existente solo depende de ser su dueño --
+     * el estado terminal se valida aparte aca (13-09-2026) para que ni el
+     * dueño pueda seguir tocando su checklist personal en una tarea cerrada.
+     */
+    private function verificarNoTerminal(ChecklistPersonalItem $item): void
+    {
+        if ($item->tarea->estado->esTerminal()) {
+            throw new PermisoDenegadoException(
+                "No se puede modificar el checklist personal de una tarea completada o cancelada."
+            );
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tarea;
 
+use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
 use App\Models\Tarea;
@@ -218,6 +219,42 @@ class ReasignarTareaTest extends TestCase
             "nuevo_responsable_id" => $nuevoResponsable->id,
             "es_excepcion" => true,
             "motivo_excepcion" => "Intento invalido",
+        ])->assertSessionHas("error");
+
+        $this->assertSame($responsable->id, $tarea->fresh()->responsable_id);
+    }
+
+    public function test_no_se_puede_reasignar_una_tarea_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $nuevoResponsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reasignar", [
+            "nuevo_responsable_id" => $nuevoResponsable->id,
+        ])->assertSessionHas("error");
+
+        $this->assertSame($responsable->id, $tarea->fresh()->responsable_id);
+    }
+
+    public function test_no_se_puede_reasignar_una_tarea_cancelada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $nuevoResponsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reasignar", [
+            "nuevo_responsable_id" => $nuevoResponsable->id,
         ])->assertSessionHas("error");
 
         $this->assertSame($responsable->id, $tarea->fresh()->responsable_id);

@@ -196,6 +196,18 @@ la misma tarjeta, no moverla ni renombrarla.
   responsable y seguimiento → tarea hija (RF-21/22), no un ítem de checklist.** Esta es la
   regla para decidir cuándo algo es un ítem de checklist vs. cuándo debería ser una tarea
   dependiente completa.
+- **Ajuste 13-09-2026 (Franco): un ítem de checklist ahora puede tener `fecha_limite`
+  opcional**, ademas del dueño — se agregó `fecha_limite` (date, nullable) a
+  `checklist_items` (ver migración `2026_09_13_180000_add_fecha_limite_to_checklist_items_table`)
+  y se expone en `ChecklistItem::$fillable`/`$casts`. Se puede fijar solo al crear o editar el
+  ítem (`CrearChecklistItemRequest`/`EditarChecklistItemRequest`, `ChecklistService::crear()`/
+  `editar()`), sin permiso especial (a diferencia del dueño, que sí requiere
+  `puedeAsignarDuenoChecklist`) — cualquiera con `puedeUsarChecklist` puede ponerla. Al crear
+  exige `after:today` (igual que `fecha_compromiso` de una tarea); al editar no, mismo motivo
+  que `ActualizarTareaRequest`: no forzar mover una fecha ya vencida solo por corregir el
+  texto. Esto relaja un poco la regla de "checklist = binario" de arriba, pero sigue sin
+  responsable propio con seguimiento de estado (eso sigue siendo terreno de tarea hija) —
+  es solo una fecha de referencia, no una fecha de compromiso con las mismas implicancias.
 
 **Fix de permisos aplicado por Franco (11-09-2026) sobre `ChecklistController`/`ChecklistService`:**
 el backend original no tenía ningún control de acceso (cualquier usuario autenticado podía
@@ -240,6 +252,132 @@ solicitado. Si el equipo decide que sí debería bloquearse, es un cambio chico 
 misma consulta a `tareasHijas()` en `CancelacionService::cancelar()`), pero no se hizo sin que
 alguien lo pida explícitamente.
 
+**Decisión explícita (Franco, 13-09-2026): la línea de tiempo de "Actividad" ahora muestra
+qué cambió en cada edición, no solo quién y cuándo.** El backend ya guardaba el antes/después
+completo de varias acciones (`TareaService::actualizar()`, `ChecklistService::editar()`,
+`ReasignacionService::ejecutar()`) pero `historial-timeline.tsx` solo renderizaba el `motivo`
+cuando existía — el resto de `datos_evento` se descartaba en el render. `construirDetalles()`
+(en `historial-timeline.tsx`) arma esas líneas de detalle por tipo de evento:
+- `tarea_editada` / `checklist_item_editado`: diff campo por campo contra `datos_anteriores`,
+  mostrando **solo los campos que realmente cambiaron** (`diffCampos()`) — la preocupación de
+  Franco era que mostrar los 5 campos de una edición aunque solo se haya movido una fecha
+  satura la línea de tiempo sin aportar nada. Los textos largos (descripción, texto de una
+  subtarea) se truncan a ~50-60 caracteres.
+- `reasignacion` / `reasignacion_excepcional`: responsable anterior → nuevo, resolviendo el id
+  a nombre contra la lista completa de `usuarios` (ya se pasaba a `TareaDetalleContent`, solo
+  faltaba enhebrarla hasta el timeline). De paso se corrigió que el motivo de la excepción
+  (`motivo_excepcion`) no se mostraba nunca — el chequeo original solo miraba la clave `motivo`.
+- `colaborador_agregado` / `tarea_hija_creada`: quién se agregó / qué tarea hija se creó, dato
+  que el backend ya guardaba (`colaborador_id`, `titulo`) sin usarlo en ningún lado.
+
+Se agregó tracking de `fecha_limite` al historial de edición de una subtarea
+(`ChecklistItem::fecha_limite`, ver `ChecklistService::editar()`) porque antes solo quedaba
+registrado texto/dueño — un hueco real dado que el propósito de esto es justamente no perder
+cambios. Si en algún momento la lista de eventos por tarea crece tanto que estos detalles
+saturan igual (fue la preocupación inicial de Franco), la salida más simple es un toggle
+compacto/detallado en `HistorialInline`, no implementado todavía porque no hizo falta.
+
+**Decisión explícita (Franco, 13-09-2026): una tarea completada o cancelada es de solo
+lectura — no se puede hacer nada más que verla.** Primer intento (bloquear solo "agregar
+cosas nuevas" y dejar editar/marcar/eliminar lo existente) quedó corto: Franco encontró que un
+ítem de checklist con dueño se podía seguir marcando/desmarcando después de completar la tarea
+("el completar todavía deja seleccionar"), y aclaró que la regla real es más simple: **tarea
+terminal (`EstadoTarea::esTerminal()`) = de solo lectura, sin excepciones.**
+
+Una vez que `Tarea::estado` es terminal, esto queda bloqueado (rol correcto o no):
+- Editar la tarea (`puedeEditar`), reasignar responsable (`puedeReasignar`, incluida la
+  excepción RN-12 vía `puedeAutorizarExcepcion`).
+- Agregar colaboradores (`puedeAgregarColaborador`), crear tareas hijas (`puedeCrearTareaHija`).
+- Checklist compartido y personal completos — crear, editar, marcar/desmarcar, eliminar
+  (`puedeUsarChecklist`, `puedeUsarChecklistPersonal`, `puedeMarcarChecklistItem`). Importante:
+  el chequeo de dueño de un ítem (`puedeMarcarChecklistItem`) NO pasaba por
+  `puedeUsarChecklist`, así que el estado terminal se valida ahí aparte; mismo caso en
+  `ChecklistPersonalService::alternar()/eliminar()`, que solo validaban dueño del ítem.
+- Adjuntar archivos (`puedeAdjuntar`), reportar problema (`puedeReportarProblema`), avisar no
+  participación (`puedeReportarNoParticipacion`).
+- Cancelar: ya estaba bloqueado por el guard de estado en `CancelacionService`; lo nuevo es que
+  el botón "Cancelar" tampoco se muestra (`puedeMostrarCancelar`).
+
+Lo único que sigue andando sobre una tarea terminal es **ver** su info — la tarea, el
+checklist, los adjuntos, el historial, todo sigue siendo visible, solo no editable.
+
+Para `puedeCancelar`/`puedeCompletar`/`puedeEditar`, que ya tenían su propio guard de estado
+con mensaje específico en el service (`CancelacionService`, `FinalizacionService`,
+`TareaService::actualizar()`) y tests que esperan ese mensaje exacto (`assertSessionHasErrors`),
+NO se tocó el método base ni el orden de los checks — se agregó un método
+`puedeMostrar*` aparte (`puedeMostrarCancelar`, `puedeMostrarCompletar`, `puedeMostrarEditar`)
+usado solo para la UI, que combina el permiso de rol con el estado terminal. Para el resto
+(reasignar, colaboradores, tareas hijas, checklist, adjuntos, reportar problema/no
+participación), que no tenían ningún guard de estado previo, el chequeo de terminal se agregó
+directo al método `puedeX` — sirve a la vez de guard real y de flag para la UI.
+
+**Decisión explícita (Franco, 13-09-2026): en "Mis tareas" (RF-09), las tareas completadas y
+canceladas se ocultan por defecto del listado, pero nunca se archivan ni se eliminan.** AVA
+pidió trazabilidad fuerte, así que "mover a otra pantalla" o esconderlas sin salida no era
+opción — la solución fue cambiar el *default* del filtro de estado que ya existía, no agregar
+un concepto nuevo de archivo/historial. `MisTareasService::obtener()` aplica
+`ESTADOS_ACTIVOS_POR_DEFECTO` (`pendiente`, `en_progreso`) solo cuando la clave `estado` no
+viene en absoluto en `$filtros` (no cuando viene vacía — con Inertia ambos casos son
+indistinguibles en la query string, así que "Limpiar filtros" también cae en este default, a
+propósito). Los filtros efectivos se devuelven en `$resultado["filtros"]` y viajan al frontend
+sin cambios en `mis-tareas/index.tsx`: las chips "Pendiente"/"En progreso" del filtro de Estado
+(ya existente) quedan preseleccionadas solas, y ver las completadas es un clic en la chip
+"Completada" — no se agregó tab ni componente nuevo. El historial de eventos de cada tarea
+sigue intacto y visible en el detalle, sin tocar.
+
+**Decisión explícita (Franco, 13-09-2026): "Reportar problema" (RF-13) y "No puedo ser
+parte" ya no se ofrecen cuando el responsable es también el creador de la tarea.**
+Ambas acciones notifican "al otro extremo" (`ReporteProblemaService`/
+`NoParticipacionService::obtenerDestinatario()`): si reporta el responsable, le llega al
+creador; si reporta un colaborador, le llega al responsable. Cuando la misma persona es
+responsable y creador, ese destinatario es ella misma -- antes el service ya evitaba
+enviar la notificación en ese caso (`$destinatario->id !== $solicitante->id`), pero la
+acción seguía disponible y "funcionaba" sin avisarle a nadie, sin que quedara claro por
+qué. Ahora `PermisosService::mismaPersonaEnAmbosExtremos()` bloquea el permiso directamente
+(`puedeReportarProblema`/`puedeReportarNoParticipacion` devuelven `false`), así el botón ni
+aparece en el frontend (ambos ya estaban condicionados a esos permisos) y el intento por
+ruta directa devuelve un mensaje explicando la alternativa real: editar la tarea (si el
+problema es la definición) o reasignarla (si no podés seguir con ella). Un colaborador que
+además sea el creador SÍ puede seguir usando ambas acciones -- le llegan a un responsable
+distinto, no hay auto-notificación en ese caso.
+
+**Decisión explícita (Franco, 13-09-2026): exportar una tarea a PDF y Excel (trazabilidad
+"para llevar" fuera de la app).** `ExportarTareaController` (rutas `tareas.exportar-pdf` /
+`tareas.exportar-excel`, sin permiso propio -- quien puede abrir `/tareas/{tarea}` puede
+exportarla) arma las mismas 3 tablas para ambos formatos vía `ExportacionTareaService`
+(datos generales, subtareas -- solo el checklist compartido, "Mi checklist" es privado y no
+sale del registro de la tarea --, e historial): una sola fuente de verdad en vez de duplicar
+el armado de filas. El Excel usa `TareaExport implements FromView` (Maatwebsite) -- el Blade
+(`resources/views/exports/tarea.blade.php`) es una tabla HTML con estilos inline por celda,
+que Maatwebsite convierte en celdas reales de Excel (colores, fusión, autosize), no una
+imagen. Un vistazo real generado y revisado con openpyxl confirma que los colores de marca
+(`#A0F700` verde-5 para encabezados de sección, `#ECF3E5` verde-1 para encabezados de tabla)
+llegan igual que en las planillas de referencia de AVA (`CONTEXTO/Planillas excel AVA/*.xlsx`).
+El PDF (`resources/views/pdf/tarea.blade.php`, dompdf) usa el mismo esquema de colores y
+lleva el isotipo AVA (`public/images/logo-ava.png`, recortado del PNG oficial en
+`CONTEXTO/ENTREGA FINAL/Logotipo & Isotipo/`).
+
+**Actualización (Franco, 13-09-2026 D2): "igual de detallado" -- se sumó el mismo detalle
+campo-por-campo que ya tiene `historial-timeline.tsx`.** `ExportacionTareaService::detalles()`
+es un port a PHP de `construirDetalles()`/`diffCampos()` del frontend (mismos campos, mismos
+truncados a 50-60 caracteres, misma resolución de `responsable_anterior_id`/`dueno_id` a
+nombre) -- **si esa lógica cambia en el frontend, hay que actualizar las dos** (no hay una
+sola fuente de verdad entre TS y PHP todavía; se evaluó y no valía la pena la abstracción
+extra solo para 2 consumidores). Cada fila de historial trae una lista de líneas (motivo +
+diffs), unidas con `<br>` en los Blade de PDF/Excel. En el Excel, `TareaExport` fija anchos de
+columna (`WithColumnWidths`, no `ShouldAutoSize` -- con contenido multilínea el autosize deja
+una columna absurda) y activa `wrapText` con un evento `AfterSheet` para que el detalle se lea
+en varias líneas dentro de la celda en vez de cortarse. `TipoEvento::label()`, `EstadoTarea::
+label()` y `PrioridadTarea::label()` (nuevos métodos en los enums) son la única pieza que ya
+comparten frontend y backend -- mismo texto que `ETIQUETAS_EVENTO`/`ESTADO_TAREA_LABELS`/
+`PRIORIDAD_TAREA_LABELS` en el frontend, a mano por ahora (no hay generación automática).
+
+**RF-18 (duplicar tarea) fue removido por completo, no solo ocultado.** Franco decidió que no
+convenía como funcionalidad — se eliminaron `DuplicarTareaService`, `DuplicarTareaRequest`,
+`DuplicarTareaDialog`, la ruta `tareas/{tarea}/duplicar` y el flag `puedeDuplicar`. Si en algún
+momento se quiere retomar, hay que reconstruirlo desde cero (o desde el historial de git), no
+queda nada parcial dando vueltas.
+
 **Checklist personal** (`ChecklistPersonalItem`, distinto del checklist compartido de RF-23):
 ya está construido — privado, sin dueño que asignar, no bloquea nada, siempre disponible sin
 importar si hay colaboradores. Ver `ChecklistPersonalService.php`.
@@ -262,6 +400,35 @@ Reusar en vez de crear de nuevo:
 Dos conexiones/schemas en la misma Postgres: `usuarios` (tablas de dominio, conexión por
 defecto) y `laravel` (framework: cache, jobs, migrations, sessions). Ver `config/database.php`.
 Todo modelo de dominio nuevo debe declarar `protected $connection = "usuarios";`.
+
+## Docker (GestorAVA-docker) — bug conocido: permisos de storage/ (13-09-2026)
+
+**Si algo que escribe a disco (exportar PDF/Excel, subir un adjunto, o cualquier cosa nueva
+que use `Storage`/`storage_path()`) tira `Permission denied` en el navegador pero anduvo bien
+en un test o en `tinker`, es esto.**
+
+Causa: `storage/` y `bootstrap/cache/` viven en el bind mount (`../GestorAVA:/var/www/app`,
+ver `compose.yml`) -- el `chown www-data:www-data` que hace el `Dockerfile` corre sobre la
+imagen en build time, pero en tiempo de ejecución eso queda tapado por los archivos reales
+del host. `docker compose exec laravel-app <comando>` entra como **root** (no hay `USER` en
+el Dockerfile), así que cualquier comando que escriba algo nuevo ahí -- `composer test`,
+`artisan tinker`, etc. -- deja ese archivo `root:root`. `php-fpm` corre como `www-data` (ver
+`php-fpm.d/www.conf`) y no puede volver a escribirlo ni loguearlo (por eso el error a veces ni
+aparece en `storage/logs/laravel.log` -- Laravel tampoco puede escribir el log).
+
+**Arreglo manual si te pasa:**
+```bash
+docker compose exec laravel-app sh -c "chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
+```
+
+**Arreglo permanente (ya aplicado en la copia de Franco, pero `GestorAVA-docker` NO es un
+repo git -- si tu carpeta Docker es una copia separada, tenés que aplicarlo vos también):**
+`php/entrypoint.sh` reaplica ese chown/chmod cada vez que el contenedor arranca, antes de
+levantar `php-fpm`/el worker. Wireado en `php/Dockerfile` (`ENTRYPOINT ["entrypoint.sh"]`,
+`CMD ["php-fpm"]`) -- aplica a los 4 contenedores que comparten ese Dockerfile (`laravel-app`
+y los 3 workers). Después de copiarlo hay que reconstruir: `docker compose build laravel-app
+worker-schedule worker-cola-normal worker-cola-pesada` y `docker compose up -d --force-recreate`
+esos mismos servicios.
 
 ## Tests
 

@@ -1,12 +1,14 @@
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { DatePickerButton } from '@/components/ui/date-picker-button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { fechaMinimaCompromiso, PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
+import { PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { SharedData } from '@/types';
 import type { PrioridadTarea } from '@/types/tarea';
 import { useForm, usePage } from '@inertiajs/react';
@@ -48,7 +50,8 @@ export function CrearTareaDialog({
     const setOpen = onOpenChange ?? setOpenInterno;
     const [responsable, setResponsable] = useState<Persona | null>(null);
     const [colaboradores, setColaboradores] = useState<Persona[]>([]);
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { enviar, processing, errors } = useAccionTarea();
+    const { data, setData, reset } = useForm({
         titulo: '',
         descripcion: '',
         fecha_inicio: '',
@@ -84,8 +87,7 @@ export function CrearTareaDialog({
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), {
-            preserveScroll: true,
+        enviar('post', tareaPadreId ? route('tareas.hijas.store', tareaPadreId) : route('tareas.store'), data, {
             onSuccess: () => {
                 setOpen(false);
                 setResponsable(null);
@@ -132,25 +134,25 @@ export function CrearTareaDialog({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="fecha_inicio">Fecha inicio (opcional)</Label>
-                                <Input
-                                    id="fecha_inicio"
-                                    type="date"
-                                    value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                <Label>Fecha inicio (opcional)</Label>
+                                <DatePickerButton
+                                    label="Elegir fecha"
+                                    valor={data.fecha_inicio}
+                                    onChange={(valor) => setData('fecha_inicio', valor)}
+                                    className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_inicio && <p className="text-sm text-rojo-1">{errors.fecha_inicio}</p>}
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="fecha_compromiso">Fecha término</Label>
-                                <Input
-                                    id="fecha_compromiso"
-                                    type="date"
-                                    min={data.fecha_inicio && data.fecha_inicio > fechaMinimaCompromiso() ? data.fecha_inicio : fechaMinimaCompromiso()}
-                                    value={data.fecha_compromiso}
-                                    onChange={(e) => setData('fecha_compromiso', e.target.value)}
-                                    required
+                                <Label>Fecha término</Label>
+                                <DatePickerButton
+                                    label="Elegir fecha"
+                                    valor={data.fecha_compromiso}
+                                    onChange={(valor) => setData('fecha_compromiso', valor)}
+                                    soloFuturo
+                                    minFecha={data.fecha_inicio || undefined}
+                                    className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
                             </div>

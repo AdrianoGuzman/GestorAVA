@@ -22,10 +22,13 @@ class ChecklistService
         string $texto,
         ?User $dueno,
         User $usuario,
+        ?string $fechaLimite = null,
     ): ChecklistItem {
         if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $tarea->estado->esTerminal()
+                    ? "No se pueden agregar ítems al checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 
@@ -37,11 +40,12 @@ class ChecklistService
 
         $this->validarDueno($tarea, $dueno);
 
-        return DB::connection("usuarios")->transaction(function () use ($tarea, $texto, $dueno, $usuario) {
+        return DB::connection("usuarios")->transaction(function () use ($tarea, $texto, $dueno, $usuario, $fechaLimite) {
             $item = $tarea->checklistItems()->create([
                 "texto" => $texto,
                 "completado" => false,
                 "dueno_id" => $dueno?->id,
+                "fecha_limite" => $fechaLimite,
             ]);
 
             $this->historial->registrar(
@@ -64,12 +68,15 @@ class ChecklistService
         string $texto,
         ?User $dueno,
         User $usuario,
+        ?string $fechaLimite = null,
     ): ChecklistItem {
         $tarea = $item->tarea;
 
         if (! $this->permisos->puedeUsarChecklist($tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $tarea->estado->esTerminal()
+                    ? "No se puede editar el checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 
@@ -83,15 +90,17 @@ class ChecklistService
 
         $this->validarDueno($tarea, $dueno);
 
-        return DB::connection("usuarios")->transaction(function () use ($item, $texto, $dueno, $usuario, $tarea) {
+        return DB::connection("usuarios")->transaction(function () use ($item, $texto, $dueno, $usuario, $tarea, $fechaLimite) {
             $datosAnteriores = [
                 "texto" => $item->texto,
                 "dueno_id" => $item->dueno_id,
+                "fecha_limite" => $item->fecha_limite?->toDateString(),
             ];
 
             $item->update([
                 "texto" => $texto,
                 "dueno_id" => $dueno?->id,
+                "fecha_limite" => $fechaLimite,
             ]);
 
             $this->historial->registrar(
@@ -103,6 +112,7 @@ class ChecklistService
                     "datos_anteriores" => $datosAnteriores,
                     "texto" => $item->texto,
                     "dueno_id" => $item->dueno_id,
+                    "fecha_limite" => $item->fecha_limite?->toDateString(),
                 ],
             );
 
@@ -127,7 +137,9 @@ class ChecklistService
     ): ChecklistItem {
         if (! $this->permisos->puedeMarcarChecklistItem($item, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el dueño asignado de este ítem puede marcarlo o desmarcarlo."
+                $item->tarea->estado->esTerminal()
+                    ? "No se puede modificar el checklist de una tarea completada o cancelada."
+                    : "Solo el dueño asignado de este ítem puede marcarlo o desmarcarlo."
             );
         }
 
@@ -155,13 +167,16 @@ class ChecklistService
     {
         if (! $this->permisos->puedeUsarChecklist($item->tarea, $usuario)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable o un colaborador de la tarea puede usar el checklist."
+                $item->tarea->estado->esTerminal()
+                    ? "No se puede eliminar un ítem del checklist de una tarea completada o cancelada."
+                    : "Solo el responsable o un colaborador de la tarea puede usar el checklist."
             );
         }
 
         DB::connection("usuarios")->transaction(function () use ($item, $usuario) {
             $tarea = $item->tarea;
             $itemId = $item->id;
+            $texto = $item->texto;
 
             $item->delete();
 
@@ -171,6 +186,7 @@ class ChecklistService
                 $usuario,
                 [
                     "checklist_item_id" => $itemId,
+                    "texto" => $texto,
                 ],
             );
         });

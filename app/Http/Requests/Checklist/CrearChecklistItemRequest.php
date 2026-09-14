@@ -16,6 +16,7 @@ class CrearChecklistItemRequest extends FormRequest
         return [
             "texto" => ["required", "string", "max:255"],
             "dueno_id" => ["nullable", "integer", "exists:users,id"],
+            "fecha_limite" => ["nullable", "date", "after:today"],
         ];
     }
 }

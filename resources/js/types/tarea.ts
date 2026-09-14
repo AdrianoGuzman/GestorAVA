@@ -75,6 +75,7 @@ export interface ChecklistItem {
     completado: boolean;
     dueno_id: number | null;
     dueno: UsuarioTarea | null;
+    fecha_limite: string | null;
     created_at: string;
 }
 
@@ -85,6 +86,8 @@ export interface TareaHija {
     titulo: string;
     estado: EstadoTarea;
     responsable: UsuarioTarea;
+    fecha_compromiso: string;
+    esta_atrasada: boolean;
 }
 
 export interface TareaDetalle {
@@ -125,6 +128,8 @@ export interface TareaResumen {
     responsable: UsuarioTarea;
     unidad_organizacional: { id: number; nombre: string } | null;
     rol: NonNullable<RolUsuarioTarea>;
+    /** Ultimo evento del historial (Idea D): quien toco la tarea por ultima vez, sin abrirla. */
+    ultimo_evento: { tipo_evento: TipoEvento; usuario: UsuarioTarea | null; created_at: string } | null;
 }
 
 export interface ContadoresMisTareas {
@@ -162,5 +167,4 @@ export interface PermisosTarea {
     puedeAsignarDuenoChecklist: boolean;
     puedeCrearTareaHija: boolean;
     puedeEditar: boolean;
-    puedeDuplicar: boolean;
 }

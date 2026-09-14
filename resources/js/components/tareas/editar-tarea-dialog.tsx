@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DatePickerButton } from '@/components/ui/date-picker-button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { PrioridadTarea } from '@/types/tarea';
 import { useForm } from '@inertiajs/react';
@@ -33,101 +35,110 @@ export function EditarTareaDialog({
     prioridad: PrioridadTarea;
 }) {
     const [open, setOpen] = useState(false);
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, reset } = useForm({
         titulo,
         descripcion: descripcion ?? '',
         fecha_inicio: fechaInicio ? fechaInicio.slice(0, 10) : '',
         fecha_compromiso: fechaCompromiso.slice(0, 10),
         prioridad,
     });
+    const { enviar, processing, errors } = useAccionTarea();
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        patch(route('tareas.actualizar', tareaId), {
-            preserveScroll: true,
+        enviar('patch', route('tareas.actualizar', tareaId), data, {
             onSuccess: () => setOpen(false),
             onError: () => reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso', 'prioridad'),
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent>
-                <form onSubmit={submit}>
-                    <DialogHeader>
-                        <DialogTitle>Editar tarea</DialogTitle>
-                        <DialogDescription>Corregí el título, la descripción o las fechas. No cambia responsable ni colaboradores.</DialogDescription>
-                    </DialogHeader>
+        // modal={false}: desde que las fechas usan DatePickerButton (un
+        // Popover), este dialogo necesita el mismo modo no-modal que
+        // crear-tarea-dialog.tsx -- anidado dentro del modal grande de
+        // detalle de tarea, el focus-trap/scroll-lock de un Dialog modal de
+        // por medio deja el Popover visible pero inerte (no abre o no
+        // responde a clicks). NonModalOverlay repone el fondo difuminado que
+        // Radix deja de pintar en ese modo.
+        <>
+            <NonModalOverlay open={open} onClose={() => setOpen(false)} />
+            <Dialog open={open} onOpenChange={setOpen} modal={false}>
+                <DialogTrigger asChild>{trigger}</DialogTrigger>
+                <DialogContent>
+                    <form onSubmit={submit}>
+                        <DialogHeader>
+                            <DialogTitle>Editar tarea</DialogTitle>
+                            <DialogDescription>Corregí el título, la descripción o las fechas. No cambia responsable ni colaboradores.</DialogDescription>
+                        </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-titulo">Título</Label>
-                            <Input id="edit-titulo" value={data.titulo} onChange={(e) => setData('titulo', e.target.value)} required />
-                            {errors.titulo && <p className="text-sm text-rojo-1">{errors.titulo}</p>}
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-descripcion">Descripción</Label>
-                            <Textarea
-                                id="edit-descripcion"
-                                value={data.descripcion}
-                                onChange={(e) => setData('descripcion', e.target.value)}
-                            />
-                            {errors.descripcion && <p className="text-sm text-rojo-1">{errors.descripcion}</p>}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-fecha_inicio">Fecha inicio (opcional)</Label>
-                                <Input
-                                    id="edit-fecha_inicio"
-                                    type="date"
-                                    value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
-                                />
-                                {errors.fecha_inicio && <p className="text-sm text-rojo-1">{errors.fecha_inicio}</p>}
+                                <Label htmlFor="edit-titulo">Título</Label>
+                                <Input id="edit-titulo" value={data.titulo} onChange={(e) => setData('titulo', e.target.value)} required />
+                                {errors.titulo && <p className="text-sm text-rojo-1">{errors.titulo}</p>}
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-fecha_compromiso">Fecha término</Label>
-                                <Input
-                                    id="edit-fecha_compromiso"
-                                    type="date"
-                                    value={data.fecha_compromiso}
-                                    onChange={(e) => setData('fecha_compromiso', e.target.value)}
-                                    required
+                                <Label htmlFor="edit-descripcion">Descripción</Label>
+                                <Textarea
+                                    id="edit-descripcion"
+                                    value={data.descripcion}
+                                    onChange={(e) => setData('descripcion', e.target.value)}
                                 />
-                                {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
+                                {errors.descripcion && <p className="text-sm text-rojo-1">{errors.descripcion}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Fecha inicio (opcional)</Label>
+                                    <DatePickerButton
+                                        label="Elegir fecha"
+                                        valor={data.fecha_inicio}
+                                        onChange={(valor) => setData('fecha_inicio', valor)}
+                                        className="h-10 w-full justify-start text-sm"
+                                    />
+                                    {errors.fecha_inicio && <p className="text-sm text-rojo-1">{errors.fecha_inicio}</p>}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label>Fecha término</Label>
+                                    <DatePickerButton
+                                        label="Elegir fecha"
+                                        valor={data.fecha_compromiso}
+                                        onChange={(valor) => setData('fecha_compromiso', valor)}
+                                        className="h-10 w-full justify-start text-sm"
+                                    />
+                                    {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-prioridad">Prioridad</Label>
+                                <Select value={data.prioridad} onValueChange={(valor) => setData('prioridad', valor as PrioridadTarea)}>
+                                    <SelectTrigger id="edit-prioridad">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PRIORIDADES_ORDENADAS.map((opcion) => (
+                                            <SelectItem key={opcion} value={opcion}>
+                                                {PRIORIDAD_TAREA_LABELS[opcion]}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
                             </div>
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-prioridad">Prioridad</Label>
-                            <Select value={data.prioridad} onValueChange={(valor) => setData('prioridad', valor as PrioridadTarea)}>
-                                <SelectTrigger id="edit-prioridad">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {PRIORIDADES_ORDENADAS.map((opcion) => (
-                                        <SelectItem key={opcion} value={opcion}>
-                                            {PRIORIDAD_TAREA_LABELS[opcion]}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button type="submit" disabled={processing || data.titulo.trim() === '' || data.fecha_compromiso === ''}>
-                            <Pencil /> Guardar cambios
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                        <DialogFooter>
+                            <Button type="submit" disabled={processing || data.titulo.trim() === '' || data.fecha_compromiso === ''}>
+                                <Pencil /> Guardar cambios
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

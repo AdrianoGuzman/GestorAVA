@@ -8,6 +8,8 @@ use App\Enums\TipoEvento;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
+use App\Notifications\DependenciaCreadaNotification;
+use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\RefreshesDualSchemaDatabase;
 use Tests\TestCase;
 
@@ -22,6 +24,8 @@ class CrearTareaHijaTest extends TestCase
 
     public function test_el_responsable_puede_crear_una_tarea_hija_y_queda_registrado_en_el_historial_del_padre(): void
     {
+        Notification::fake();
+
         $obra = UnidadOrganizacional::factory()->create();
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
         $padre = Tarea::factory()->create([
@@ -43,10 +47,16 @@ class CrearTareaHijaTest extends TestCase
         $this->assertTrue(
             $padre->historial()->where("tipo_evento", TipoEvento::TareaHijaCreada)->exists()
         );
+
+        // El responsable de la tarea padre creo la propia dependencia -- no
+        // tiene sentido notificarse a si mismo (EP-20).
+        Notification::assertNothingSent();
     }
 
-    public function test_un_colaborador_puede_crear_una_tarea_hija(): void
+    public function test_un_colaborador_puede_crear_una_tarea_hija_y_se_notifica_al_responsable_del_padre(): void
     {
+        Notification::fake();
+
         $obra = UnidadOrganizacional::factory()->create();
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
         $colaborador = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -63,6 +73,8 @@ class CrearTareaHijaTest extends TestCase
         ])->assertRedirect()->assertSessionHas("success");
 
         $this->assertSame(1, Tarea::where("tarea_padre_id", $padre->id)->count());
+        Notification::assertSentTo($responsable, DependenciaCreadaNotification::class);
+        Notification::assertNotSentTo($colaborador, DependenciaCreadaNotification::class);
     }
 
     public function test_un_usuario_ajeno_no_puede_crear_una_tarea_hija(): void
@@ -78,6 +90,42 @@ class CrearTareaHijaTest extends TestCase
 
         $this->actingAs($ajeno)->post("/tareas/{$padre->id}/hijas", [
             "titulo" => "Tarea hija no autorizada",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertSessionHas("error");
+
+        $this->assertSame(0, Tarea::where("tarea_padre_id", $padre->id)->count());
+    }
+
+    public function test_no_se_pueden_crear_tareas_hijas_de_una_tarea_padre_completada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$padre->id}/hijas", [
+            "titulo" => "Tarea hija tardía",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertSessionHas("error");
+
+        $this->assertSame(0, Tarea::where("tarea_padre_id", $padre->id)->count());
+    }
+
+    public function test_no_se_pueden_crear_tareas_hijas_de_una_tarea_padre_cancelada(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $padre = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$padre->id}/hijas", [
+            "titulo" => "Tarea hija tardía",
             "fecha_compromiso" => now()->addDays(5)->toDateString(),
         ])->assertSessionHas("error");
 

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Tarea extends Model {
     use HasFactory;
@@ -78,6 +79,14 @@ class Tarea extends Model {
 
     public function historial(): HasMany {
         return $this->hasMany(HistorialTarea::class, "tarea_id");
+    }
+
+    /**
+     * Ultimo evento del historial, usado en el listado de "Mis tareas" para
+     * mostrar quien toco la tarea por ultima vez sin tener que abrirla.
+     */
+    public function ultimoEvento(): HasOne {
+        return $this->hasOne(HistorialTarea::class, "tarea_id")->latestOfMany();
     }
 
     public function notificaciones(): HasMany {

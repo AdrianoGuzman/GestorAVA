@@ -30,7 +30,7 @@ class MisTareasController extends Controller
         return Inertia::render("mis-tareas/index", [
             "tareas" => $resultado["tareas"],
             "contadores" => $resultado["contadores"],
-            "filtros" => $filtros,
+            "filtros" => $resultado["filtros"],
             "unidadesOrganizacionales" => UnidadOrganizacional::orderBy("nombre")->get(["id", "nombre"]),
             "usuarios" => User::select(["id", "nombre_1", "nombre_2", "apellido_1", "apellido_2", "email"])->get(),
         ]);

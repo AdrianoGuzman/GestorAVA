@@ -14,6 +14,14 @@ use Illuminate\Support\Collection;
 class MisTareasService
 {
     /**
+     * Sin filtro de estado explicito, se ocultan completada/cancelada por
+     * defecto (panel de trabajo, no historial) -- la trazabilidad que pidio
+     * AVA se preserva porque siguen ahi con un clic (chip "Completada" en el
+     * filtro de Estado), nunca se eliminan ni se mueven a otra pantalla.
+     */
+    private const ESTADOS_ACTIVOS_POR_DEFECTO = ["pendiente", "en_progreso"];
+
+    /**
      * RF-09: agrupa las tareas del usuario en 4 roles, sin duplicar una misma
      * tarea entre ellos, y las devuelve como una lista unica (cada tarea
      * marcada con el rol del que vino) para la vista de listado. "Delegadas
@@ -24,10 +32,17 @@ class MisTareasService
      * $filtros acepta: busqueda (string), estado (string[]), prioridad
      * (string[]), solo_atrasadas (bool), unidad_organizacional_id (int),
      * filtro_rol (string, limita el resultado a un solo rol -- usado por el
-     * filtro rapido del frontend).
+     * filtro rapido del frontend). Si "estado" no viene (clave ausente, no
+     * solo vacio), se aplica ESTADOS_ACTIVOS_POR_DEFECTO -- el resultado
+     * incluye los filtros efectivos bajo "filtros" para que el frontend
+     * refleje el default en los chips en vez de mostrarlos vacios.
      */
     public function obtener(User $usuario, array $filtros = []): array
     {
+        if (! array_key_exists("estado", $filtros)) {
+            $filtros["estado"] = self::ESTADOS_ACTIVOS_POR_DEFECTO;
+        }
+
         $filtroRol = $filtros["filtro_rol"] ?? null;
 
         // Los ids excluidos de "creadas por mi" se calculan SIN los filtros
@@ -63,7 +78,7 @@ class MisTareasService
         // cercana pero menor prioridad.
         $tareas = collect($roles)
             ->flatMap(function ($consulta, $rol) {
-                return $consulta()->with(["responsable", "unidadOrganizacional"])->get()
+                return $consulta()->with(["responsable", "unidadOrganizacional", "ultimoEvento.usuario"])->get()
                     ->each(fn (Tarea $tarea) => $tarea->rol = $rol);
             })
             ->sortBy([
@@ -74,6 +89,7 @@ class MisTareasService
 
         return [
             "tareas" => $tareas,
+            "filtros" => $filtros,
             "contadores" => [
                 "total" => $tareas->count(),
                 "atrasadas" => $tareas->where("esta_atrasada", true)->count(),

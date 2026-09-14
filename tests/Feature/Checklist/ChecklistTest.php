@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Checklist;
 
+use App\Enums\EstadoTarea;
 use App\Enums\TipoEvento;
 use App\Models\ChecklistItem;
 use App\Models\Tarea;
@@ -101,6 +102,32 @@ class ChecklistTest extends TestCase
         );
     }
 
+    public function test_editar_la_fecha_limite_registra_el_antes_y_despues_en_el_historial(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+            "texto" => "Paso con fecha",
+            "fecha_limite" => "2026-09-20",
+        ]);
+
+        $this->actingAs($usuario)
+            ->patch("/checklist/{$item->id}", [
+                "texto" => "Paso con fecha",
+                "fecha_limite" => "2026-09-25",
+            ])
+            ->assertRedirect();
+
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ChecklistItemEditado)->latest()->first();
+
+        $this->assertNotNull($evento);
+        $this->assertSame("2026-09-20", $evento->datos_evento["datos_anteriores"]["fecha_limite"]);
+        $this->assertSame("2026-09-25", $evento->datos_evento["fecha_limite"]);
+    }
+
     public function test_elimina_un_item_y_registra_el_historial(): void
     {
         $usuario = User::factory()->create();
@@ -109,6 +136,7 @@ class ChecklistTest extends TestCase
         ]);
         $item = ChecklistItem::factory()->create([
             "tarea_id" => $tarea->id,
+            "texto" => "Paso a eliminar",
         ]);
 
         $this->actingAs($usuario)
@@ -119,11 +147,12 @@ class ChecklistTest extends TestCase
             "id" => $item->id,
         ]);
 
-        $this->assertTrue(
-            $tarea->historial()
-                ->where("tipo_evento", TipoEvento::ChecklistItemEliminado)
-                ->exists()
-        );
+        $evento = $tarea->historial()->where("tipo_evento", TipoEvento::ChecklistItemEliminado)->first();
+
+        $this->assertNotNull($evento);
+        // El item ya no existe una vez borrado -- sin guardar el texto en el
+        // propio evento, el historial no podria decir que subtarea era.
+        $this->assertSame("Paso a eliminar", $evento->datos_evento["texto"]);
     }
 
     public function test_permite_asignar_como_dueno_al_responsable_de_la_tarea(): void
@@ -377,5 +406,134 @@ class ChecklistTest extends TestCase
         $this->assertDatabaseHas("checklist_items", [
             "id" => $item->id,
         ]);
+    }
+
+    public function test_crea_un_item_con_fecha_limite(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+
+        $manana = now()->addDay()->toDateString();
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+                "fecha_limite" => $manana,
+            ])
+            ->assertRedirect();
+
+        $item = ChecklistItem::firstOrFail();
+
+        $this->assertSame($manana, $item->fecha_limite->toDateString());
+    }
+
+    public function test_rechaza_fecha_limite_en_el_pasado_al_crear(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+                "fecha_limite" => now()->subDay()->toDateString(),
+            ])
+            ->assertSessionHasErrors("fecha_limite");
+    }
+
+    public function test_edita_la_fecha_limite_de_un_item(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+        ]);
+
+        $manana = now()->addDay()->toDateString();
+
+        $this->actingAs($usuario)
+            ->patch("/checklist/{$item->id}", [
+                "texto" => $item->texto,
+                "fecha_limite" => $manana,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame($manana, $item->fresh()->fecha_limite->toDateString());
+    }
+
+    public function test_no_se_pueden_agregar_items_a_una_tarea_completada(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+            ])
+            ->assertSessionHas("error");
+
+        $this->assertSame(0, ChecklistItem::count());
+    }
+
+    public function test_no_se_pueden_agregar_items_a_una_tarea_cancelada(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "estado" => EstadoTarea::Cancelada,
+        ]);
+
+        $this->actingAs($usuario)
+            ->post("/tareas/{$tarea->id}/checklist", [
+                "texto" => "Revisar instalación eléctrica",
+            ])
+            ->assertSessionHas("error");
+
+        $this->assertSame(0, ChecklistItem::count());
+    }
+
+    public function test_no_se_puede_marcar_un_item_de_una_tarea_completada(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+            "dueno_id" => $usuario->id,
+        ]);
+
+        $this->actingAs($usuario)
+            ->patch("/checklist/{$item->id}/marcar")
+            ->assertSessionHas("error");
+
+        $this->assertFalse($item->fresh()->completado);
+    }
+
+    public function test_no_se_puede_eliminar_un_item_de_una_tarea_completada(): void
+    {
+        $usuario = User::factory()->create();
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "estado" => EstadoTarea::Completada,
+        ]);
+        $item = ChecklistItem::factory()->create([
+            "tarea_id" => $tarea->id,
+        ]);
+
+        $this->actingAs($usuario)
+            ->delete("/checklist/{$item->id}")
+            ->assertSessionHas("error");
+
+        $this->assertDatabaseHas("checklist_items", ["id" => $item->id]);
     }
 }

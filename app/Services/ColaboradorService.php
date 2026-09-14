@@ -26,7 +26,9 @@ class ColaboradorService
     {
         if (! $this->permisos->puedeAgregarColaborador($tarea, $solicitante)) {
             throw new PermisoDenegadoException(
-                "Solo el responsable actual o un colaborador ya existente de la tarea puede agregar colaboradores."
+                $tarea->estado->esTerminal()
+                    ? "No se pueden agregar colaboradores a una tarea completada o cancelada."
+                    : "Solo el responsable actual o un colaborador ya existente de la tarea puede agregar colaboradores."
             );
         }
 

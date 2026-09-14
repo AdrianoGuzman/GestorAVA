@@ -17,10 +17,12 @@ class ChecklistItem extends Model {
         "texto",
         "completado",
         "dueno_id",
+        "fecha_limite",
     ];
 
     protected $casts = [
         "completado" => "boolean",
+        "fecha_limite" => "date",
     ];
 
     public function tarea(): BelongsTo {
