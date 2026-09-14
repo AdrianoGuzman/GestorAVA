@@ -96,8 +96,12 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
     return (
         <div className="flex w-full flex-1 flex-col">
             {/* Barra de acciones: separada del contenido, como el titulo+acciones
-                de Asana en vez de repartidas entre el header y una columna lateral. */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+                de Asana en vez de repartidas entre el header y una columna lateral.
+                pr-8: espacio para la "x" de cerrar del modal (DialogContent la
+                pone absolute top-4 right-4) -- sin este margen, el ultimo boton
+                de la fila (antes "Más acciones", ahora tambien "Exportar") queda
+                pegado justo donde cae esa "x". */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pr-8 pb-4">
                 <div className="flex items-center gap-2">
                     <h1 className="text-xl font-semibold text-foreground">{tarea.titulo}</h1>
                     {permisos.puedeEditar && (
