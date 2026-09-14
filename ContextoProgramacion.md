@@ -401,6 +401,35 @@ Dos conexiones/schemas en la misma Postgres: `usuarios` (tablas de dominio, cone
 defecto) y `laravel` (framework: cache, jobs, migrations, sessions). Ver `config/database.php`.
 Todo modelo de dominio nuevo debe declarar `protected $connection = "usuarios";`.
 
+## Docker (GestorAVA-docker) — bug conocido: permisos de storage/ (13-09-2026)
+
+**Si algo que escribe a disco (exportar PDF/Excel, subir un adjunto, o cualquier cosa nueva
+que use `Storage`/`storage_path()`) tira `Permission denied` en el navegador pero anduvo bien
+en un test o en `tinker`, es esto.**
+
+Causa: `storage/` y `bootstrap/cache/` viven en el bind mount (`../GestorAVA:/var/www/app`,
+ver `compose.yml`) -- el `chown www-data:www-data` que hace el `Dockerfile` corre sobre la
+imagen en build time, pero en tiempo de ejecución eso queda tapado por los archivos reales
+del host. `docker compose exec laravel-app <comando>` entra como **root** (no hay `USER` en
+el Dockerfile), así que cualquier comando que escriba algo nuevo ahí -- `composer test`,
+`artisan tinker`, etc. -- deja ese archivo `root:root`. `php-fpm` corre como `www-data` (ver
+`php-fpm.d/www.conf`) y no puede volver a escribirlo ni loguearlo (por eso el error a veces ni
+aparece en `storage/logs/laravel.log` -- Laravel tampoco puede escribir el log).
+
+**Arreglo manual si te pasa:**
+```bash
+docker compose exec laravel-app sh -c "chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
+```
+
+**Arreglo permanente (ya aplicado en la copia de Franco, pero `GestorAVA-docker` NO es un
+repo git -- si tu carpeta Docker es una copia separada, tenés que aplicarlo vos también):**
+`php/entrypoint.sh` reaplica ese chown/chmod cada vez que el contenedor arranca, antes de
+levantar `php-fpm`/el worker. Wireado en `php/Dockerfile` (`ENTRYPOINT ["entrypoint.sh"]`,
+`CMD ["php-fpm"]`) -- aplica a los 4 contenedores que comparten ese Dockerfile (`laravel-app`
+y los 3 workers). Después de copiarlo hay que reconstruir: `docker compose build laravel-app
+worker-schedule worker-cola-normal worker-cola-pesada` y `docker compose up -d --force-recreate`
+esos mismos servicios.
+
 ## Tests
 
 Ver [README.md](README.md#tests) — **siempre `composer test`**, nunca `php artisan test` directo
