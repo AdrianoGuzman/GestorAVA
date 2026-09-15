@@ -4,13 +4,14 @@ import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { TareaModalContext } from '@/components/tareas/tarea-modal-context';
 import { Button } from '@/components/ui/button';
+import { stringAFecha } from '@/components/ui/date-picker-button';
 import type { TareaHija } from '@/types/tarea';
 import { Link } from '@inertiajs/react';
 import { CalendarDays, Plus } from 'lucide-react';
 import { useContext } from 'react';
 
 function formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleDateString('es-CL');
+    return stringAFecha(fecha.slice(0, 10)).toLocaleDateString('es-CL');
 }
 
 /**
