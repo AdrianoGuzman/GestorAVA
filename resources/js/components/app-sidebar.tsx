@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ListTodo, Settings } from 'lucide-react';
+import { FolderKanban, ListTodo, Settings } from 'lucide-react';
 import AppLogo from './app-logo';
 
 /**
@@ -18,6 +18,11 @@ export function AppSidebar() {
             title: 'Mis tareas',
             url: route('mis-tareas.index'),
             icon: ListTodo,
+        },
+        {
+            title: 'Mis proyectos',
+            url: route('mis-proyectos.index'),
+            icon: FolderKanban,
         },
         ...(auth.puedeAdministrarEstructura
             ? [

@@ -58,10 +58,6 @@ class User extends Authenticatable {
         return $this->belongsToMany(Rol::class, "usuarios_tienen_roles", "id_usuario", "id_rol");
     }
 
-    public function proyectos(): BelongsToMany {
-        return $this->belongsToMany(Proyecto::class, "usuarios_tienen_proyectos", "id_usuario", "id_proyecto");
-    }
-
     public function unidadOrganizacional(): BelongsTo {
         return $this->belongsTo(UnidadOrganizacional::class, "unidad_organizacional_id");
     }

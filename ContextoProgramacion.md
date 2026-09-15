@@ -441,3 +441,58 @@ Ver [README.md](README.md#tests) — **siempre `composer test`**, nunca `php art
 - Integrar seguido desde `Dev` a la rama propia (mergear Dev→tu rama) para no divergir
   mucho y evitar conflictos grandes.
 - Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, etc.), commits chicos y enfocados.
+
+## Ideas para próximos sprints (anotadas 14-09-2026, no implementar en Sprint 1)
+
+Franco, en conversación con Monserrat (AVA) y revisión de las planillas de control de
+avance, salieron dos frentes nuevos que quedan fuera del alcance de Sprint 1
+(deadline 22-09-2026) pero que valen la pena registrar para no perderlos:
+
+- **Chat organizacional + IA que ayude a organizar tareas** — idea propia del equipo para
+  Sprint 3. Requiere pensar el modelo de mensajería/conversación y cómo se conecta con
+  las tareas existentes; no arrancar antes.
+- **Coordinación de reuniones dentro del software** — Monserrat coordina reuniones hoy a
+  mano por WhatsApp/correo (uno por uno, cruzando disponibilidad). Es un caso de uso real
+  y con demanda, pero: (a) sincronizar con Google Calendar real necesita credenciales OAuth
+  que Franco todavía no tiene armadas (ver dependencia ya anotada para la reunión del
+  14-09-2026), y (b) una mini-herramienta propia de propuesta de horarios + respuestas
+  (sin Google) es viable técnicamente pero es un módulo nuevo completo (dominio, tabla de
+  respuestas, notificaciones, UI), comparable en tamaño a la exportación PDF/Excel — no
+  entra con margen razonable en los días que quedan de Sprint 1. Candidato fuerte para
+  Sprint 3, junto con el chat/IA.
+
+## Proyecto y Sección (14-09-2026)
+
+Nueva capa por encima de `Tarea`, pedida por Franco tras revisar las planillas de AVA:
+agrupa tareas de una o varias unidades organizacionales bajo una misma iniciativa
+estratégica (ej. "Cultura preventiva"), calcado del nivel "Premisa"/"Grupo" de esas
+planillas.
+
+- **`Proyecto`** (`app/Models/Proyecto.php`): nombre, descripción, estado
+  (activo/cerrado -- "cerrar" no borra ni desvincula nada). **Reemplaza por completo** un
+  `Proyecto`/`usuarios_tienen_proyectos` viejo (centro de costos heredado de otro sistema
+  de AVA, 0 filas, sin uso real) que se eliminó vía migración -- si ves referencias a esos
+  nombres en un commit viejo, es ese scaffolding descartado, no este.
+- **`Seccion`** (`app/Models/Seccion.php`): agrupa tareas *dentro* de un proyecto por
+  objetivo, con un **peso (0-1)**. El avance del proyecto es el promedio ponderado del
+  avance de sus secciones (`ProyectoController::avanceProyecto()`), normalizado dividiendo
+  por la suma real de los pesos -- no hace falta que sumen exactamente 1. Una tarea sin
+  sección se ve igual (grupo "Sin sección") pero no entra en ese cálculo. Sin ninguna
+  sección todavía, cae al cálculo simple de siempre (completadas / no-canceladas) sobre
+  todas las tareas del proyecto.
+- El "avance" de una sección/proyecto hoy es ese cálculo simple -- un proxy hasta que se
+  defina el progreso ponderado por subtarea (tema todavía abierto, ver conversación sobre
+  las planillas de AVA).
+- **Permisos**: crear/editar/cerrar un Proyecto, crear/editar sus Secciones, y **asociar
+  una tarea a un proyecto/sección** (al crearla o editarla) están reservados a
+  Directorio/Gerencia (`NivelJerarquico::puedeAdministrarProyectos()`). El backend lo
+  refuerza aunque alguien salte la UI (`TareaService::campoSegunPermisoProyectos()`):
+  ignora el cambio en vez de rechazar toda la creación/edición.
+- Una tarea pertenece a **lo más un** proyecto y **lo más una** sección de ese proyecto
+  (validado: la sección debe pertenecer al proyecto elegido). Sin tabla pivote.
+- Nueva sección de sidebar "Mis proyectos" (visible para todos, como "Mis tareas");
+  filtro por proyecto en "Mis tareas" también abierto a todos (ver/filtrar no es lo mismo
+  que asignar).
+- El cambio de proyecto/sección de una tarea queda en el historial con el mismo nivel de
+  detalle que el resto ("Idea A"/"Idea B" del 13-09-2026) -- diff en `historial-timeline.tsx`
+  y su espejo en PHP `ExportacionTareaService.php`.

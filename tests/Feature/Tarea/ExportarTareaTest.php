@@ -5,6 +5,7 @@ namespace Tests\Feature\Tarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
 use App\Models\ChecklistItem;
+use App\Models\Proyecto;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
@@ -144,5 +145,41 @@ class ExportarTareaTest extends TestCase
 
         $this->assertSame("Responsable: {$anterior->name} → {$nuevo->name}", $filas[0]["detalle"][0]);
         $this->assertSame("Responsable saliente: quedó como colaborador", $filas[0]["detalle"][1]);
+    }
+
+    public function test_el_historial_exportado_resuelve_el_proyecto_a_nombre_en_una_edicion(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $proyecto = Proyecto::factory()->create(["nombre" => "Cultura preventiva"]);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::TareaEditada,
+            "usuario_id" => $responsable->id,
+            "datos_evento" => [
+                "datos_anteriores" => [
+                    "titulo" => $tarea->titulo,
+                    "descripcion" => $tarea->descripcion,
+                    "fecha_inicio" => null,
+                    "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                    "prioridad" => $tarea->prioridad->value,
+                    "proyecto_id" => null,
+                ],
+                "titulo" => $tarea->titulo,
+                "descripcion" => $tarea->descripcion,
+                "fecha_inicio" => null,
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "prioridad" => $tarea->prioridad->value,
+                "proyecto_id" => $proyecto->id,
+            ],
+        ]);
+        $tarea->load(["historial" => fn ($query) => $query->with("usuario")]);
+
+        $filas = app(ExportacionTareaService::class)->historial($tarea);
+
+        $this->assertSame("Proyecto: Sin proyecto → Cultura preventiva", $filas[0]["detalle"][0]);
     }
 }

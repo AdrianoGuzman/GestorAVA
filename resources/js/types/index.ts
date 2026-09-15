@@ -9,6 +9,8 @@ export interface Auth {
     notificacionesNoLeidas: number;
     /** Baja de usuarios: solo Directorio, ver NivelJerarquico::puedeEliminarUsuarios(). */
     puedeEliminarUsuarios: boolean;
+    /** Crear/editar/cerrar un Proyecto: Directorio y Gerencia, ver NivelJerarquico::puedeAdministrarProyectos(). */
+    puedeAdministrarProyectos: boolean;
 }
 
 export interface BreadcrumbItem {

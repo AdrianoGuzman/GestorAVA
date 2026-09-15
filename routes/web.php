@@ -3,9 +3,12 @@
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistPersonalController;
 use App\Http\Controllers\DependenciaController;
+use App\Http\Controllers\ExportarProyectoController;
 use App\Http\Controllers\ExportarTareaController;
 use App\Http\Controllers\MisTareasController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\ProyectoController;
+use App\Http\Controllers\SeccionController;
 use App\Http\Controllers\TareaController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +24,15 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('mis-tareas', [MisTareasController::class, 'index'])->name('mis-tareas.index');
+
+    Route::get('mis-proyectos', [ProyectoController::class, 'index'])->name('mis-proyectos.index');
+    Route::get('proyectos/{proyecto}', [ProyectoController::class, 'show'])->name('proyectos.show');
+    Route::post('proyectos', [ProyectoController::class, 'store'])->name('proyectos.store');
+    Route::patch('proyectos/{proyecto}', [ProyectoController::class, 'update'])->name('proyectos.update');
+    Route::post('proyectos/{proyecto}/secciones', [SeccionController::class, 'store'])->name('secciones.store');
+    Route::patch('secciones/{seccion}', [SeccionController::class, 'update'])->name('secciones.update');
+    Route::get('proyectos/{proyecto}/exportar-pdf', [ExportarProyectoController::class, 'pdf'])->name('proyectos.exportar-pdf');
+    Route::get('proyectos/{proyecto}/exportar-excel', [ExportarProyectoController::class, 'excel'])->name('proyectos.exportar-excel');
 
     Route::get('notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
     Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas'])->name('notificaciones.leer-todas');

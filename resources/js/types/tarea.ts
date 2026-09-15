@@ -90,6 +90,22 @@ export interface TareaHija {
     esta_atrasada: boolean;
 }
 
+/** Proyecto (agrupa tareas de varias unidades bajo una misma iniciativa estrategica). */
+export interface ProyectoResumen {
+    id: number;
+    nombre: string;
+    /** Acota las fechas de sus tareas (RN: toda tarea de un proyecto debe caer dentro de su plazo). */
+    fecha_inicio: string | null;
+    fecha_termino: string | null;
+}
+
+/** Sección dentro de un Proyecto (agrupa tareas por objetivo). */
+export interface SeccionResumen {
+    id: number;
+    nombre: string;
+    proyecto_id: number;
+}
+
 export interface TareaDetalle {
     id: number;
     titulo: string;
@@ -106,6 +122,8 @@ export interface TareaDetalle {
     responsable: UsuarioTarea;
     creador: UsuarioTarea;
     colaboradores: UsuarioTarea[];
+    proyecto: ProyectoResumen | null;
+    seccion: { id: number; nombre: string } | null;
     historial: HistorialEvento[];
     adjuntos: AdjuntoTarea[];
     checklist_items: ChecklistItem[];
@@ -150,6 +168,7 @@ export interface FiltrosMisTareas {
     prioridad?: PrioridadTarea[];
     solo_atrasadas?: boolean;
     unidad_organizacional_id?: number | null;
+    proyecto_id?: number | null;
     filtro_rol?: FiltroRolMisTareas;
 }
 

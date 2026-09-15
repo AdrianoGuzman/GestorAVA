@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
 use App\Models\HistorialTarea;
+use App\Models\Proyecto;
+use App\Models\Seccion;
 use App\Models\Tarea;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -34,6 +36,8 @@ class ExportacionTareaService
             "Responsable" => $tarea->responsable?->name ?? "—",
             "Colaboradores" => $tarea->colaboradores->isEmpty() ? "—" : $tarea->colaboradores->pluck("name")->implode(", "),
             "Creador" => $tarea->creador?->name ?? "—",
+            "Proyecto" => $tarea->proyecto?->nombre ?? "—",
+            "Sección" => $tarea->seccion?->nombre ?? "—",
             "Fecha inicio" => $tarea->fecha_inicio?->format("d-m-Y") ?? "—",
             "Fecha término" => $tarea->fecha_compromiso->format("d-m-Y"),
             "Descripción" => $tarea->descripcion ?: "—",
@@ -68,10 +72,12 @@ class ExportacionTareaService
         // etc.), no una columna real -- pluck() de query builder no lo ve y falla
         // en SQL. Hay que traer los modelos y recien ahi pluckear en PHP.
         $nombrePorId = User::all()->pluck("name", "id");
+        $proyectoPorId = Proyecto::all()->pluck("nombre", "id");
+        $seccionPorId = Seccion::all()->pluck("nombre", "id");
 
         return $tarea->historial
             ->reject(fn ($evento) => in_array($evento->tipo_evento, self::EVENTOS_OCULTOS, true))
-            ->map(function (HistorialTarea $evento) use ($nombrePorId) {
+            ->map(function (HistorialTarea $evento) use ($nombrePorId, $proyectoPorId, $seccionPorId) {
                 $lineas = [];
 
                 $motivo = $evento->datos_evento["motivo"] ?? $evento->datos_evento["motivo_excepcion"] ?? null;
@@ -79,7 +85,7 @@ class ExportacionTareaService
                     $lineas[] = "Motivo: {$motivo}";
                 }
 
-                array_push($lineas, ...$this->detalles($evento, $nombrePorId));
+                array_push($lineas, ...$this->detalles($evento, $nombrePorId, $proyectoPorId, $seccionPorId));
 
                 return [
                     "fecha" => $evento->created_at->format("d-m-Y H:i"),
@@ -93,10 +99,16 @@ class ExportacionTareaService
     }
 
     /** @return string[] */
-    private function detalles(HistorialTarea $evento, \Illuminate\Support\Collection $nombrePorId): array
-    {
+    private function detalles(
+        HistorialTarea $evento,
+        \Illuminate\Support\Collection $nombrePorId,
+        \Illuminate\Support\Collection $proyectoPorId,
+        \Illuminate\Support\Collection $seccionPorId,
+    ): array {
         $datos = $evento->datos_evento ?? [];
         $nombreDe = fn ($id) => is_int($id) ? ($nombrePorId[$id] ?? "Usuario #{$id}") : self::SIN_VALOR;
+        $proyectoDe = fn ($id) => $id === null ? "Sin proyecto" : ($proyectoPorId[$id] ?? "Proyecto #{$id}");
+        $seccionDe = fn ($id) => $id === null ? "Sin sección" : ($seccionPorId[$id] ?? "Sección #{$id}");
 
         return match ($evento->tipo_evento) {
             TipoEvento::TareaEditada => $this->diffCampos($datos["datos_anteriores"] ?? null, $datos, [
@@ -105,6 +117,8 @@ class ExportacionTareaService
                 ["fecha_inicio", "Fecha inicio", fn ($v) => $this->formatearFecha($v)],
                 ["fecha_compromiso", "Fecha término", fn ($v) => $this->formatearFecha($v)],
                 ["prioridad", "Prioridad", fn ($v) => $this->formatearPrioridad($v)],
+                ["proyecto_id", "Proyecto", fn ($v) => $proyectoDe($v)],
+                ["seccion_id", "Sección", fn ($v) => $seccionDe($v)],
             ]),
 
             TipoEvento::ChecklistItemEditado => $this->diffCampos($datos["datos_anteriores"] ?? null, $datos, [

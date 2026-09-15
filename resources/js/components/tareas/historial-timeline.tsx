@@ -4,7 +4,7 @@ import { DatePickerButton, stringAFecha } from '@/components/ui/date-picker-butt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PRIORIDAD_TAREA_LABELS } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
-import type { HistorialEvento, PrioridadTarea, TipoEvento } from '@/types/tarea';
+import type { HistorialEvento, PrioridadTarea, ProyectoResumen, SeccionResumen, TipoEvento } from '@/types/tarea';
 import { History } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -127,11 +127,18 @@ function diffCampos(
  * (ver TareaService::actualizar(), ChecklistService::editar(),
  * ReasignacionService::ejecutar()).
  */
-function construirDetalles(evento: HistorialEvento, nombrePorId: Map<number, string>): DetalleEvento[] {
+function construirDetalles(
+    evento: HistorialEvento,
+    nombrePorId: Map<number, string>,
+    proyectoPorId: Map<number, string>,
+    seccionPorId: Map<number, string>,
+): DetalleEvento[] {
     const datos = evento.datos_evento;
     if (!datos) return [];
 
     const nombreDe = (id: unknown): string => (typeof id === 'number' ? (nombrePorId.get(id) ?? `Usuario #${id}`) : SIN_VALOR);
+    const proyectoDe = (id: unknown): string => (id === null ? 'Sin proyecto' : (proyectoPorId.get(id as number) ?? `Proyecto #${id}`));
+    const seccionDe = (id: unknown): string => (id === null ? 'Sin sección' : (seccionPorId.get(id as number) ?? `Sección #${id}`));
 
     switch (evento.tipo_evento) {
         case 'tarea_editada': {
@@ -143,6 +150,8 @@ function construirDetalles(evento: HistorialEvento, nombrePorId: Map<number, str
                 { key: 'fecha_inicio', label: 'Fecha inicio', formatear: formatearFecha },
                 { key: 'fecha_compromiso', label: 'Fecha término', formatear: formatearFecha },
                 { key: 'prioridad', label: 'Prioridad', formatear: formatearPrioridad },
+                { key: 'proyecto_id', label: 'Proyecto', formatear: proyectoDe },
+                { key: 'seccion_id', label: 'Sección', formatear: seccionDe },
             ]);
         }
         case 'checklist_item_editado': {
@@ -186,9 +195,21 @@ function construirDetalles(evento: HistorialEvento, nombrePorId: Map<number, str
 }
 
 /** RF-24 D5 / RF-16: historial cronológico completo de eventos de la tarea. */
-export function HistorialTimeline({ eventos, usuarios }: { eventos: HistorialEvento[]; usuarios: Persona[] }) {
+export function HistorialTimeline({
+    eventos,
+    usuarios,
+    proyectos = [],
+    secciones = [],
+}: {
+    eventos: HistorialEvento[];
+    usuarios: Persona[];
+    proyectos?: ProyectoResumen[];
+    secciones?: SeccionResumen[];
+}) {
     const visibles = eventos.filter((evento) => !EVENTOS_OCULTOS_EN_TIMELINE.has(evento.tipo_evento));
     const nombrePorId = useMemo(() => new Map(usuarios.map((persona) => [persona.id, persona.name])), [usuarios]);
+    const proyectoPorId = useMemo(() => new Map(proyectos.map((proyecto) => [proyecto.id, proyecto.nombre])), [proyectos]);
+    const seccionPorId = useMemo(() => new Map(secciones.map((seccion) => [seccion.id, seccion.nombre])), [secciones]);
 
     if (visibles.length === 0) {
         return <p className="text-sm text-muted-foreground">Todavía no hay eventos registrados.</p>;
@@ -201,7 +222,7 @@ export function HistorialTimeline({ eventos, usuarios }: { eventos: HistorialEve
                 // (para no confundirlo con el motivo de una reasignacion normal, que
                 // no tiene), pero para mostrarlo es el mismo caso que el resto.
                 const motivo = evento.datos_evento?.motivo ?? evento.datos_evento?.motivo_excepcion;
-                const detalles = construirDetalles(evento, nombrePorId);
+                const detalles = construirDetalles(evento, nombrePorId, proyectoPorId, seccionPorId);
 
                 return (
                     <li key={evento.id} className="relative">
@@ -238,7 +259,17 @@ export function HistorialTimeline({ eventos, usuarios }: { eventos: HistorialEve
  * filtro de fecha y el orden quedan en una fila simple arriba del timeline,
  * sin overlay ni trigger.
  */
-export function HistorialInline({ eventos, usuarios }: { eventos: HistorialEvento[]; usuarios: Persona[] }) {
+export function HistorialInline({
+    eventos,
+    usuarios,
+    proyectos = [],
+    secciones = [],
+}: {
+    eventos: HistorialEvento[];
+    usuarios: Persona[];
+    proyectos?: ProyectoResumen[];
+    secciones?: SeccionResumen[];
+}) {
     const [desde, setDesde] = useState('');
     const [hasta, setHasta] = useState('');
     const [orden, setOrden] = useState<'reciente' | 'antigua'>('reciente');
@@ -310,7 +341,7 @@ export function HistorialInline({ eventos, usuarios }: { eventos: HistorialEvent
                 pagina entera) crece sin limite. Con esto el detalle de la tarea
                 siempre mide lo mismo, sin importar cuanta actividad acumule. */}
             <div className="mt-4 max-h-72 overflow-y-auto pr-1">
-                <HistorialTimeline eventos={eventosOrdenados} usuarios={usuarios} />
+                <HistorialTimeline eventos={eventosOrdenados} usuarios={usuarios} proyectos={proyectos} secciones={secciones} />
             </div>
         </div>
     );

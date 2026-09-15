@@ -31,8 +31,8 @@ class MisTareasService
      *
      * $filtros acepta: busqueda (string), estado (string[]), prioridad
      * (string[]), solo_atrasadas (bool), unidad_organizacional_id (int),
-     * filtro_rol (string, limita el resultado a un solo rol -- usado por el
-     * filtro rapido del frontend). Si "estado" no viene (clave ausente, no
+     * proyecto_id (int), filtro_rol (string, limita el resultado a un solo
+     * rol -- usado por el filtro rapido del frontend). Si "estado" no viene (clave ausente, no
      * solo vacio), se aplica ESTADOS_ACTIVOS_POR_DEFECTO -- el resultado
      * incluye los filtros efectivos bajo "filtros" para que el frontend
      * refleje el default en los chips en vez de mostrarlos vacios.
@@ -176,6 +176,10 @@ class MisTareasService
 
         if (! empty($filtros["unidad_organizacional_id"])) {
             $query->where("tareas.unidad_organizacional_id", $filtros["unidad_organizacional_id"]);
+        }
+
+        if (! empty($filtros["proyecto_id"])) {
+            $query->where("tareas.proyecto_id", $filtros["proyecto_id"]);
         }
 
         return $query;

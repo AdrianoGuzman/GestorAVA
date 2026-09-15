@@ -21,7 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
-import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, TareaResumen } from '@/types/tarea';
+import type { EstadoTarea, FiltroRolMisTareas, FiltrosMisTareas, PrioridadTarea, ProyectoResumen, SeccionResumen, TareaResumen } from '@/types/tarea';
 import { Head, router, usePage } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,6 +41,8 @@ interface Props {
     filtros: FiltrosMisTareas;
     unidadesOrganizacionales: { id: number; nombre: string }[];
     usuarios: Persona[];
+    proyectos: ProyectoResumen[];
+    secciones: SeccionResumen[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mis tareas', href: '/mis-tareas' }];
@@ -640,7 +642,19 @@ function etiquetaSemana(lunes: Date): string {
     return `${inicio} – ${fin} ${domingo.getFullYear()}`;
 }
 
-function TabCalendario({ tareas, usuarios, onAbrirTarea }: { tareas: TareaResumen[]; usuarios: Persona[]; onAbrirTarea: (id: number) => void }) {
+function TabCalendario({
+    tareas,
+    usuarios,
+    proyectos,
+    secciones,
+    onAbrirTarea,
+}: {
+    tareas: TareaResumen[];
+    usuarios: Persona[];
+    proyectos: ProyectoResumen[];
+    secciones: SeccionResumen[];
+    onAbrirTarea: (id: number) => void;
+}) {
     const [cursor, setCursor] = useState(() => new Date());
     const [vista, setVista] = useState<VistaCalendario>('mes');
     const [direccion, setDireccion] = useState<-1 | 0 | 1>(0);
@@ -776,6 +790,8 @@ function TabCalendario({ tareas, usuarios, onAbrirTarea }: { tareas: TareaResume
 
             <CrearTareaDialog
                 personas={usuarios}
+                proyectos={proyectos}
+                secciones={secciones}
                 open={fechaNuevaTarea !== null}
                 onOpenChange={(open) => {
                     if (!open) setFechaNuevaTarea(null);
@@ -877,7 +893,16 @@ function ResumenContadores({ contadores }: { contadores: Props['contadores'] }) 
     );
 }
 
-function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuarios, onAbrirTarea }: Props & { onAbrirTarea: (id: number) => void }) {
+function TabLista({
+    tareas,
+    contadores,
+    filtros,
+    unidadesOrganizacionales,
+    usuarios,
+    proyectos,
+    secciones,
+    onAbrirTarea,
+}: Props & { onAbrirTarea: (id: number) => void }) {
     const [busqueda, setBusqueda] = useState(filtros.busqueda ?? '');
     const primerRender = useRef(true);
 
@@ -898,7 +923,8 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
         estadosSeleccionados.length > 0 ||
         prioridadesSeleccionadas.length > 0 ||
         !!filtros.solo_atrasadas ||
-        !!filtros.unidad_organizacional_id;
+        !!filtros.unidad_organizacional_id ||
+        !!filtros.proyecto_id;
 
     const alternarEstado = (estado: EstadoTarea) => {
         const siguiente = estadosSeleccionados.includes(estado)
@@ -924,6 +950,8 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                 <h2 className="text-lg font-semibold text-foreground">Tareas</h2>
                 <CrearTareaDialog
                     personas={usuarios}
+                    proyectos={proyectos}
+                    secciones={secciones}
                     trigger={
                         <Button size="sm" className="bg-verde-5 text-gris-2 hover:bg-verde-6">
                             <Plus /> Nueva tarea
@@ -961,6 +989,7 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                             prioridad: [],
                                             solo_atrasadas: false,
                                             unidad_organizacional_id: null,
+                                            proyecto_id: null,
                                         })
                                     }
                                     className="text-xs font-medium text-verde-6 hover:underline"
@@ -1055,6 +1084,28 @@ function TabLista({ tareas, contadores, filtros, unidadesOrganizacionales, usuar
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {proyectos.length > 0 && (
+                            <div className="space-y-2 border-t border-border pt-4">
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Proyecto</p>
+                                <Select
+                                    value={filtros.proyecto_id ? String(filtros.proyecto_id) : 'todos'}
+                                    onValueChange={(valor) => actualizarFiltros(filtros, { proyecto_id: valor === 'todos' ? null : Number(valor) })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todos">Todos</SelectItem>
+                                        {proyectos.map((proyecto) => (
+                                            <SelectItem key={proyecto.id} value={String(proyecto.id)}>
+                                                {proyecto.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </PopoverContent>
                 </Popover>
             </div>
@@ -1122,7 +1173,15 @@ export default function MisTareasIndex(props: Props) {
                 <div key={tab} className="animate-in fade-in-0 duration-200">
                     {tab === 'lista' && <TabLista {...props} onAbrirTarea={modal.abrir} />}
 
-                    {tab === 'calendario' && <TabCalendario tareas={props.tareas} usuarios={props.usuarios} onAbrirTarea={modal.abrir} />}
+                    {tab === 'calendario' && (
+                        <TabCalendario
+                            tareas={props.tareas}
+                            usuarios={props.usuarios}
+                            proyectos={props.proyectos}
+                            secciones={props.secciones}
+                            onAbrirTarea={modal.abrir}
+                        />
+                    )}
 
                     {tab === 'metricas' && (
                         <Card>
@@ -1143,6 +1202,9 @@ export default function MisTareasIndex(props: Props) {
                 cargando={modal.cargando}
                 onClose={modal.cerrar}
                 refrescar={modal.refrescar}
+                abrirRelacionada={modal.abrirRelacionada}
+                volver={modal.volver}
+                puedeVolver={modal.puedeVolver}
             />
         </AppLayout>
     );

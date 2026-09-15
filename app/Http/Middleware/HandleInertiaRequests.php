@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
                 // solo al abrir la campana (ver NotificacionController).
                 'notificacionesNoLeidas' => $request->user()?->notificacionesRecibidas()->where('leida', false)->count() ?? 0,
                 'puedeEliminarUsuarios' => $request->user()?->nivel_jerarquico?->puedeEliminarUsuarios() ?? false,
+                'puedeAdministrarProyectos' => $request->user()?->nivel_jerarquico?->puedeAdministrarProyectos() ?? false,
             ],
             // PermisoDenegadoException::render() y Controller::exito() flashean
             // esto (back()->with()) -- sin compartirlo, esos mensajes quedaban

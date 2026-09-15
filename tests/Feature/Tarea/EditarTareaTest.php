@@ -3,8 +3,10 @@
 namespace Tests\Feature\Tarea;
 
 use App\Enums\EstadoTarea;
+use App\Enums\NivelJerarquico;
 use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
+use App\Models\Proyecto;
 use App\Models\Tarea;
 use App\Models\User;
 use Tests\Concerns\RefreshesDualSchemaDatabase;
@@ -221,5 +223,57 @@ class EditarTareaTest extends TestCase
             ->assertSessionHas("success");
 
         $this->assertSame(PrioridadTarea::Alta, $tarea->fresh()->prioridad);
+    }
+
+    public function test_permite_asociar_o_cambiar_el_proyecto_al_editar(): void
+    {
+        // Directorio: asociar una tarea a un proyecto esta reservado a
+        // Directorio/Gerencia, ver test_un_responsable_sin_permiso_no_puede...
+        $responsable = User::factory()->conNivel(NivelJerarquico::Directorio)->create();
+        $proyecto = Proyecto::factory()->create();
+        $tarea = Tarea::factory()->create(["responsable_id" => $responsable->id]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => $tarea->titulo,
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "proyecto_id" => $proyecto->id,
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertSame($proyecto->id, $tarea->fresh()->proyecto_id);
+    }
+
+    public function test_conserva_el_proyecto_si_no_se_manda_al_editar(): void
+    {
+        $responsable = User::factory()->create();
+        $proyecto = Proyecto::factory()->create();
+        $tarea = Tarea::factory()->create(["responsable_id" => $responsable->id, "proyecto_id" => $proyecto->id]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => "Solo corrijo el titulo",
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertSame($proyecto->id, $tarea->fresh()->proyecto_id);
+    }
+
+    public function test_un_responsable_sin_permiso_no_puede_cambiar_el_proyecto_aunque_lo_mande(): void
+    {
+        $responsable = User::factory()->create();
+        $proyecto = Proyecto::factory()->create();
+        $tarea = Tarea::factory()->create(["responsable_id" => $responsable->id, "proyecto_id" => null]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => $tarea->titulo,
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "proyecto_id" => $proyecto->id,
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertNull($tarea->fresh()->proyecto_id);
     }
 }
