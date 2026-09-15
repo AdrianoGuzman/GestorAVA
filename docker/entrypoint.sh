@@ -31,4 +31,19 @@ if [ "$(php artisan tinker --execute='echo \App\Models\User::count();' 2>/dev/nu
     php artisan db:seed --force
 fi
 
+# Solo para esta demo: alguien edito por error el nivel jerarquico de
+# admin@ava.cl y gerencia@ava.cl a "jefe_area" (y la unidad de asistente@ava.cl
+# a "Directorio AVA") desde Administracion de usuarios -- y como "jefe_area"
+# no tiene acceso a esa pantalla, nadie podia entrar a corregirlo por la UI.
+# Reaplica los valores correctos del seeder en cada boot (idempotente -- no
+# hace nada si ya estan bien).
+php artisan tinker --execute='
+\App\Models\User::where("email", "admin@ava.cl")->update(["nivel_jerarquico" => \App\Enums\NivelJerarquico::Directorio]);
+\App\Models\User::where("email", "gerencia@ava.cl")->update(["nivel_jerarquico" => \App\Enums\NivelJerarquico::Gerencia]);
+$areaElectrica = \App\Models\UnidadOrganizacional::where("nombre", "Área Eléctrica")->first();
+if ($areaElectrica) {
+    \App\Models\User::where("email", "asistente@ava.cl")->update(["unidad_organizacional_id" => $areaElectrica->id]);
+}
+' > /dev/null 2>&1 || true
+
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
