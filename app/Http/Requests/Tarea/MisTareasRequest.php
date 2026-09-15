@@ -42,6 +42,7 @@ class MisTareasRequest extends FormRequest
             "prioridad.*" => ["string", "in:alta,media,baja"],
             "solo_atrasadas" => ["sometimes", "boolean"],
             "unidad_organizacional_id" => ["sometimes", "nullable", "integer", "exists:unidades_organizacionales,id"],
+            "proyecto_id" => ["sometimes", "nullable", "integer", "exists:proyectos,id"],
         ];
     }
 }

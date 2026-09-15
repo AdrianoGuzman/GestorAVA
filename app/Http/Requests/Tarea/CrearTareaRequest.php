@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Tarea;
 
 use App\Enums\PrioridadTarea;
+use App\Models\Proyecto;
+use App\Models\Seccion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
@@ -38,7 +40,16 @@ class CrearTareaRequest extends FormRequest
             "descripcion" => ["nullable", "string"],
             "responsable_id" => ["required", "integer", "exists:users,id"],
             "prioridad" => ["required", new Enum(PrioridadTarea::class)],
-            "fecha_inicio" => ["nullable", "date"],
+            "fecha_inicio" => [
+                "nullable",
+                "date",
+                function ($attribute, $value, $fail) {
+                    $proyecto = Proyecto::find($this->input("proyecto_id"));
+                    if ($proyecto?->fecha_inicio && $value < $proyecto->fecha_inicio->toDateString()) {
+                        $fail("La fecha de inicio no puede ser anterior al inicio del proyecto ({$proyecto->fecha_inicio->format('d-m-Y')}).");
+                    }
+                },
+            ],
             "fecha_compromiso" => [
                 "required",
                 "date",
@@ -49,9 +60,27 @@ class CrearTareaRequest extends FormRequest
                         $fail("La fecha de término no puede ser anterior a la fecha de inicio.");
                     }
                 },
+                function ($attribute, $value, $fail) {
+                    $proyecto = Proyecto::find($this->input("proyecto_id"));
+                    if ($proyecto?->fecha_termino && $value > $proyecto->fecha_termino->toDateString()) {
+                        $fail("La fecha de término no puede ser posterior al término del proyecto ({$proyecto->fecha_termino->format('d-m-Y')}).");
+                    }
+                },
             ],
             "colaboradores" => ["sometimes", "array"],
             "colaboradores.*" => ["integer", "exists:users,id"],
+            "proyecto_id" => ["nullable", "integer", "exists:usuarios.proyectos,id"],
+            "seccion_id" => [
+                "nullable",
+                "integer",
+                "exists:usuarios.secciones,id",
+                function ($attribute, $value, $fail) {
+                    $seccion = Seccion::find($value);
+                    if ($seccion && (int) $seccion->proyecto_id !== (int) $this->input("proyecto_id")) {
+                        $fail("La sección no pertenece al proyecto elegido.");
+                    }
+                },
+            ],
         ];
     }
 }

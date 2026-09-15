@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAccionTarea } from '@/hooks/use-accion-tarea';
 import { PRIORIDAD_TAREA_LABELS, PRIORIDADES_ORDENADAS } from '@/lib/estado-tarea';
 import type { SharedData } from '@/types';
-import type { PrioridadTarea } from '@/types/tarea';
+import type { PrioridadTarea, ProyectoResumen, SeccionResumen } from '@/types/tarea';
 import { useForm, usePage } from '@inertiajs/react';
 import { Plus, UserPlus, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
@@ -29,9 +29,16 @@ import { FormEventHandler, useEffect, useState } from 'react';
  * en vez de una tarea normal -- mismo formulario, solo cambia el endpoint y
  * el texto del dialog.
  */
+/** Sentinel para "sin proyecto"/"sin sección" en los Select -- Radix no acepta value="". */
+const SIN_PROYECTO = 'sin-proyecto';
+const SIN_SECCION = 'sin-seccion';
+
 export function CrearTareaDialog({
     trigger,
     personas,
+    proyectos = [],
+    secciones = [],
+    proyectoIdInicial,
     fechaCompromisoInicial,
     tareaPadreId,
     open: openControlado,
@@ -39,6 +46,10 @@ export function CrearTareaDialog({
 }: {
     trigger?: React.ReactNode;
     personas: Persona[];
+    proyectos?: ProyectoResumen[];
+    secciones?: SeccionResumen[];
+    /** Preselecciona el proyecto al abrir -- usado desde "Mis proyectos" (ver proyectos/index.tsx). */
+    proyectoIdInicial?: number;
     fechaCompromisoInicial?: string;
     tareaPadreId?: number;
     open?: boolean;
@@ -59,7 +70,18 @@ export function CrearTareaDialog({
         prioridad: 'media' as PrioridadTarea,
         responsable_id: '',
         colaboradores: [] as number[],
+        proyecto_id: null as number | null,
+        seccion_id: null as number | null,
     });
+    const seccionesDelProyecto = secciones.filter((seccion) => seccion.proyecto_id === data.proyecto_id);
+
+    // RN (14-09-2026): toda tarea de un proyecto debe caer dentro de su plazo.
+    // El backend lo exige igual (defensa real); esto solo evita elegir una
+    // fecha invalida en el calendario para no tener que corregirla despues.
+    const proyectoSeleccionado = proyectos.find((proyecto) => proyecto.id === data.proyecto_id);
+    const proyectoFechaInicio = proyectoSeleccionado?.fecha_inicio?.slice(0, 10);
+    const proyectoFechaTermino = proyectoSeleccionado?.fecha_termino?.slice(0, 10);
+    const minFechaCompromiso = [data.fecha_inicio, proyectoFechaInicio].filter(Boolean).sort().pop() || undefined;
 
     useEffect(() => {
         if (!open) return;
@@ -72,6 +94,10 @@ export function CrearTareaDialog({
 
         if (fechaCompromisoInicial) {
             setData('fecha_compromiso', fechaCompromisoInicial);
+        }
+
+        if (proyectoIdInicial !== undefined) {
+            setData('proyecto_id', proyectoIdInicial);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -139,6 +165,8 @@ export function CrearTareaDialog({
                                     label="Elegir fecha"
                                     valor={data.fecha_inicio}
                                     onChange={(valor) => setData('fecha_inicio', valor)}
+                                    minFecha={proyectoFechaInicio}
+                                    maxFecha={proyectoFechaTermino}
                                     className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_inicio && <p className="text-sm text-rojo-1">{errors.fecha_inicio}</p>}
@@ -151,7 +179,8 @@ export function CrearTareaDialog({
                                     valor={data.fecha_compromiso}
                                     onChange={(valor) => setData('fecha_compromiso', valor)}
                                     soloFuturo
-                                    minFecha={data.fecha_inicio || undefined}
+                                    minFecha={minFechaCompromiso}
+                                    maxFecha={proyectoFechaTermino}
                                     className="h-10 w-full justify-start text-sm"
                                 />
                                 {errors.fecha_compromiso && <p className="text-sm text-rojo-1">{errors.fecha_compromiso}</p>}
@@ -174,6 +203,57 @@ export function CrearTareaDialog({
                             </Select>
                             {errors.prioridad && <p className="text-sm text-rojo-1">{errors.prioridad}</p>}
                         </div>
+
+                        {auth.puedeAdministrarProyectos && proyectos.length > 0 && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="proyecto">Proyecto (opcional)</Label>
+                                    <Select
+                                        value={data.proyecto_id === null ? SIN_PROYECTO : String(data.proyecto_id)}
+                                        onValueChange={(valor) => {
+                                            setData('proyecto_id', valor === SIN_PROYECTO ? null : Number(valor));
+                                            setData('seccion_id', null);
+                                        }}
+                                    >
+                                        <SelectTrigger id="proyecto">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={SIN_PROYECTO}>Sin proyecto</SelectItem>
+                                            {proyectos.map((proyecto) => (
+                                                <SelectItem key={proyecto.id} value={String(proyecto.id)}>
+                                                    {proyecto.nombre}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.proyecto_id && <p className="text-sm text-rojo-1">{errors.proyecto_id}</p>}
+                                </div>
+
+                                {data.proyecto_id !== null && seccionesDelProyecto.length > 0 && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="seccion">Sección (opcional)</Label>
+                                        <Select
+                                            value={data.seccion_id === null ? SIN_SECCION : String(data.seccion_id)}
+                                            onValueChange={(valor) => setData('seccion_id', valor === SIN_SECCION ? null : Number(valor))}
+                                        >
+                                            <SelectTrigger id="seccion">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={SIN_SECCION}>Sin sección</SelectItem>
+                                                {seccionesDelProyecto.map((seccion) => (
+                                                    <SelectItem key={seccion.id} value={String(seccion.id)}>
+                                                        {seccion.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.seccion_id && <p className="text-sm text-rojo-1">{errors.seccion_id}</p>}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="grid gap-2">
                             <Label>Responsable</Label>

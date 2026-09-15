@@ -5,6 +5,7 @@ namespace Tests\Feature\Tarea;
 use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\TipoEvento;
+use App\Models\Proyecto;
 use App\Models\Tarea;
 use App\Models\UnidadOrganizacional;
 use App\Models\User;
@@ -381,5 +382,22 @@ class MisTareasTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->has("tareas", 1)
             ->where("tareas.0.id", $tareaA->id));
+    }
+
+    public function test_filtro_proyecto(): void
+    {
+        $usuario = $this->usuario(NivelJerarquico::Asistente);
+        $proyecto = Proyecto::factory()->create();
+        $tareaDelProyecto = Tarea::factory()->create([
+            "responsable_id" => $usuario->id,
+            "proyecto_id" => $proyecto->id,
+        ]);
+        Tarea::factory()->create(["responsable_id" => $usuario->id, "proyecto_id" => null]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas?proyecto_id={$proyecto->id}")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tareaDelProyecto->id));
     }
 }

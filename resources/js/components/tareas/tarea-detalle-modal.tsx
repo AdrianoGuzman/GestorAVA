@@ -37,6 +37,9 @@ export function useTareaDetalleModal() {
     const [tareaId, setTareaId] = useState<number | null>(null);
     const [datos, setDatos] = useState<TareaDetalleContentProps | null>(null);
     const [cargando, setCargando] = useState(false);
+    // Ids de tareas que se van "abandonando" al entrar a una relacionada
+    // (tarea hija, dependencia) sin cerrar el modal -- ver abrirRelacionada.
+    const [pila, setPila] = useState<number[]>([]);
 
     const cargar = (id: number, mostrarSpinner: boolean) => {
         if (mostrarSpinner) setCargando(true);
@@ -60,14 +63,35 @@ export function useTareaDetalleModal() {
     };
 
     const abrir = (id: number) => {
+        setPila([]);
         setTareaId(id);
         setDatos(null);
         cargar(id, true);
     };
 
+    /** Entra a una tarea relacionada sin cerrar el modal, guardando la actual para poder "Volver". */
+    const abrirRelacionada = (id: number) => {
+        setPila((actual) => (tareaId !== null ? [...actual, tareaId] : actual));
+        setTareaId(id);
+        setDatos(null);
+        cargar(id, true);
+    };
+
+    const volver = () => {
+        setPila((actual) => {
+            if (actual.length === 0) return actual;
+            const anteriorId = actual[actual.length - 1];
+            setTareaId(anteriorId);
+            setDatos(null);
+            cargar(anteriorId, true);
+            return actual.slice(0, -1);
+        });
+    };
+
     const cerrar = () => {
         setTareaId(null);
         setDatos(null);
+        setPila([]);
     };
 
     // Red de seguridad para cualquier accion que todavia no pase por
@@ -87,7 +111,7 @@ export function useTareaDetalleModal() {
         return Promise.resolve();
     };
 
-    return { tareaId, datos, cargando, abrir, cerrar, refrescar };
+    return { tareaId, datos, cargando, abrir, abrirRelacionada, volver, puedeVolver: pila.length > 0, cerrar, refrescar };
 }
 
 export function TareaDetalleModal({
@@ -96,12 +120,21 @@ export function TareaDetalleModal({
     cargando,
     onClose,
     refrescar,
+    abrirRelacionada,
+    volver,
+    puedeVolver,
+    volverAlOrigen,
 }: {
     tareaId: number | null;
     datos: TareaDetalleContentProps | null;
     cargando: boolean;
     onClose: () => void;
     refrescar: () => Promise<unknown>;
+    abrirRelacionada: (id: number) => void;
+    volver: () => void;
+    puedeVolver: boolean;
+    /** Ver TareaModalContext -- presente cuando este modal se abrio encima de otro (ej. desde el detalle de un Proyecto). */
+    volverAlOrigen?: { etiqueta: string; onClick: () => void } | null;
 }) {
     return (
         <>
@@ -121,7 +154,7 @@ export function TareaDetalleModal({
                             <Loader2 className="size-5 animate-spin" /> Cargando tarea...
                         </div>
                     ) : (
-                        <TareaModalContext.Provider value={{ refrescar }}>
+                        <TareaModalContext.Provider value={{ refrescar, abrirRelacionada, volver, puedeVolver, volverAlOrigen }}>
                             <TareaDetalleContent {...datos} />
                         </TareaModalContext.Provider>
                     )}

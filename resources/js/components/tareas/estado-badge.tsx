@@ -7,6 +7,7 @@ import {
 } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
 import type { EstadoTarea, PrioridadTarea } from '@/types/tarea';
+import type { EstadoProyecto } from '@/types/proyecto';
 
 /**
  * RF-24 D2: el estado y el indicador "atrasada" se muestran a la vez cuando
@@ -39,6 +40,25 @@ export function PrioridadBadge({ prioridad, className }: { prioridad: PrioridadT
             )}
         >
             Prioridad {PRIORIDAD_TAREA_LABELS[prioridad].toLowerCase()}
+        </span>
+    );
+}
+
+const ESTADO_PROYECTO_BADGE_CLASSES: Record<EstadoProyecto, string> = {
+    activo: 'border-verde-3 bg-verde-1 text-verde-6',
+    cerrado: 'border-border bg-muted text-muted-foreground',
+};
+
+export function EstadoProyectoBadge({ estado, className }: { estado: EstadoProyecto; className?: string }) {
+    return (
+        <span
+            className={cn(
+                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                ESTADO_PROYECTO_BADGE_CLASSES[estado],
+                className,
+            )}
+        >
+            {estado === 'activo' ? 'Activo' : 'Cerrado'}
         </span>
     );
 }

@@ -75,4 +75,20 @@ enum NivelJerarquico: string
     {
         return $this === self::Directorio;
     }
+
+    /**
+     * Quien puede crear/editar/cerrar un Proyecto (agrupa tareas de varias
+     * unidades bajo una misma iniciativa). Franco (14-09-2026): por ahora
+     * Directorio y Gerencia, igual que puedeAdministrarEstructura() -- pero
+     * es una regla propia (no la reusa) porque puede terminar abriendose a
+     * Jefe de Área tras la reunión con AVA sin tocar la administración de
+     * usuarios/unidades.
+     */
+    public function puedeAdministrarProyectos(): bool
+    {
+        return match ($this) {
+            self::Directorio, self::Gerencia => true,
+            self::JefeArea, self::Asistente => false,
+        };
+    }
 }

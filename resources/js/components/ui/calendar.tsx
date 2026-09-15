@@ -16,7 +16,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
                 month: 'flex flex-col gap-4',
                 month_caption: 'flex justify-center pt-1 relative items-center w-full',
                 caption_label: 'text-sm font-medium text-foreground',
-                nav: 'flex items-center justify-between absolute inset-x-1 top-1',
+                // z-10: month_caption tambien es "relative w-full" (mismo nivel de
+                // stacking que un absolute con z-index:auto) -- sin esto, pintaba
+                // encima de los botones de navegacion y solo quedaba clickeable el
+                // borde que sobresalia de la caption centrada.
+                nav: 'z-10 flex items-center justify-between absolute inset-x-1 top-1',
                 button_previous: cn(
                     buttonVariants({ variant: 'outline' }),
                     'size-7 bg-transparent p-0 opacity-60 transition-all hover:opacity-100 active:scale-95',

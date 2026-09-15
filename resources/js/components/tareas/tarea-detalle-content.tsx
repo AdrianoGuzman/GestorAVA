@@ -11,19 +11,22 @@ import { MotivoDialog } from '@/components/tareas/motivo-dialog';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { ReasignarDialog } from '@/components/tareas/reasignar-dialog';
+import { TareaModalContext } from '@/components/tareas/tarea-modal-context';
 import { Button } from '@/components/ui/button';
 import { stringAFecha } from '@/components/ui/date-picker-button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { calcularHorasAtrasoEntrega, ENTREGADA_CON_ATRASO_BADGE_CLASSES, formatearDuracionAtraso, ROL_USUARIO_LABELS } from '@/lib/estado-tarea';
 import { cn } from '@/lib/utils';
-import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, RolUsuarioTarea, TareaDetalle } from '@/types/tarea';
+import type { AdjuntoDeTareaHija, ChecklistPersonalItem, PermisosTarea, ProyectoResumen, RolUsuarioTarea, SeccionResumen, TareaDetalle } from '@/types/tarea';
 import {
+    ArrowLeft,
     Ban,
     Calendar,
     CircleCheckBig,
     Download,
     FileSpreadsheet,
     FileText,
+    FolderKanban,
     GitBranch,
     History,
     ListTodo,
@@ -37,12 +40,14 @@ import {
     UserX,
     Users,
 } from 'lucide-react';
-import { ReactNode, useRef, useState } from 'react';
+import { ReactNode, useContext, useRef, useState } from 'react';
 
 export interface TareaDetalleContentProps {
     tarea: TareaDetalle;
     rolUsuario: RolUsuarioTarea;
     usuarios: Persona[];
+    proyectos: ProyectoResumen[];
+    secciones: SeccionResumen[];
     checklistPersonal: ChecklistPersonalItem[];
     adjuntosDeTareasHijas: AdjuntoDeTareaHija[];
     permisos: PermisosTarea;
@@ -87,15 +92,40 @@ function FilaMetadata({ label, children }: { label: string; children: ReactNode 
  * contenido, y el historial integrado al final como "Actividad" en vez de
  * oculto en un Sheet.
  */
-export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPersonal, adjuntosDeTareasHijas, permisos }: TareaDetalleContentProps) {
+export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, secciones, checklistPersonal, adjuntosDeTareasHijas, permisos }: TareaDetalleContentProps) {
     const [problemaAbierto, setProblemaAbierto] = useState(false);
     const [noParticiparAbierto, setNoParticiparAbierto] = useState(false);
     const actividadRef = useRef<HTMLDivElement>(null);
+    const modal = useContext(TareaModalContext);
 
     const hayMasAcciones = permisos.puedeReportarProblema || permisos.puedeReportarNoParticipacion;
 
     return (
         <div className="flex w-full flex-1 flex-col">
+            {/* Solo aparece si se llego aca desde otra tarea (hija/dependencia) sin
+                cerrar el modal -- ver TareaModalContext.abrirRelacionada. */}
+            {modal?.puedeVolver && (
+                <button
+                    type="button"
+                    onClick={modal.volver}
+                    className="mb-2 flex w-fit items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                >
+                    <ArrowLeft className="size-3.5" /> Volver a la tarea anterior
+                </button>
+            )}
+
+            {/* Solo aparece si este modal se abrio encima de otro (ej. una tarea
+                abierta desde el detalle de un Proyecto) -- ver TareaModalContext.volverAlOrigen. */}
+            {modal?.volverAlOrigen && (
+                <button
+                    type="button"
+                    onClick={modal.volverAlOrigen.onClick}
+                    className="mb-2 flex w-fit items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                >
+                    <ArrowLeft className="size-3.5" /> {modal.volverAlOrigen.etiqueta}
+                </button>
+            )}
+
             {/* Barra de acciones: separada del contenido, como el titulo+acciones
                 de Asana en vez de repartidas entre el header y una columna lateral.
                 pr-8: espacio para la "x" de cerrar del modal (DialogContent la
@@ -113,6 +143,10 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                             fechaInicio={tarea.fecha_inicio}
                             fechaCompromiso={tarea.fecha_compromiso}
                             prioridad={tarea.prioridad}
+                            proyectoId={tarea.proyecto?.id ?? null}
+                            seccionId={tarea.seccion?.id ?? null}
+                            proyectos={proyectos}
+                            secciones={secciones}
                             trigger={
                                 <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Editar tarea">
                                     <Pencil className="size-4" />
@@ -294,6 +328,16 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                     )}
                 </FilaMetadata>
 
+                <FilaMetadata label="Proyecto">
+                    <FolderKanban className="size-4 shrink-0 text-gris-1" />
+                    <span className={tarea.proyecto ? 'font-medium' : 'text-muted-foreground'}>
+                        {tarea.proyecto?.nombre ?? 'Sin proyecto'}
+                    </span>
+                    {tarea.proyecto && (
+                        <span className="text-muted-foreground">— {tarea.seccion?.nombre ?? 'Sin sección'}</span>
+                    )}
+                </FilaMetadata>
+
                 <FilaMetadata label="Fecha inicio / término">
                     <Calendar className="size-4 shrink-0 text-gris-1" />
                     <span>
@@ -377,7 +421,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, checklistPers
                 de la barra de arriba hace scroll hasta aca para que se note que
                 existe sin depender de que alguien baje toda la pagina primero. */}
             <div ref={actividadRef} className="scroll-mt-4 pt-4">
-                <HistorialInline eventos={tarea.historial} usuarios={usuarios} />
+                <HistorialInline eventos={tarea.historial} usuarios={usuarios} proyectos={proyectos} secciones={secciones} />
             </div>
         </div>
     );

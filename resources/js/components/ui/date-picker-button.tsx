@@ -52,6 +52,7 @@ export function DatePickerButton({
     className,
     soloFuturo,
     minFecha,
+    maxFecha,
     compact = false,
 }: {
     label: string;
@@ -62,6 +63,8 @@ export function DatePickerButton({
     soloFuturo?: boolean;
     /** Ademas de soloFuturo, no permite elegir un dia anterior a esta fecha "yyyy-MM-dd" (ej. termino no puede ser antes que inicio). */
     minFecha?: string;
+    /** No permite elegir un dia posterior a esta fecha "yyyy-MM-dd" (ej. la tarea no puede pasarse del termino de su proyecto). */
+    maxFecha?: string;
     compact?: boolean;
 }) {
     const [abierto, setAbierto] = useState(false);
@@ -73,6 +76,9 @@ export function DatePickerButton({
     }
     if (minFecha) {
         limites.push({ before: stringAFecha(minFecha) });
+    }
+    if (maxFecha) {
+        limites.push({ after: stringAFecha(maxFecha) });
     }
 
     return (

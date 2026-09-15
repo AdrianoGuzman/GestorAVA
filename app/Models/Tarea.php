@@ -28,6 +28,8 @@ class Tarea extends Model {
         "responsable_id",
         "creador_id",
         "unidad_organizacional_id",
+        "proyecto_id",
+        "seccion_id",
         "fecha_inicio",
         "fecha_compromiso",
         "estado",
@@ -59,6 +61,14 @@ class Tarea extends Model {
 
     public function unidadOrganizacional(): BelongsTo {
         return $this->belongsTo(UnidadOrganizacional::class, "unidad_organizacional_id");
+    }
+
+    public function proyecto(): BelongsTo {
+        return $this->belongsTo(Proyecto::class, "proyecto_id");
+    }
+
+    public function seccion(): BelongsTo {
+        return $this->belongsTo(Seccion::class, "seccion_id");
     }
 
     public function colaboradores(): BelongsToMany {

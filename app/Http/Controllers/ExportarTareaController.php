@@ -52,6 +52,8 @@ class ExportarTareaController extends Controller
             "responsable",
             "colaboradores",
             "creador",
+            "proyecto",
+            "seccion",
             "checklistItems" => fn ($query) => $query->with("dueno")->orderBy("created_at"),
             "historial" => fn ($query) => $query->with("usuario")->orderBy("created_at"),
         ]);

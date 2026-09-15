@@ -52,6 +52,8 @@ class TareaService
                 "responsable_id" => $responsable->id,
                 "creador_id" => $creador->id,
                 "unidad_organizacional_id" => $responsable->unidad_organizacional_id,
+                "proyecto_id" => $this->campoSegunPermisoProyectos($datos["proyecto_id"] ?? null, null, $creador),
+                "seccion_id" => $this->campoSegunPermisoProyectos($datos["seccion_id"] ?? null, null, $creador),
                 "fecha_inicio" => $datos["fecha_inicio"] ?? null,
                 "fecha_compromiso" => $datos["fecha_compromiso"],
                 "estado" => EstadoTarea::Pendiente,
@@ -121,6 +123,8 @@ class TareaService
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
                 "prioridad" => $tarea->prioridad->value,
+                "proyecto_id" => $tarea->proyecto_id,
+                "seccion_id" => $tarea->seccion_id,
             ];
 
             $tarea->update([
@@ -129,6 +133,8 @@ class TareaService
                 "fecha_inicio" => $datos["fecha_inicio"] ?? null,
                 "fecha_compromiso" => $datos["fecha_compromiso"],
                 "prioridad" => $datos["prioridad"] ?? $tarea->prioridad->value,
+                "proyecto_id" => $this->campoSegunPermisoProyectos($datos["proyecto_id"] ?? null, $tarea->proyecto_id, $usuario),
+                "seccion_id" => $this->campoSegunPermisoProyectos($datos["seccion_id"] ?? null, $tarea->seccion_id, $usuario),
             ]);
 
             // RF-14: si la fecha corregida ya no esta vencida, la tarea deja
@@ -145,9 +151,28 @@ class TareaService
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
                 "prioridad" => $tarea->prioridad->value,
+                "proyecto_id" => $tarea->proyecto_id,
+                "seccion_id" => $tarea->seccion_id,
             ]);
 
             return $tarea->fresh();
         });
+    }
+
+    /**
+     * Franco (14-09-2026): asociar una tarea a un Proyecto o a una Seccion
+     * queda reservado a Directorio/Gerencia (mismo criterio que administrar
+     * el proyecto en si, ver NivelJerarquico::puedeAdministrarProyectos())
+     * -- un intento de otro nivel (UI ya lo oculta, esto cubre un llamado
+     * directo a la ruta) simplemente no cambia el valor en vez de rechazar
+     * toda la creacion/edicion por un campo que no deberia haber mandado.
+     */
+    private function campoSegunPermisoProyectos(?int $solicitado, ?int $actual, User $actor): ?int
+    {
+        if ($solicitado === $actual) {
+            return $actual;
+        }
+
+        return ($actor->nivel_jerarquico?->puedeAdministrarProyectos() ?? false) ? $solicitado : $actual;
     }
 }

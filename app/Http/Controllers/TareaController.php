@@ -14,6 +14,8 @@ use App\Http\Requests\Tarea\ReportarProblemaRequest;
 use App\Http\Requests\Tarea\RetrocederTareaRequest;
 use App\Models\AdjuntoTarea;
 use App\Models\ChecklistPersonalItem;
+use App\Models\Proyecto;
+use App\Models\Seccion;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Services\AdjuntoService;
@@ -66,6 +68,8 @@ class TareaController extends Controller
             "responsable",
             "colaboradores",
             "creador",
+            "proyecto",
+            "seccion",
             "adjuntos" => fn ($query) => $query->with("usuario")->latest("created_at"),
             "checklistItems" => fn ($query) => $query->with("dueno")->orderBy("created_at"),
             "tareasHijas" => fn ($query) => $query->with("responsable")->orderBy("created_at"),
@@ -78,6 +82,8 @@ class TareaController extends Controller
             "tarea" => $tarea,
             "rolUsuario" => $this->misTareasService->rolDe($tarea, $usuario),
             "usuarios" => User::select(["id", "nombre_1", "nombre_2", "apellido_1", "apellido_2", "email"])->get(),
+            "proyectos" => Proyecto::orderBy("nombre")->get(["id", "nombre", "fecha_inicio", "fecha_termino"]),
+            "secciones" => Seccion::orderBy("nombre")->get(["id", "nombre", "proyecto_id"]),
             "checklistPersonal" => ChecklistPersonalItem::where("tarea_id", $tarea->id)
                 ->where("usuario_id", $usuario->id)
                 ->orderBy("created_at")

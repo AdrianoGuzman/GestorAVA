@@ -6,6 +6,8 @@ use App\Enums\EstadoTarea;
 use App\Enums\NivelJerarquico;
 use App\Enums\PrioridadTarea;
 use App\Enums\TipoEvento;
+use App\Models\Proyecto;
+use App\Models\Seccion;
 use App\Models\Tarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
@@ -170,6 +172,90 @@ class CrearTareaTest extends TestCase
             "fecha_compromiso" => now()->addDays(5)->toDateString(),
             "prioridad" => "urgentisima",
         ])->assertSessionHasErrors("prioridad");
+
+        $this->assertSame(0, Tarea::count());
+    }
+
+    public function test_permite_asociar_la_tarea_a_un_proyecto_al_crearla(): void
+    {
+        // Gerencia: asociar una tarea a un proyecto esta reservado a
+        // Directorio/Gerencia, ver test_un_asistente_no_puede_asociar...
+        $creador = User::factory()->conNivel(NivelJerarquico::Gerencia)->create();
+        $proyecto = Proyecto::factory()->create();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Firmar acuerdo AVA-ACHS-DEKRA",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "proyecto_id" => $proyecto->id,
+        ])->assertRedirect();
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertSame($proyecto->id, $tarea->proyecto_id);
+    }
+
+    public function test_rechaza_un_proyecto_inexistente(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea con proyecto invalido",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "proyecto_id" => 9999,
+        ])->assertSessionHasErrors("proyecto_id");
+
+        $this->assertSame(0, Tarea::count());
+    }
+
+    /**
+     * Franco (14-09-2026): asociar una tarea a un proyecto queda reservado a
+     * Directorio/Gerencia -- un Asistente que igual lo manda (saltandose la
+     * UI, que ya oculta el campo) simplemente no queda asociado, en vez de
+     * rechazar toda la creacion.
+     */
+    public function test_un_asistente_no_puede_asociar_la_tarea_a_un_proyecto_aunque_lo_mande(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+        $proyecto = Proyecto::factory()->create();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Intento de asociar sin permiso",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "proyecto_id" => $proyecto->id,
+        ])->assertRedirect();
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertNull($tarea->proyecto_id);
+    }
+
+    public function test_permite_asociar_la_tarea_a_una_seccion_de_su_proyecto(): void
+    {
+        $creador = User::factory()->conNivel(NivelJerarquico::Gerencia)->create();
+        $proyecto = Proyecto::factory()->create();
+        $seccion = Seccion::factory()->create(["proyecto_id" => $proyecto->id]);
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea con seccion",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "proyecto_id" => $proyecto->id,
+            "seccion_id" => $seccion->id,
+        ])->assertRedirect();
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertSame($seccion->id, $tarea->seccion_id);
+    }
+
+    public function test_rechaza_una_seccion_que_no_pertenece_al_proyecto_elegido(): void
+    {
+        $creador = User::factory()->conNivel(NivelJerarquico::Gerencia)->create();
+        $proyecto = Proyecto::factory()->create();
+        $seccionDeOtroProyecto = Seccion::factory()->create();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea con seccion cruzada",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "proyecto_id" => $proyecto->id,
+            "seccion_id" => $seccionDeOtroProyecto->id,
+        ])->assertSessionHasErrors("seccion_id");
 
         $this->assertSame(0, Tarea::count());
     }
