@@ -100,6 +100,17 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, se
 
     const hayMasAcciones = permisos.puedeReportarProblema || permisos.puedeReportarNoParticipacion;
 
+    // Quien ya participa (responsable o colaborador) no debe volver a
+    // aparecer como opcion al agregar un nuevo colaborador.
+    const colaboradoresPotenciales = usuarios.filter(
+        (usuario) => usuario.id !== tarea.responsable.id && !tarea.colaboradores.some((colaborador) => colaborador.id === usuario.id),
+    );
+
+    // El responsable actual no es un candidato valido para "reasignar" --
+    // reasignarle la tarea a si mismo no tiene sentido y solo confunde el
+    // selector.
+    const candidatosAResponsable = usuarios.filter((usuario) => usuario.id !== tarea.responsable.id);
+
     return (
         <div className="flex w-full flex-1 flex-col">
             {/* Solo aparece si se llego aca desde otra tarea (hija/dependencia) sin
@@ -294,7 +305,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, se
                     {permisos.puedeReasignar && (
                         <ReasignarDialog
                             tareaId={tarea.id}
-                            personas={usuarios}
+                            personas={candidatosAResponsable}
                             trigger={
                                 <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Reasignar responsable">
                                     <Pencil className="size-4" />
@@ -318,7 +329,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, se
                     {permisos.puedeAgregarColaborador && (
                         <AgregarColaboradorDialog
                             tareaId={tarea.id}
-                            personas={usuarios}
+                            personas={colaboradoresPotenciales}
                             trigger={
                                 <button type="button" className="rounded-full p-1 -m-1 text-verde-6 transition-colors hover:bg-verde-1 hover:text-verde-6 active:bg-verde-2" title="Agregar colaborador">
                                     <Plus className="size-4" />
