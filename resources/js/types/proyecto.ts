@@ -13,7 +13,7 @@ export interface TareaDeProyecto {
     responsable: UsuarioTarea;
 }
 
-export type TipoEventoProyecto = 'creacion' | 'proyecto_editado' | 'seccion_creada' | 'seccion_editada';
+export type TipoEventoProyecto = 'creacion' | 'proyecto_editado' | 'seccion_creada' | 'seccion_editada' | 'entrega_aplazada';
 
 /** Evento de trazabilidad del proyecto (14-09-2026): quién lo creó, qué cambió en cada edición, secciones agregadas/editadas. */
 export interface HistorialEventoProyecto {

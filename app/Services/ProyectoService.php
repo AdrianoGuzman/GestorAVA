@@ -86,6 +86,29 @@ class ProyectoService
         return $proyecto;
     }
 
+    /**
+     * Aplazar la entrega (AVA Montajes, 15-09-2026): a diferencia de
+     * actualizar(), esto tiene su propio evento de historial (en vez de
+     * "proyecto_editado" generico) porque lleva motivo obligatorio y solo
+     * toca fecha_termino -- mismo criterio que RetrocesoService con Tarea.
+     */
+    public function aplazarEntrega(Proyecto $proyecto, array $datos, User $actor): Proyecto
+    {
+        $this->verificarPermiso($actor);
+
+        $fechaAnterior = $proyecto->fecha_termino->toDateString();
+
+        $proyecto->update(["fecha_termino" => $datos["fecha_termino"]]);
+
+        $this->historial->registrar($proyecto, TipoEventoProyecto::EntregaAplazada, $actor, [
+            "datos_anteriores" => ["fecha_termino" => $fechaAnterior],
+            "fecha_termino" => $proyecto->fecha_termino->toDateString(),
+            "motivo" => $datos["motivo"],
+        ]);
+
+        return $proyecto;
+    }
+
     /** Mismo permiso que administrar el proyecto en si -- ver NivelJerarquico::puedeAdministrarProyectos(). */
     public function crearSeccion(Proyecto $proyecto, array $datos, User $actor): Seccion
     {

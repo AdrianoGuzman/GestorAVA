@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('proyectos/{proyecto}', [ProyectoController::class, 'show'])->name('proyectos.show');
     Route::post('proyectos', [ProyectoController::class, 'store'])->name('proyectos.store');
     Route::patch('proyectos/{proyecto}', [ProyectoController::class, 'update'])->name('proyectos.update');
+    Route::patch('proyectos/{proyecto}/aplazar-entrega', [ProyectoController::class, 'aplazarEntrega'])->name('proyectos.aplazar-entrega');
     Route::post('proyectos/{proyecto}/secciones', [SeccionController::class, 'store'])->name('secciones.store');
     Route::patch('secciones/{seccion}', [SeccionController::class, 'update'])->name('secciones.update');
     Route::get('proyectos/{proyecto}/exportar-pdf', [ExportarProyectoController::class, 'pdf'])->name('proyectos.exportar-pdf');

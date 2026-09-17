@@ -1,3 +1,4 @@
+import { AplazarEntregaDialog } from '@/components/proyectos/aplazar-entrega-dialog';
 import { CrearSeccionDialog } from '@/components/proyectos/crear-seccion-dialog';
 import { EditarProyectoDialog } from '@/components/proyectos/editar-proyecto-dialog';
 import { EditarSeccionDialog } from '@/components/proyectos/editar-seccion-dialog';
@@ -188,28 +189,32 @@ export function ProyectoDetalleContent({ proyecto, usuarios, onAbrirTarea }: Pro
                     </p>
                 </div>
 
-                {/* Sin permiso propio: cualquiera que pueda abrir el detalle del
-                    proyecto (visible para todos, ver ProyectoController::show())
-                    puede exportar el mismo registro que esta viendo. */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="ghost">
-                            <Download /> Exportar
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <a href={route('proyectos.exportar-pdf', proyecto.id)}>
-                                <FileText /> Exportar a PDF
-                            </a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <a href={route('proyectos.exportar-excel', proyecto.id)}>
-                                <FileSpreadsheet /> Exportar a Excel
-                            </a>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-1">
+                    {puedeAdministrar && proyecto.estado === 'activo' && <AplazarEntregaDialog proyecto={proyecto} />}
+
+                    {/* Sin permiso propio: cualquiera que pueda abrir el detalle del
+                        proyecto (visible para todos, ver ProyectoController::show())
+                        puede exportar el mismo registro que esta viendo. */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                                <Download /> Exportar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <a href={route('proyectos.exportar-pdf', proyecto.id)}>
+                                    <FileText /> Exportar a PDF
+                                </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a href={route('proyectos.exportar-excel', proyecto.id)}>
+                                    <FileSpreadsheet /> Exportar a Excel
+                                </a>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
             <div className="space-y-1">
