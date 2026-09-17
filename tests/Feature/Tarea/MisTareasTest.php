@@ -129,6 +129,30 @@ class MisTareasTest extends TestCase
             ->where("tareas.0.rol", "responsable"));
     }
 
+    public function test_delegada_y_colaborador_no_se_duplica(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $usuario = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $nuevoResponsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $nuevoResponsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->colaboradores()->attach($usuario->id);
+        $tarea->historial()->create([
+            "tipo_evento" => TipoEvento::Reasignacion,
+            "usuario_id" => $usuario->id,
+            "datos_evento" => ["responsable_nuevo_id" => $nuevoResponsable->id],
+        ]);
+
+        $response = $this->actingAs($usuario)->get("/mis-tareas")->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has("tareas", 1)
+            ->where("tareas.0.id", $tarea->id)
+            ->where("tareas.0.rol", "colaborador"));
+    }
+
     public function test_contadores_agregados(): void
     {
         $obra = UnidadOrganizacional::factory()->create();

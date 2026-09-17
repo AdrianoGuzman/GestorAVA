@@ -76,11 +76,19 @@ class MisTareasService
         // Prioridad alta primero, y a igual prioridad, la fecha mas proxima
         // primero -- asi lo urgente no se pierde entre tareas de fecha mas
         // cercana pero menor prioridad.
+        // "Colaborador" y "Delegado" (y en teoria "Responsable" y
+        // "Colaborador") no se excluyen entre si en sus respectivas
+        // consultas -- una tarea que reasignaste manteniendote como
+        // colaborador califica para ambos roles a la vez. unique("id")
+        // deja la primera aparicion segun el orden de $roles (responsable >
+        // colaborador > delegado > creador), la misma prioridad que ya se
+        // usa a mano para excluir "creador" arriba.
         $tareas = collect($roles)
             ->flatMap(function ($consulta, $rol) {
                 return $consulta()->with(["responsable", "unidadOrganizacional", "ultimoEvento.usuario"])->get()
                     ->each(fn (Tarea $tarea) => $tarea->rol = $rol);
             })
+            ->unique("id")
             ->sortBy([
                 fn (Tarea $a, Tarea $b) => $b->prioridad->peso() <=> $a->prioridad->peso(),
                 fn (Tarea $a, Tarea $b) => $a->fecha_compromiso <=> $b->fecha_compromiso,
