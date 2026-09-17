@@ -30,12 +30,21 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
         e.preventDefault();
 
         enviar('patch', route('tareas.reasignar', tareaId), data, {
-            onSuccess: () => {
-                setOpen(false);
-                setNuevoResponsable(null);
-                reset();
-            },
+            onSuccess: () => handleOpenChange(false),
         });
+    };
+
+    // Cerrar sin enviar (Esc, click afuera, la X) dejaba la selección previa
+    // guardada en el estado del componente: al reabrir el panel se veía como
+    // si esa persona ya fuera el nuevo responsable, sin haberse reasignado
+    // nunca. Limpiar siempre que el panel se cierra, no solo tras un envío
+    // exitoso.
+    const handleOpenChange = (siguienteOpen: boolean) => {
+        setOpen(siguienteOpen);
+        if (!siguienteOpen) {
+            setNuevoResponsable(null);
+            reset();
+        }
     };
 
     return (
@@ -47,8 +56,8 @@ export function ReasignarDialog({ trigger, tareaId, personas }: { trigger: React
         // difuminado que Radix deja de pintar en ese modo (Sheet usa el
         // mismo primitivo de Radix Dialog por debajo, mismo bug).
         <>
-            <NonModalOverlay open={open} onClose={() => setOpen(false)} />
-            <Sheet open={open} onOpenChange={setOpen} modal={false}>
+            <NonModalOverlay open={open} onClose={() => handleOpenChange(false)} />
+            <Sheet open={open} onOpenChange={handleOpenChange} modal={false}>
                 <SheetTrigger asChild>{trigger}</SheetTrigger>
                 <SheetContent className="flex flex-col overflow-y-auto">
                     <form onSubmit={submit} className="flex flex-1 flex-col">

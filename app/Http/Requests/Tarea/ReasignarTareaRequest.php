@@ -20,7 +20,7 @@ class ReasignarTareaRequest extends FormRequest
             "nuevo_responsable_id" => ["required", "integer", "exists:users,id"],
             "mantener_como_colaborador" => ["sometimes", "boolean"],
             "es_excepcion" => ["sometimes", "boolean"],
-            "motivo_excepcion" => ["required_if:es_excepcion,true", "string"],
+            "motivo_excepcion" => ["nullable", "required_if:es_excepcion,true", "string"],
         ];
     }
 }

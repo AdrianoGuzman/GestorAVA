@@ -102,6 +102,24 @@ export function useAccionTarea() {
                 const erroresValidacion = error.response?.data?.errors;
                 const planos = erroresValidacion ? aplanarErrores(erroresValidacion) : {};
                 setErrors(planos);
+
+                // Ningun rechazo dentro del modal tenia una via garantizada de
+                // mostrarse: un 403 sin campo (PermisoDenegadoException) no
+                // tenia ningun toast (fuera del modal lo agarra FlashToaster
+                // via flash.error, pero esta rama usa axios directo y nunca
+                // llega ahi); y un 422 de validacion solo se veia si el
+                // formulario que llama a este hook rendereaba justo ESE campo
+                // (ej. reasignar-dialog.tsx no tiene cajita de error para
+                // "mantener_como_colaborador"/"es_excepcion" -- el 422 llegaba
+                // pero quedaba invisible, indistinguible de "no paso nada").
+                // Mostrar siempre algo visible, sea cual sea la forma del
+                // rechazo.
+                const primerErrorValidacion = Object.values(planos)[0];
+                const mensajeError = primerErrorValidacion ?? error.response?.data?.message;
+                if (mensajeError) {
+                    toast({ variant: 'destructive', title: mensajeError });
+                }
+
                 opciones.onError?.(planos);
             })
             .finally(() => setProcessing(false));
