@@ -67,6 +67,11 @@ class ReasignacionService
         DB::connection("usuarios")->transaction(function () use ($tarea, $nuevoResponsable, $responsableSaliente, $mantenerComoColaborador) {
             $tarea->update(["responsable_id" => $nuevoResponsable->id]);
 
+            // Si el nuevo responsable ya era colaborador (se lo "asciende"),
+            // sacarlo de esa lista -- no puede figurar como responsable Y
+            // como colaborador al mismo tiempo, queda duplicado en la UI.
+            $tarea->colaboradores()->detach($nuevoResponsable->id);
+
             if ($mantenerComoColaborador && $responsableSaliente && $responsableSaliente->id !== $nuevoResponsable->id) {
                 $tarea->colaboradores()->syncWithoutDetaching([$responsableSaliente->id]);
             }

@@ -46,4 +46,15 @@ if ($areaElectrica) {
 }
 ' > /dev/null 2>&1 || true
 
+# Solo para esta demo: reasignaciones hechas antes de que ReasignacionService
+# sacara al nuevo responsable de la lista de colaboradores dejaron datos
+# inconsistentes (una misma persona aparece como Responsable Y como
+# Colaborador de la misma tarea). Limpia eso en cada boot -- idempotente, no
+# hace nada si ya esta bien.
+php artisan tinker --execute='
+\Illuminate\Support\Facades\DB::connection("usuarios")->statement(
+    "DELETE FROM colaboradores_tarea USING tareas WHERE colaboradores_tarea.tarea_id = tareas.id AND colaboradores_tarea.usuario_id = tareas.responsable_id"
+);
+' > /dev/null 2>&1 || true
+
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
