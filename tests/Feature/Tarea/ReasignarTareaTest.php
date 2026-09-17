@@ -139,6 +139,26 @@ class ReasignarTareaTest extends TestCase
         $this->assertTrue($tarea->fresh()->colaboradores->contains("id", $responsable->id));
     }
 
+    public function test_el_nuevo_responsable_deja_de_figurar_como_colaborador(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $nuevoResponsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+        $tarea->colaboradores()->attach($nuevoResponsable->id);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/reasignar", [
+            "nuevo_responsable_id" => $nuevoResponsable->id,
+        ])->assertRedirect();
+
+        $tarea->refresh();
+        $this->assertSame($nuevoResponsable->id, $tarea->responsable_id);
+        $this->assertFalse($tarea->colaboradores->contains("id", $nuevoResponsable->id));
+    }
+
     public function test_el_responsable_saliente_no_participa_por_defecto(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
