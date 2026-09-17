@@ -835,7 +835,6 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
         >
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">{tarea.codigo}</p>
                     <p className={cn('flex items-center gap-2 font-semibold', completada ? 'text-muted-foreground' : 'text-foreground')}>
                         {completada && <CheckCircle2 className="size-5 shrink-0 text-verde-6" />}
                         <span className="truncate">{tarea.titulo}</span>
