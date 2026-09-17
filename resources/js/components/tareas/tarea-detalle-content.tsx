@@ -5,7 +5,7 @@ import { ChecklistSection } from '@/components/tareas/checklist-section';
 import { ConfirmarCompletarDialog } from '@/components/tareas/confirmar-completar-dialog';
 import { DependenciasSection } from '@/components/tareas/dependencias-section';
 import { EditarTareaDialog } from '@/components/tareas/editar-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, NivelJerarquicoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import { HistorialInline } from '@/components/tareas/historial-timeline';
 import { MotivoDialog } from '@/components/tareas/motivo-dialog';
 import { PersonaAvatar } from '@/components/tareas/persona-avatar';
@@ -302,6 +302,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, se
                 <FilaMetadata label="Responsable">
                     <User className="size-4 shrink-0 text-gris-1" />
                     <span className="font-medium">{tarea.responsable.name}</span>
+                    {tarea.responsable.nivel_jerarquico && <NivelJerarquicoBadge nivel={tarea.responsable.nivel_jerarquico} />}
                     {permisos.puedeReasignar && (
                         <ReasignarDialog
                             tareaId={tarea.id}

@@ -30,6 +30,8 @@ export interface UsuarioTarea {
     id: number;
     name: string;
     email: string;
+    /** AVA Montajes (17-09-2026): qué nivel jerárquico maneja la tarea, visible junto al responsable. */
+    nivel_jerarquico?: import('@/types/usuario').NivelJerarquico | null;
     [key: string]: unknown;
 }
 
