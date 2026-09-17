@@ -68,16 +68,17 @@ class PermisosService
     }
 
     /**
-     * RF-06 D1: el responsable de la tarea o cualquier colaborador ya
-     * existente puede agregar nuevos colaboradores, sin restriccion de nivel
-     * jerarquico ni de unidad organizacional (RN-04). Decision de Franco
-     * (13-09-2026): no aplica sobre una tarea ya completada o cancelada (ver
-     * EstadoTarea::esTerminal()).
+     * RF-06 D2 (17-09-2026): solo el creador o el responsable de la tarea
+     * pueden agregar nuevos colaboradores -- reemplaza la decision de
+     * Franco del 13-09-2026, que tambien lo permitia a cualquier
+     * colaborador ya existente. Sin restriccion de nivel jerarquico ni de
+     * unidad organizacional (RN-04). No aplica sobre una tarea ya
+     * completada o cancelada (ver EstadoTarea::esTerminal()).
      */
     public function puedeAgregarColaborador(Tarea $tarea, User $solicitante): bool
     {
         return ! $tarea->estado->esTerminal()
-            && ($solicitante->id === $tarea->responsable_id || $tarea->colaboradores->contains("id", $solicitante->id));
+            && ($solicitante->id === $tarea->creador_id || $solicitante->id === $tarea->responsable_id);
     }
 
     /**

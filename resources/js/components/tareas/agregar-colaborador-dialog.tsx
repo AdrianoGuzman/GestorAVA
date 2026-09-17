@@ -54,7 +54,7 @@ export function AgregarColaboradorDialog({ trigger, tareaId, personas }: { trigg
                     <form onSubmit={submit} className="flex flex-1 flex-col">
                         <SheetHeader>
                             <SheetTitle>Agregar colaborador</SheetTitle>
-                            <SheetDescription>El responsable o un colaborador ya existente puede agregar nuevos colaboradores.</SheetDescription>
+                            <SheetDescription>Solo el creador o el responsable de la tarea pueden agregar nuevos colaboradores.</SheetDescription>
                         </SheetHeader>
 
                         <div className="grid gap-2 py-4">

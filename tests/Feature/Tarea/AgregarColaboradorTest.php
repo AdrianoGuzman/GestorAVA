@@ -48,7 +48,7 @@ class AgregarColaboradorTest extends TestCase
         Notification::assertSentTo($colaboradorB, TareaAsignadaNotification::class);
     }
 
-    public function test_un_colaborador_existente_puede_agregar_a_otro(): void
+    public function test_un_colaborador_existente_no_puede_agregar_a_otro(): void
     {
         $obra = UnidadOrganizacional::factory()->create();
         $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
@@ -62,9 +62,47 @@ class AgregarColaboradorTest extends TestCase
 
         $this->actingAs($colaboradorExistente)->post("/tareas/{$tarea->id}/colaboradores", [
             "colaboradores" => [$nuevoColaborador->id],
+        ])->assertSessionHas("error");
+
+        $this->assertFalse($tarea->fresh()->colaboradores->contains("id", $nuevoColaborador->id));
+    }
+
+    public function test_el_responsable_puede_agregar_colaboradores_aunque_no_sea_el_creador(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $creador = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $candidato = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $creador->id,
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($responsable)->post("/tareas/{$tarea->id}/colaboradores", [
+            "colaboradores" => [$candidato->id],
         ])->assertRedirect()->assertSessionHas("success");
 
-        $this->assertTrue($tarea->fresh()->colaboradores->contains("id", $nuevoColaborador->id));
+        $this->assertTrue($tarea->fresh()->colaboradores->contains("id", $candidato->id));
+    }
+
+    public function test_el_creador_puede_agregar_colaboradores_aunque_no_sea_el_responsable(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $creador = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $candidato = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "creador_id" => $creador->id,
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+        ]);
+
+        $this->actingAs($creador)->post("/tareas/{$tarea->id}/colaboradores", [
+            "colaboradores" => [$candidato->id],
+        ])->assertRedirect()->assertSessionHas("success");
+
+        $this->assertTrue($tarea->fresh()->colaboradores->contains("id", $candidato->id));
     }
 
     public function test_un_colaborador_puede_ser_de_otra_unidad_organizacional(): void
