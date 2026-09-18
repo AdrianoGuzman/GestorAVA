@@ -62,6 +62,7 @@ class TareaService
                 // servicio -- ej. tests, DuplicarTareaService -- podria no
                 // traerlo.
                 "prioridad" => $datos["prioridad"] ?? PrioridadTarea::Media->value,
+                "evidencia_obligatoria" => $datos["evidencia_obligatoria"] ?? false,
                 "esta_atrasada" => false,
                 // RF-21: null salvo que DependenciaService::crearTareaHija()
                 // la pase explicitamente -- una tarea normal nunca tiene padre.
@@ -77,6 +78,7 @@ class TareaService
                 "colaboradores" => $colaboradorIds->all(),
                 "fecha_compromiso" => $datos["fecha_compromiso"],
                 "prioridad" => $tarea->prioridad->value,
+                "evidencia_obligatoria" => $tarea->evidencia_obligatoria,
             ]);
 
             return $tarea;
@@ -123,6 +125,7 @@ class TareaService
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
                 "prioridad" => $tarea->prioridad->value,
+                "evidencia_obligatoria" => $tarea->evidencia_obligatoria,
                 "proyecto_id" => $tarea->proyecto_id,
                 "seccion_id" => $tarea->seccion_id,
             ];
@@ -133,6 +136,7 @@ class TareaService
                 "fecha_inicio" => $datos["fecha_inicio"] ?? null,
                 "fecha_compromiso" => $datos["fecha_compromiso"],
                 "prioridad" => $datos["prioridad"] ?? $tarea->prioridad->value,
+                "evidencia_obligatoria" => $datos["evidencia_obligatoria"] ?? $tarea->evidencia_obligatoria,
                 "proyecto_id" => $this->campoSegunPermisoProyectos($datos["proyecto_id"] ?? null, $tarea->proyecto_id, $usuario),
                 "seccion_id" => $this->campoSegunPermisoProyectos($datos["seccion_id"] ?? null, $tarea->seccion_id, $usuario),
             ]);
@@ -151,6 +155,7 @@ class TareaService
                 "fecha_inicio" => $tarea->fecha_inicio?->toDateString(),
                 "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
                 "prioridad" => $tarea->prioridad->value,
+                "evidencia_obligatoria" => $tarea->evidencia_obligatoria,
                 "proyecto_id" => $tarea->proyecto_id,
                 "seccion_id" => $tarea->seccion_id,
             ]);

@@ -114,6 +114,7 @@ export interface TareaDetalle {
     descripcion: string | null;
     estado: EstadoTarea;
     prioridad: PrioridadTarea;
+    evidencia_obligatoria: boolean;
     esta_atrasada: boolean;
     fecha_inicio: string | null;
     fecha_compromiso: string;

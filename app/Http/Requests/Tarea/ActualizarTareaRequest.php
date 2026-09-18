@@ -42,6 +42,11 @@ class ActualizarTareaRequest extends FormRequest
             $tarea = $this->route("tarea");
             $this->merge(["seccion_id" => $tarea?->seccion_id]);
         }
+
+        if (! $this->has("evidencia_obligatoria")) {
+            $tarea = $this->route("tarea");
+            $this->merge(["evidencia_obligatoria" => $tarea?->evidencia_obligatoria ?? false]);
+        }
     }
 
     public function rules(): array
@@ -70,6 +75,7 @@ class ActualizarTareaRequest extends FormRequest
                 },
             ],
             "prioridad" => ["required", new Enum(PrioridadTarea::class)],
+            "evidencia_obligatoria" => ["required", "boolean"],
             "proyecto_id" => ["nullable", "integer", "exists:usuarios.proyectos,id"],
             "seccion_id" => [
                 "nullable",

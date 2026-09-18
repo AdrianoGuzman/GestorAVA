@@ -154,6 +154,7 @@ export function TareaDetalleContent({ tarea, rolUsuario, usuarios, proyectos, se
                             fechaInicio={tarea.fecha_inicio}
                             fechaCompromiso={tarea.fecha_compromiso}
                             prioridad={tarea.prioridad}
+                            evidenciaObligatoria={tarea.evidencia_obligatoria}
                             proyectoId={tarea.proyecto?.id ?? null}
                             seccionId={tarea.seccion?.id ?? null}
                             proyectos={proyectos}

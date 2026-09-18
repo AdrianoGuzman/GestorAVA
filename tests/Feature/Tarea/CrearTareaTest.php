@@ -259,4 +259,31 @@ class CrearTareaTest extends TestCase
 
         $this->assertSame(0, Tarea::count());
     }
+
+    public function test_se_puede_marcar_evidencia_obligatoria_al_crear(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Instalacion con evidencia obligatoria",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+            "evidencia_obligatoria" => true,
+        ])->assertSessionHas("success");
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertTrue($tarea->evidencia_obligatoria);
+    }
+
+    public function test_evidencia_obligatoria_queda_en_false_por_defecto(): void
+    {
+        $creador = $this->crearUsuarioConUnidad();
+
+        $this->actingAs($creador)->post("/tareas", [
+            "titulo" => "Tarea sin evidencia obligatoria",
+            "fecha_compromiso" => now()->addDays(5)->toDateString(),
+        ])->assertSessionHas("success");
+
+        $tarea = Tarea::firstOrFail();
+        $this->assertFalse($tarea->evidencia_obligatoria);
+    }
 }

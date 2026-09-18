@@ -34,6 +34,7 @@ class Tarea extends Model {
         "fecha_compromiso",
         "estado",
         "prioridad",
+        "evidencia_obligatoria",
         "esta_atrasada",
         "recordatorio_vencimiento_enviado",
         "tarea_padre_id",
@@ -44,6 +45,7 @@ class Tarea extends Model {
     protected $casts = [
         "estado" => EstadoTarea::class,
         "prioridad" => PrioridadTarea::class,
+        "evidencia_obligatoria" => "boolean",
         "esta_atrasada" => "boolean",
         "recordatorio_vencimiento_enviado" => "boolean",
         "fecha_inicio" => "date",
