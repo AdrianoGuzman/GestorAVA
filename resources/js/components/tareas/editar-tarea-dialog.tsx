@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DatePickerButton } from '@/components/ui/date-picker-button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export function EditarTareaDialog({
     fechaInicio,
     fechaCompromiso,
     prioridad,
+    evidenciaObligatoria,
     proyectoId,
     seccionId,
     proyectos,
@@ -42,6 +44,7 @@ export function EditarTareaDialog({
     fechaInicio: string | null;
     fechaCompromiso: string;
     prioridad: PrioridadTarea;
+    evidenciaObligatoria: boolean;
     proyectoId: number | null;
     seccionId: number | null;
     proyectos: ProyectoResumen[];
@@ -55,6 +58,7 @@ export function EditarTareaDialog({
         fecha_inicio: fechaInicio ? fechaInicio.slice(0, 10) : '',
         fecha_compromiso: fechaCompromiso.slice(0, 10),
         prioridad,
+        evidencia_obligatoria: evidenciaObligatoria,
         proyecto_id: proyectoId,
         seccion_id: seccionId,
     });
@@ -74,7 +78,8 @@ export function EditarTareaDialog({
 
         enviar('patch', route('tareas.actualizar', tareaId), data, {
             onSuccess: () => setOpen(false),
-            onError: () => reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso', 'prioridad', 'proyecto_id', 'seccion_id'),
+            onError: () =>
+                reset('titulo', 'descripcion', 'fecha_inicio', 'fecha_compromiso', 'prioridad', 'evidencia_obligatoria', 'proyecto_id', 'seccion_id'),
         });
     };
 
@@ -209,6 +214,19 @@ export function EditarTareaDialog({
                                     )}
                                 </div>
                             )}
+
+                            <div className="grid gap-1.5">
+                                <label className="flex items-center gap-2 text-sm font-medium">
+                                    <Checkbox
+                                        checked={data.evidencia_obligatoria}
+                                        onCheckedChange={(checked) => setData('evidencia_obligatoria', checked === true)}
+                                    />
+                                    Requiere evidencia obligatoria
+                                </label>
+                                <p className="pl-7 text-xs text-muted-foreground">
+                                    No se va a poder completar la tarea hasta que alguien suba un archivo marcado como "Obligatorio".
+                                </p>
+                            </div>
                         </div>
 
                         <DialogFooter>

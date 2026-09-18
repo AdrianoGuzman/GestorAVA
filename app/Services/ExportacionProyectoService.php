@@ -122,6 +122,14 @@ class ExportacionProyectoService
                 ["nombre", "Nombre", fn ($v) => $this->formatearTexto($v, 60)],
                 ["peso", "Peso", fn ($v) => $this->formatearPorcentaje($v)],
             ]),
+
+            // Sin diff: igual que en historial-proyecto-timeline.tsx, este
+            // evento ya se llama "Aplazó la entrega" -- la fecha vieja no
+            // aporta, solo la nueva.
+            TipoEventoProyecto::EntregaAplazada => [
+                "Fecha término: {$this->formatearFecha($datos['fecha_termino'] ?? null)}",
+                "Motivo: {$this->formatearTexto($datos['motivo'] ?? null, 200)}",
+            ],
         };
     }
 

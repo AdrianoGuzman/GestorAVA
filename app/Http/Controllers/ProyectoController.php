@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Proyecto\ActualizarProyectoRequest;
+use App\Http\Requests\Proyecto\AplazarEntregaRequest;
 use App\Http\Requests\Proyecto\CrearProyectoRequest;
 use App\Models\Proyecto;
 use App\Models\Seccion;
@@ -102,5 +103,12 @@ class ProyectoController extends Controller
         $proyecto = $this->proyectoService->actualizar($proyecto, $request->validated(), $request->user());
 
         return back()->with("success", "Proyecto \"{$proyecto->nombre}\" actualizado correctamente.");
+    }
+
+    public function aplazarEntrega(AplazarEntregaRequest $request, Proyecto $proyecto): RedirectResponse
+    {
+        $proyecto = $this->proyectoService->aplazarEntrega($proyecto, $request->validated(), $request->user());
+
+        return back()->with("success", "Se aplazó la entrega de \"{$proyecto->nombre}\".");
     }
 }

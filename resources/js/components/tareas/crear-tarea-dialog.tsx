@@ -1,6 +1,7 @@
 import { PersonaPicker, type Persona } from '@/components/tareas/persona-picker';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DatePickerButton } from '@/components/ui/date-picker-button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, NonModalOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ export function CrearTareaDialog({
         fecha_inicio: '',
         fecha_compromiso: fechaCompromisoInicial ?? '',
         prioridad: 'media' as PrioridadTarea,
+        evidencia_obligatoria: false as boolean,
         responsable_id: '',
         colaboradores: [] as number[],
         proyecto_id: null as number | null,
@@ -254,6 +256,19 @@ export function CrearTareaDialog({
                                 )}
                             </div>
                         )}
+
+                        <div className="grid gap-1.5">
+                            <label className="flex items-center gap-2 text-sm font-medium">
+                                <Checkbox
+                                    checked={data.evidencia_obligatoria}
+                                    onCheckedChange={(checked) => setData('evidencia_obligatoria', checked === true)}
+                                />
+                                Requiere evidencia obligatoria
+                            </label>
+                            <p className="pl-7 text-xs text-muted-foreground">
+                                No se va a poder completar la tarea hasta que alguien suba un archivo marcado como "Obligatorio".
+                            </p>
+                        </div>
 
                         <div className="grid gap-2">
                             <Label>Responsable</Label>

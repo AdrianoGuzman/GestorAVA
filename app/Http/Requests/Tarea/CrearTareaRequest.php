@@ -40,6 +40,7 @@ class CrearTareaRequest extends FormRequest
             "descripcion" => ["nullable", "string"],
             "responsable_id" => ["required", "integer", "exists:users,id"],
             "prioridad" => ["required", new Enum(PrioridadTarea::class)],
+            "evidencia_obligatoria" => ["sometimes", "boolean"],
             "fecha_inicio" => [
                 "nullable",
                 "date",

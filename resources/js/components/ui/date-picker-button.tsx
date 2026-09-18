@@ -104,6 +104,12 @@ export function DatePickerButton({
                 <Calendar
                     mode="single"
                     selected={valor ? stringAFecha(valor) : undefined}
+                    // Sin esto, el calendario siempre abre en el mes de hoy --
+                    // molesto para elegir una fecha lejana (ej. aplazar una
+                    // entrega varios meses adelante). Prioriza el valor ya
+                    // elegido, si no hay, el minimo permitido (mas cercano a lo
+                    // que probablemente se quiere elegir que "hoy").
+                    defaultMonth={valor ? stringAFecha(valor) : minFecha ? stringAFecha(minFecha) : undefined}
                     disabled={limites.length > 0 ? limites : undefined}
                     onSelect={(fecha) => {
                         onChange(fecha ? fechaAString(fecha) : '');

@@ -21,6 +21,7 @@ return [
     "guards_completar" => [
         \App\Guards\ChecklistPendienteGuard::class,
         \App\Guards\DependenciasPendientesGuard::class,
+        \App\Guards\EvidenciaObligatoriaGuard::class,
     ],
 
 ];

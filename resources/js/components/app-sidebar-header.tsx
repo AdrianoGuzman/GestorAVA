@@ -1,3 +1,4 @@
+import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { CampanaNotificaciones } from '@/components/notificaciones/campana-notificaciones';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -10,7 +11,10 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
-            <CampanaNotificaciones />
+            <div className="flex items-center gap-1">
+                <AppearanceToggleDropdown />
+                <CampanaNotificaciones />
+            </div>
         </header>
     );
 }

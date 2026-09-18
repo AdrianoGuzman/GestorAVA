@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAccionTarea } from '@/hooks/use-accion-tarea';
+import { toast } from '@/hooks/use-toast';
 import { CircleCheckBig } from 'lucide-react';
 import { useState } from 'react';
 
@@ -9,17 +10,25 @@ import { useState } from 'react';
  * formulario propios -- pero FinalizacionService puede rechazar la accion
  * igual (RF-22 dependencias pendientes, RF-23 subtareas sin marcar, o un
  * estado que ya no admite completar), con el motivo bajo la clave "bloqueos"
- * (o "estado"), no ligada a ningun input. Sin mostrarlo aca explicitamente,
- * el boton "no hacia nada" a los ojos de quien lo aprieta: la tarea seguia
- * sin completarse y no habia ninguna pista de por que.
+ * (o "estado"), no ligada a ningun input. Dentro del modal de "Mis tareas"
+ * ese rechazo ya dispara un toast solo (ver useAccionTarea); en la pagina
+ * completa (`/tareas/{id}`) no pasa por ahi, asi que lo disparamos a mano
+ * para no dejar el boton "sin hacer nada" a los ojos de quien lo aprieta.
  */
 export function ConfirmarCompletarDialog({ trigger, tareaId }: { trigger: React.ReactNode; tareaId: number }) {
     const [open, setOpen] = useState(false);
-    const { enviar, processing, errors } = useAccionTarea();
-    const bloqueo = errors.bloqueos ?? errors.estado;
+    const { enviar, processing, enModal } = useAccionTarea();
 
     const confirmar = () => {
-        enviar('patch', route('tareas.completar', tareaId), {}, { onSuccess: () => setOpen(false) });
+        enviar('patch', route('tareas.completar', tareaId), {}, {
+            onSuccess: () => setOpen(false),
+            onError: (errores) => {
+                if (!enModal) {
+                    const mensaje = errores.bloqueos ?? errores.estado;
+                    if (mensaje) toast({ variant: 'destructive', title: mensaje });
+                }
+            },
+        });
     };
 
     return (
@@ -28,9 +37,8 @@ export function ConfirmarCompletarDialog({ trigger, tareaId }: { trigger: React.
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Marcar tarea como completada</DialogTitle>
-                    <DialogDescription>Esta acción no se puede deshacer. ¿Confirmás que la tarea está terminada?</DialogDescription>
+                    <DialogDescription>Esta acción no se puede deshacer. ¿Confirmas que la tarea está terminada?</DialogDescription>
                 </DialogHeader>
-                {bloqueo && <p className="text-sm text-rojo-1">{bloqueo}</p>}
                 <DialogFooter>
                     <Button onClick={confirmar} disabled={processing}>
                         <CircleCheckBig /> Completar tarea
