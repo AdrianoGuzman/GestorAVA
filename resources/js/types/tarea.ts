@@ -30,6 +30,8 @@ export interface UsuarioTarea {
     id: number;
     name: string;
     email: string;
+    /** AVA Montajes (17-09-2026): qué nivel jerárquico maneja la tarea, visible junto al responsable. */
+    nivel_jerarquico?: import('@/types/usuario').NivelJerarquico | null;
     [key: string]: unknown;
 }
 
@@ -112,6 +114,7 @@ export interface TareaDetalle {
     descripcion: string | null;
     estado: EstadoTarea;
     prioridad: PrioridadTarea;
+    evidencia_obligatoria: boolean;
     esta_atrasada: boolean;
     fecha_inicio: string | null;
     fecha_compromiso: string;

@@ -276,4 +276,35 @@ class EditarTareaTest extends TestCase
 
         $this->assertNull($tarea->fresh()->proyecto_id);
     }
+
+    public function test_permite_marcar_evidencia_obligatoria_al_editar(): void
+    {
+        $responsable = User::factory()->create();
+        $tarea = Tarea::factory()->create(["responsable_id" => $responsable->id, "evidencia_obligatoria" => false]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => $tarea->titulo,
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+                "evidencia_obligatoria" => true,
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertTrue($tarea->fresh()->evidencia_obligatoria);
+    }
+
+    public function test_conserva_evidencia_obligatoria_si_no_se_manda_al_editar(): void
+    {
+        $responsable = User::factory()->create();
+        $tarea = Tarea::factory()->create(["responsable_id" => $responsable->id, "evidencia_obligatoria" => true]);
+
+        $this->actingAs($responsable)
+            ->patch("/tareas/{$tarea->id}", [
+                "titulo" => "Solo corrijo el titulo",
+                "fecha_compromiso" => $tarea->fecha_compromiso->toDateString(),
+            ])
+            ->assertSessionHas("success");
+
+        $this->assertTrue($tarea->fresh()->evidencia_obligatoria);
+    }
 }

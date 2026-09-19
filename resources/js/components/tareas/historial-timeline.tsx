@@ -150,6 +150,7 @@ function construirDetalles(
                 { key: 'fecha_inicio', label: 'Fecha inicio', formatear: formatearFecha },
                 { key: 'fecha_compromiso', label: 'Fecha término', formatear: formatearFecha },
                 { key: 'prioridad', label: 'Prioridad', formatear: formatearPrioridad },
+                { key: 'evidencia_obligatoria', label: 'Evidencia obligatoria', formatear: (v) => (v ? 'Sí' : 'No') },
                 { key: 'proyecto_id', label: 'Proyecto', formatear: proyectoDe },
                 { key: 'seccion_id', label: 'Sección', formatear: seccionDe },
             ]);

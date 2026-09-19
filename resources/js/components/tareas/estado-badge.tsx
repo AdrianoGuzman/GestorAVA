@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { EstadoTarea, PrioridadTarea } from '@/types/tarea';
 import type { EstadoProyecto } from '@/types/proyecto';
+import { NIVEL_JERARQUICO_LABELS, type NivelJerarquico } from '@/types/usuario';
 
 /**
  * RF-24 D2: el estado y el indicador "atrasada" se muestran a la vez cuando
@@ -59,6 +60,25 @@ export function EstadoProyectoBadge({ estado, className }: { estado: EstadoProye
             )}
         >
             {estado === 'activo' ? 'Activo' : 'Cerrado'}
+        </span>
+    );
+}
+
+/**
+ * AVA Montajes (17-09-2026): qué nivel jerárquico maneja cada tarea, visible
+ * junto al responsable -- no es una regla de permisos nueva, solo un dato
+ * que antes había que ir a buscar a Administración. Neutro (no usa colores
+ * de estado/prioridad) para no competir con esas señales en la misma fila.
+ */
+export function NivelJerarquicoBadge({ nivel, className }: { nivel: NivelJerarquico; className?: string }) {
+    return (
+        <span
+            className={cn(
+                'inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground',
+                className,
+            )}
+        >
+            {NIVEL_JERARQUICO_LABELS[nivel]}
         </span>
     );
 }

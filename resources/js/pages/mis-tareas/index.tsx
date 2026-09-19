@@ -1,5 +1,5 @@
 import { CrearTareaDialog } from '@/components/tareas/crear-tarea-dialog';
-import { AtrasadaBadge, EstadoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
+import { AtrasadaBadge, EstadoBadge, NivelJerarquicoBadge, PrioridadBadge } from '@/components/tareas/estado-badge';
 import type { Persona } from '@/components/tareas/persona-picker';
 import { TareaDetalleModal, useTareaDetalleModal } from '@/components/tareas/tarea-detalle-modal';
 import { Button } from '@/components/ui/button';
@@ -835,7 +835,6 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
         >
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">{tarea.codigo}</p>
                     <p className={cn('flex items-center gap-2 font-semibold', completada ? 'text-muted-foreground' : 'text-foreground')}>
                         {completada && <CheckCircle2 className="size-5 shrink-0 text-verde-6" />}
                         <span className="truncate">{tarea.titulo}</span>
@@ -851,8 +850,9 @@ function TareaCard({ tarea, onAbrir }: { tarea: TareaResumen; onAbrir: (id: numb
             </div>
 
             <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-                <p>
-                    {tarea.responsable.name} · {ROL_USUARIO_LABELS[tarea.rol]}
+                <p className="flex flex-wrap items-center gap-1.5">
+                    {tarea.responsable.name}
+                    {tarea.responsable.nivel_jerarquico && <NivelJerarquicoBadge nivel={tarea.responsable.nivel_jerarquico} />}
                 </p>
                 <p>Vence: {formatearFecha(tarea.fecha_compromiso)}</p>
             </div>

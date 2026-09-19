@@ -199,4 +199,71 @@ class CompletarTareaTest extends TestCase
 
         $this->assertSame(EstadoTarea::Completada, $padre->fresh()->estado);
     }
+
+    public function test_no_se_puede_completar_si_evidencia_obligatoria_y_nadie_subio_un_adjunto_necesario(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+            "evidencia_obligatoria" => true,
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
+            ->assertSessionHasErrors("bloqueos");
+
+        $this->assertSame(EstadoTarea::EnProgreso, $tarea->fresh()->estado);
+    }
+
+    public function test_se_puede_completar_si_evidencia_obligatoria_y_ya_hay_un_adjunto_necesario(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+            "evidencia_obligatoria" => true,
+        ]);
+        $tarea->adjuntos()->create([
+            "usuario_id" => $responsable->id,
+            "nombre_original" => "certificado.pdf",
+            "ruta" => "adjuntos/certificado.pdf",
+            "mime_type" => "application/pdf",
+            "tamano_bytes" => 1024,
+            "categoria" => "necesario",
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
+            ->assertRedirect()->assertSessionHas("success");
+
+        $this->assertSame(EstadoTarea::Completada, $tarea->fresh()->estado);
+    }
+
+    public function test_un_adjunto_de_evidencia_no_sirve_para_cumplir_la_evidencia_obligatoria(): void
+    {
+        $obra = UnidadOrganizacional::factory()->create();
+        $responsable = $this->usuario(NivelJerarquico::Asistente, $obra);
+        $tarea = Tarea::factory()->create([
+            "responsable_id" => $responsable->id,
+            "unidad_organizacional_id" => $obra->id,
+            "estado" => EstadoTarea::EnProgreso,
+            "evidencia_obligatoria" => true,
+        ]);
+        $tarea->adjuntos()->create([
+            "usuario_id" => $responsable->id,
+            "nombre_original" => "foto.jpg",
+            "ruta" => "adjuntos/foto.jpg",
+            "mime_type" => "image/jpeg",
+            "tamano_bytes" => 2048,
+            "categoria" => "evidencia",
+        ]);
+
+        $this->actingAs($responsable)->patch("/tareas/{$tarea->id}/completar")
+            ->assertSessionHasErrors("bloqueos");
+
+        $this->assertSame(EstadoTarea::EnProgreso, $tarea->fresh()->estado);
+    }
 }

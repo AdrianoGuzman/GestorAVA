@@ -6,6 +6,7 @@ const ETIQUETAS_EVENTO: Record<TipoEventoProyecto, string> = {
     proyecto_editado: 'Editó el proyecto',
     seccion_creada: 'Agregó una sección',
     seccion_editada: 'Editó una sección',
+    entrega_aplazada: 'Aplazó la entrega',
 };
 
 const SIN_VALOR = '(vacío)';
@@ -77,6 +78,11 @@ function construirDetalles(evento: HistorialEventoProyecto): DetalleEvento[] {
             return typeof datos.seccion_nombre === 'string'
                 ? [{ label: 'Sección', actual: `${formatearTexto(datos.seccion_nombre, 60)} (peso ${formatearPeso(datos.peso)})` }]
                 : [];
+        // Sin "anterior": a diferencia de proyecto_editado (que puede cambiar
+        // cualquier campo y por eso muestra el diff completo), este evento ya
+        // es "Aplazó la entrega" -- la fecha vieja no aporta, solo la nueva.
+        case 'entrega_aplazada':
+            return [{ label: 'Fecha término', actual: formatearFecha(datos.fecha_termino) }];
         case 'creacion':
             return [
                 { label: 'Fecha inicio', actual: formatearFecha(datos.fecha_inicio) },
@@ -104,6 +110,7 @@ export function HistorialProyectoTimeline({ eventos }: { eventos: HistorialEvent
             <ol className="max-h-72 space-y-4 overflow-y-auto border-l border-gris-3 pr-1 pl-4">
                 {ordenados.map((evento) => {
                     const detalles = construirDetalles(evento);
+                    const motivo = evento.datos_evento?.motivo;
                     return (
                         <li key={evento.id} className="relative">
                             <span className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-gris-1" />
@@ -111,6 +118,11 @@ export function HistorialProyectoTimeline({ eventos }: { eventos: HistorialEvent
                                 {evento.usuario?.name ?? 'Sistema'} — {ETIQUETAS_EVENTO[evento.tipo_evento]}
                             </p>
                             <p className="text-xs text-muted-foreground">{new Date(evento.created_at).toLocaleString('es-CL')}</p>
+                            {typeof motivo === 'string' && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    <span className="font-medium text-foreground/70">Motivo:</span> {formatearTexto(motivo, 60)}
+                                </p>
+                            )}
                             {detalles.length > 0 && (
                                 <ul className="mt-1 space-y-0.5">
                                     {detalles.map((detalle) => (

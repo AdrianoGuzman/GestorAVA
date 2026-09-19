@@ -120,7 +120,7 @@ export function AdjuntosSection({
                                 categoria === 'necesario' ? 'bg-verde-5 text-gris-2' : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
-                            Necesario para la tarea
+                            Obligatorio
                         </button>
                         <button
                             type="button"
@@ -145,7 +145,7 @@ export function AdjuntosSection({
                         <input {...getInputProps()} />
                         <Paperclip className="size-6 text-gris-1" />
                         <p className="text-sm text-foreground">
-                            {subiendo ? 'Subiendo...' : isDragActive ? 'Soltá el archivo acá...' : 'Arrastrá un archivo o hacé click para elegirlo'}
+                            {subiendo ? 'Subiendo...' : isDragActive ? 'Suelta el archivo acá...' : 'Arrastra un archivo o haz click para elegirlo'}
                         </p>
                         <p className="text-xs text-muted-foreground">PDF, imágenes, Word, Excel o ZIP — máx. 10MB</p>
                     </div>
@@ -156,7 +156,7 @@ export function AdjuntosSection({
             <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                     <h4 className="mb-2 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                        Necesarios para la tarea
+                        Obligatorios
                     </h4>
                     <ListaAdjuntos adjuntos={necesarios} vacio="Sin archivos de referencia todavía." />
                 </div>

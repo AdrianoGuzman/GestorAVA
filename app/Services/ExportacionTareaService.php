@@ -117,6 +117,7 @@ class ExportacionTareaService
                 ["fecha_inicio", "Fecha inicio", fn ($v) => $this->formatearFecha($v)],
                 ["fecha_compromiso", "Fecha término", fn ($v) => $this->formatearFecha($v)],
                 ["prioridad", "Prioridad", fn ($v) => $this->formatearPrioridad($v)],
+                ["evidencia_obligatoria", "Evidencia obligatoria", fn ($v) => $v ? "Sí" : "No"],
                 ["proyecto_id", "Proyecto", fn ($v) => $proyectoDe($v)],
                 ["seccion_id", "Sección", fn ($v) => $seccionDe($v)],
             ]),
